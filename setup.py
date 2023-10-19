@@ -2,8 +2,8 @@ from setuptools import setup, find_packages
 
 setup(
     name='epydemics',
-    version='0.1.1',  # Start with a small version number, you can increment this as you make changes
-    packages=find_packages(),  # Automatically discover and include all packages in the package directory
+    version='0.4',
+    packages=find_packages(),
     install_requires=[
         'numpy',
         'pandas',
@@ -13,9 +13,6 @@ setup(
         'python-box',
         'scikit-learn',
         'statsmodels',
-        'itertools',
-        'logging',
-        'json'
     ],
     author='Juliho David Castillo Colmenares',
     author_email='juliho.colmenares@gmail.com',
