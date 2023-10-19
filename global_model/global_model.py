@@ -1,8 +1,7 @@
-import pandas as pd
 import matplotlib.pyplot as plt
 from epydemics import  process_data_from_owid, DataContainer, Model
 
-global_dataframe = process_data_from_owid("owid-covid-data.csv")
+global_dataframe = process_data_from_owid("./data_sample/owid-covid-data.csv")
 
 global_data_container = DataContainer(
     global_dataframe
