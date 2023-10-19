@@ -9,7 +9,7 @@ from statsmodels.tsa.api import VAR
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 import json
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logging.getLogger("matplotlib").setLevel(logging.WARNING)
 
 ratios = ["alpha", "beta", "gamma"]
