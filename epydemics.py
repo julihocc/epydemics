@@ -1,13 +1,13 @@
 import itertools
 import logging
-
 import numpy as np
 from box import Box
 import pandas as pd
-import seaborn as sns
 from matplotlib import pyplot as plt
 from scipy.stats import gmean, hmean
 from statsmodels.tsa.api import VAR
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+import json
 
 logging.basicConfig(level=logging.DEBUG)
 logging.getLogger("matplotlib").setLevel(logging.WARNING)
@@ -25,13 +25,14 @@ compartment_labels = {
     "D": "Deaths",
 }
 central_tendency_methods = ["mean", "median", "gmean", "hmean"]
-method_names = {"mean": "Mean", "median": "Median", "gmean":"Geometric Mean", "hmean":"Harmonic Mean"}
+method_names = {"mean": "Mean", "median": "Median", "gmean": "Geometric Mean", "hmean": "Harmonic Mean"}
 method_colors = {
     "mean": "blue",
     "median": "orange",
     "gmean": "green",
     "hmean": "purple",
 }
+
 
 def prepare_for_logit_function(data):
     logging.debug(f"Filtering data for {logit_ratios}")
@@ -41,8 +42,8 @@ def prepare_for_logit_function(data):
 
     for placeholder in ["alpha", "beta", "gamma"]:
         data[placeholder] = (data[placeholder]
-                               .apply(lambda x: x if x > 0 else np.nan)
-                               .apply(lambda x: x if x < 1 else np.nan))
+                             .apply(lambda x: x if x > 0 else np.nan)
+                             .apply(lambda x: x if x < 1 else np.nan))
         data[placeholder] = data[placeholder].fillna(method="ffill").fillna(method="bfill")
 
     return data
@@ -75,7 +76,7 @@ def validate_data(training_data):
 
 
 def process_data_from_owid(
-        url="https://covid.ourworldindata.org/data/owid-covid-data.csv", 
+        url="https://covid.ourworldindata.org/data/owid-covid-data.csv",
         iso_code="OWID_WRL"):
     try:
         data = pd.read_csv(url)
@@ -86,7 +87,7 @@ def process_data_from_owid(
         data = data[data["iso_code"] == iso_code]
     except Exception as e:
         raise Exception(f"Could not filter data for {iso_code}: {e}")
-    
+
     try:
         data = data[["date", "total_cases", "total_deaths", "population"]]
     except ValueError:
@@ -126,7 +127,6 @@ def preprocess_data(data, window=7):
 
 
 def reindex_data(data, start=None, stop=None):
-
     start = pd.to_datetime(start) if start is not None else data.index.min()
     stop = pd.to_datetime(stop) if stop is not None else data.index.max()
 
@@ -197,9 +197,9 @@ def feature_engineering(data):
 
 class DataContainer:
     def __init__(
-        self,
-        raw_data,
-        window=7
+            self,
+            raw_data,
+            window=7
     ):
         self.raw_data = raw_data
         self.window = window
@@ -256,7 +256,7 @@ class Model:
         )
         try:
             self.forecasted_logit_ratios_tuple_arrays = self.logit_ratios_model_fitted.forecast_interval(
-                    self.logit_ratios_values, self.days_to_forecast, **kwargs
+                self.logit_ratios_values, self.days_to_forecast, **kwargs
             )
         except Exception as e:
             raise Exception(e)
@@ -294,9 +294,9 @@ class Model:
             previous = simulation.loc[t0]
             S = previous.S - previous.I * previous.alpha * previous.S / previous.A
             I = (previous.I
-                + previous.I * previous.alpha * previous.S / previous.A
-                - previous.beta * previous.I
-                - previous.gamma * previous.I)
+                 + previous.I * previous.alpha * previous.S / previous.A
+                 - previous.beta * previous.I
+                 - previous.gamma * previous.I)
             R = previous.R + previous.beta * previous.I
             D = previous.D + previous.gamma * previous.I
             C = I + R + D
@@ -362,10 +362,10 @@ class Model:
 
     def visualize_results(self,
                           compartment_code,
-                          testing_data = None,
-                          log_response = True):
+                          testing_data=None,
+                          log_response=True):
         compartment = self.results[compartment_code]
-        compartment_levels = [column for column in compartment.columns if column not in central_tendency_methods ]
+        compartment_levels = [column for column in compartment.columns if column not in central_tendency_methods]
 
         for level in compartment_levels:
             plt.plot(
@@ -403,50 +403,38 @@ class Model:
         plt.legend(loc="upper left")
         plt.show()
 
-if __name__ == "__main__":
+    def evaluate_forecast(self, testing_data, compartment_codes=("C", "D", "I"), save_evaluation=False, filename=None):
 
-    global_dataframe = process_data_from_owid("owid-covid-data.csv")
+        evaluation = {}
 
-    global_data_container = DataContainer(
-        global_dataframe
-    )
+        for compartment_code in compartment_codes:
+            compartment = self.results[compartment_code]
 
-    print(global_data_container.data.columns)
-    print(global_data_container.data.isnull().sum())
+            evaluation[compartment_code] = {}
 
-    global_data_container.data[["C", "D", "N"]].plot(
-        subplots=True
-    )
-    plt.show()
+            for method in central_tendency_methods:
 
-    global_data_container.data[["A", "S", "I", "R"]].plot(
-        subplots=True
-    )
-    plt.show()
+                forecast = compartment[method].values
+                actual = testing_data[compartment_code].values
+                mae = mean_absolute_error(actual, forecast)
+                mse = mean_squared_error(actual, forecast)
+                rmse = np.sqrt(mse)
+                mape = np.mean(np.abs((actual - forecast) / actual)) * 100
+                smape = np.mean(np.abs((actual - forecast) / (actual + forecast))) * 100
 
-    global_model = Model(
-        global_data_container,
-        start="2020-03-01",
-        stop="2020-12-31",
-    )
+                evaluation[compartment_code][method] = {
+                    "mae": mae,
+                    "mse": mse,
+                    "rmse": rmse,
+                    "mape": mape,
+                    "smape": smape,
+                }
 
-    print(global_model.forecasting_interval)
+        if save_evaluation:
+            if filename is None:
+                now = pd.Timestamp.now()
+                filename = now.strftime("%Y%m%d%H%M%S")
+            with open(f"{filename}.json", "w") as f:
+                json.dump(evaluation, f)
 
-    global_model.create_logit_ratios_model()
-    global_model.fit_logit_ratios_model()
-    global_model.forecast_logit_ratios(steps=30)
-
-    global_model.run_simulations()
-
-    global_model.generate_result()
-
-    global_testing_data = global_data_container.data.loc[global_model.forecasting_interval]
-
-    for compartment in ["C", "D", "I"]:
-        global_model.visualize_results(
-            compartment,
-            global_testing_data,
-            log_response=True)
-
-
-
+        return evaluation

@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="ProjectRootManager" version="2" project-jdk-name="epydemics" project-jdk-type="Python SDK" />
+  <component name="Black">
+    <option name="executionMode" value="BINARY" />
+    <option name="pathToExecutable" value="C:\Users\julih\anaconda3\Scripts\black.exe" />
+    <option name="sdkUUID" value="421eab94-8934-4836-bb68-cd44cb23521c" />
+  </component>
+  <component name="ProjectRootManager" version="2" project-jdk-name="epydemics (2)" project-jdk-type="Python SDK" />
   <component name="PyCharmDSProjectLayout">
     <option name="id" value="JupyterRightHiddenStructureLayout" />
   </component>
