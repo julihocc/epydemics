@@ -17,10 +17,10 @@ D'(t) = \gamma(t) D(t)
 $$
 where
 
-1. $ S(t) $ is the number of susceptible people,
-2. $ I(t) $ is the number of infected,
-3. $ R(t) $ is the number of recovered.
-4. $ D(t) $ is the number of deceased.
+1. $S(t)$ is the number of susceptible people,
+2. $I(t)$ is the number of infected,
+3. $R(t)$ is the number of recovered.
+4. $D(t)$ is the number of deceased.
 
 Close related, we define
 
