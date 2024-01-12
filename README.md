@@ -40,27 +40,21 @@ However, the main problem seems to be that the classical models, as the one give
 In the present article, we shall inspect a possible and promising solution by using the above ideas to model time-dependent parameters in the SIR model as time series. As we want to make this approach as affordable for most people as possible, we will employ some tools from machine learning to give highly accurate predictions of the pandemia. To illustrate this idea, we have use data from the [Our World in Data](https://ourworldindata.org/coronavirus) project.
 
 We will analyze the following discrete generalization of the SIR model.
-$$
-S(t+1)-S(t) = - \alpha(t) \dfrac{S(t)I(t)}{S(t)+I(t)} \\
-I(t+1)-I(t) = \alpha(t) \dfrac{S(t)I(t)}{S(t)+I(t)} - \beta(t) I(t) -\gamma(t)I(t) \\
-R(t+1)-R(t) = \beta(t) I(t) \\
-D(t+1)-D(t) = \gamma(T) I(t)
-$$
+$$S(t+1)-S(t) = - \alpha(t) \dfrac{S(t)I(t)}{S(t)+I(t)}$$
+$$I(t+1)-I(t) = \alpha(t) \dfrac{S(t)I(t)}{S(t)+I(t)} - \beta(t) I(t) -\gamma(t)I(t)$$
+$$R(t+1)-R(t) = \beta(t) I(t)$$
+$$D(t+1)-D(t) = \gamma(T) I(t)$$
 
-Define $ C(t) $ as the number of confirmed cases, that is, $ C = I+R+D $. So we have
-$$
-C(t+1)-C(t) =  \alpha(t) \dfrac{S(t)I(t)}{S(t)+I(t)}
-$$
+Define $C(t)$ as the number of confirmed cases, that is, $C = I+R+D$. So we have
+$$C(t+1)-C(t) =  \alpha(t) \dfrac{S(t)I(t)}{S(t)+I(t)}$$
 
 For the sake of simplicity, we consider a fixed total population $N$ over time, including the deceased ones.
 
-From here, que denote the first (backward) difference $ F(t)-F(t-1) $ of a quantity $ F $ at time $ t $ as $ \Delta F(t).$
+From here, que denote the first (backward) difference $F(t)-F(t-1)$ of a quantity $F$ at time $t$ as $\Delta F(t).$
 
 From  the discrete model above, it follows that
-$$
-\alpha(t) = \dfrac{S(t)+I(t)}{S(t)I(t)} \Delta C(t)\\
-\beta(t) = \dfrac{\Delta R(t)}{I(t)} \\
-\gamma(t) = \dfrac{\Delta D(t)}{I(t)}
-$$
+$$\alpha(t) = \dfrac{S(t)+I(t)}{S(t)I(t)} \Delta C(t)$$
+$$\beta(t) = \dfrac{\Delta R(t)}{I(t)}$$
+$$\gamma(t) = \dfrac{\Delta D(t)}{I(t)}$$
 
 The main idea is to obtain the time series for $\alpha(t) $, $ \beta(t) $ and $ \gamma(t) $, and then use these time series to forecast the evolution of the pandemia, using the discrete model above. For this purpose, we have developed a Python module called `epydemics` which is publicly available in [GitHub,](https://github.com/julihocc/epydemics) and it could be installed from [PyPI](https://pypi.org/project/epydemics/).
