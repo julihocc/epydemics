@@ -9,10 +9,10 @@ Email: juliho.colmenares@gmail.com
 ## Introduction
 
 Let's consider the following SIRD Model
-$$S'(t) = - \alpha(t) \frac{S(t)I(t)}{S(t)+I(t)} \\
-I'(t) = \alpha(t) \frac{S(t)I(t)}{S(t)+I(t)} - \beta(t) I(t)  - \gamma(t) D(t) \\
-R'(t) = \beta(t) I(t) \\
-D'(t) = \gamma(t) D(t)=$$
+$$S'(t) = - \alpha(t) \frac{S(t)I(t)}{S(t)+I(t)}$$
+$$I'(t) = \alpha(t) \frac{S(t)I(t)}{S(t)+I(t)} - \beta(t) I(t)  - \gamma(t) D(t)$$
+$$R'(t) = \beta(t) I(t)$$
+$$D'(t) = \gamma(t) D(t)=$$
 
 where
 
