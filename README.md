@@ -57,4 +57,4 @@ $$\alpha(t) = \dfrac{S(t)+I(t)}{S(t)I(t)} \Delta C(t)$$
 $$\beta(t) = \dfrac{\Delta R(t)}{I(t)}$$
 $$\gamma(t) = \dfrac{\Delta D(t)}{I(t)}$$
 
-The main idea is to obtain the time series for $\alpha(t) $, $ \beta(t) $ and $ \gamma(t) $, and then use these time series to forecast the evolution of the pandemia, using the discrete model above. For this purpose, we have developed a Python module called `epydemics` which is publicly available in [GitHub,](https://github.com/julihocc/epydemics) and it could be installed from [PyPI](https://pypi.org/project/epydemics/).
+The main idea is to obtain the time series for $\alpha(t) $, $\beta(t)$ and $\gamma(t)$, and then use these time series to forecast the evolution of the pandemia, using the discrete model above. For this purpose, we have developed a Python module called `epydemics` which is publicly available in [GitHub,](https://github.com/julihocc/epydemics) and it could be installed from [PyPI](https://pypi.org/project/epydemics/).
