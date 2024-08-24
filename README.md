@@ -4,7 +4,6 @@
 **Forecasting COVID-19 using time series and machine learning**
 
 Author: Juliho David Castillo Colmenares
-Email: juliho.colmenares@gmail.com
 
 ## Introduction
 
