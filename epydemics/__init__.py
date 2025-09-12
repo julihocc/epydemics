@@ -3,8 +3,18 @@
 This package provides tools for modeling and analyzing epidemic data using
 discrete SIRD models combined with time series analysis.
 
-Version: 0.6.0-dev (Phase 1 Refactoring)
+Phase 3 Features:
+- Extracted analysis module with visualization and evaluation functions
+- Modern pandas syntax (deprecated methods replaced)
+- Enhanced type safety and improved interfaces
+- Comprehensive test coverage for analysis functionality
+
+Version: 0.6.0-dev (Phase 3 Advanced Features & Analysis Module)
 """
+
+# Import main functionality from modular structure
+from .analysis.evaluation import evaluate_forecast, evaluate_model
+from .analysis.visualization import visualize_results
 
 # Import specific constants and exceptions to avoid star imports
 from .core.constants import (
@@ -20,8 +30,6 @@ from .core.exceptions import (
     EpydemicsError,
     NotDataFrameError,
 )
-
-# Import main functionality from modular structure
 from .data.container import DataContainer, validate_data
 from .epydemics import process_data_from_owid
 from .models.sird import Model
@@ -48,6 +56,10 @@ __all__ = [
     "NotDataFrameError",
     "DataValidationError",
     "DateRangeError",
+    # Analysis functions
+    "evaluate_forecast",
+    "evaluate_model",
+    "visualize_results",
     # Main classes and functions
     "DataContainer",
     "Model",

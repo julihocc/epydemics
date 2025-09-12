@@ -1,27 +1,17 @@
 """SIRD epidemiological model with VAR time series forecasting."""
 
-import json
-import logging
 import itertools
-from typing import Optional, Dict, Any, Tuple, List
+import logging
+from typing import Any, Dict, Optional, Tuple
 
-import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from box import Box
-from statsmodels.tsa.api import VAR
 from scipy.stats import gmean, hmean
-from sklearn.metrics import mean_absolute_error, mean_squared_error
+from statsmodels.tsa.api import VAR
 
-from ..core.constants import (
-    logit_ratios,
-    compartments,
-    forecasting_levels,
-    central_tendency_methods,
-    method_names,
-    method_colors,
-    compartment_labels,
-)
+from ..analysis.evaluation import evaluate_forecast as _evaluate_forecast
+from ..analysis.visualization import visualize_results as _visualize_results
+from ..core.constants import compartments, forecasting_levels, logit_ratios
 from ..data.container import reindex_data
 from ..utils.transformations import logistic_function
 from .base import BaseModel, SIRDModelMixin
@@ -52,22 +42,29 @@ class Model(BaseModel, SIRDModelMixin):
             stop: Stop date for model training (YYYY-MM-DD format)
             days_to_forecast: Number of days to forecast ahead
         """
-        self.data = None
+        # Data and model attributes
+        self.data: Optional[pd.DataFrame] = None
         self.data_container = data_container
         self.window = data_container.window
         self.start = start
         self.stop = stop
-        self.results = None
-        self.simulation = None
-        self.forecasting_box = None
-        self.forecasted_logit_ratios_tuple_arrays = None
-        self.forecasting_interval = None
-        self.forecast_index_stop = None
-        self.forecast_index_start = None
+
+        # Results and simulation attributes (set during model execution)
+        self.results: Optional[Box] = None
+        self.simulation: Optional[Box] = None
+        self.forecasting_box: Optional[Dict[str, pd.DataFrame]] = None
+        self.forecasted_logit_ratios_tuple_arrays: Optional[Any] = None
+        self.forecasting_interval: Optional[pd.DatetimeIndex] = None
+        self.forecast_index_stop: Optional[pd.Timestamp] = None
+        self.forecast_index_start: Optional[pd.Timestamp] = None
+
+        # Model parameters
         self.days_to_forecast = days_to_forecast
-        self.logit_ratios_model = None
-        self.logit_ratios_model_fitted = None
-        self.forecasted_logit_ratios = None
+
+        # VAR model attributes
+        self.logit_ratios_model: Optional[VAR] = None
+        self.logit_ratios_model_fitted: Optional[Any] = None
+        self.forecasted_logit_ratios: Optional[pd.DataFrame] = None
 
         self.data = reindex_data(data_container.data, start, stop)
         self.logit_ratios_values = self.data[logit_ratios].values
@@ -306,48 +303,12 @@ class Model(BaseModel, SIRDModelMixin):
             testing_data: Optional test data for comparison
             log_response: Whether to use logarithmic scale
         """
-        compartment = self.results[compartment_code]
-        compartment_levels = [
-            column
-            for column in compartment.columns
-            if column not in central_tendency_methods
-        ]
-
-        for level in compartment_levels:
-            plt.plot(
-                compartment.index,
-                compartment[level].values,
-                color="gray",
-                linestyle="dashdot",
-                alpha=0.25,
-            )
-
-        for method in central_tendency_methods:
-            plt.plot(
-                compartment.index,
-                compartment[method].values,
-                label=method_names[method],
-                color=method_colors[method],
-                linestyle="dashed",
-            )
-
-        if testing_data is not None:
-            plt.plot(
-                testing_data.index,
-                testing_data[compartment_code].values,
-                color="red",
-                label="Actual data",
-            )
-
-        plt.title(f"{compartment_labels[compartment_code]}")
-
-        if log_response:
-            plt.title(f"{compartment_labels[compartment_code]} (logarithmic response)")
-            plt.yscale("log")
-
-        plt.grid(True)
-        plt.legend(loc="upper left")
-        plt.show()
+        _visualize_results(
+            results=self.results,
+            compartment_code=compartment_code,
+            testing_data=testing_data,
+            log_response=log_response,
+        )
 
     def evaluate_forecast(
         self,
@@ -368,36 +329,10 @@ class Model(BaseModel, SIRDModelMixin):
         Returns:
             Dictionary with evaluation metrics for each compartment and method
         """
-        evaluation = {}
-
-        for compartment_code in compartment_codes:
-            compartment = self.results[compartment_code]
-
-            evaluation[compartment_code] = {}
-
-            for method in central_tendency_methods:
-
-                forecast = compartment[method].values
-                actual = testing_data[compartment_code].values
-                mae = mean_absolute_error(actual, forecast)
-                mse = mean_squared_error(actual, forecast)
-                rmse = np.sqrt(mse)
-                mape = np.mean(np.abs((actual - forecast) / actual)) * 100
-                smape = np.mean(np.abs((actual - forecast) / (actual + forecast))) * 100
-
-                evaluation[compartment_code][method] = {
-                    "mae": mae,
-                    "mse": mse,
-                    "rmse": rmse,
-                    "mape": mape,
-                    "smape": smape,
-                }
-
-        if save_evaluation:
-            if filename is None:
-                now = pd.Timestamp.now()
-                filename = now.strftime("%Y%m%d%H%M%S")
-            with open(f"{filename}.json", "w") as f:
-                json.dump(evaluation, f)
-
-        return evaluation
+        return _evaluate_forecast(
+            results=self.results,
+            testing_data=testing_data,
+            compartment_codes=compartment_codes,
+            save_evaluation=save_evaluation,
+            filename=filename,
+        )

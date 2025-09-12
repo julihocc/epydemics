@@ -52,9 +52,7 @@ def prepare_for_logit_function(data):
             .apply(lambda x: x if x > 0 else np.nan)
             .apply(lambda x: x if x < 1 else np.nan)
         )
-        data[placeholder] = (
-            data[placeholder].fillna(method="ffill").fillna(method="bfill")
-        )
+        data[placeholder] = data[placeholder].ffill().bfill()
 
     return data
 
@@ -157,7 +155,7 @@ def reindex_data(data, start=None, stop=None):
         raise Exception(f"Could not reindex data: {e}")
 
     try:
-        data = data.fillna(method="ffill")
+        data = data.ffill()
     except Exception as e:
         raise Exception(f"Could not fill missing values: {e}")
 
@@ -199,7 +197,7 @@ def feature_engineering(data):
     data = prepare_for_logit_function(data)
     data = add_logit_ratios(data)
 
-    data = data.fillna(method="ffill").fillna(0)
+    data = data.ffill().fillna(0)
     logging.debug(f"When completing feature engineering, columns are {data.columns}")
 
     return data

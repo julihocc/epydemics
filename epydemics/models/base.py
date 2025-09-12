@@ -41,7 +41,7 @@ class BaseModel(ABC):
         self.stop = stop
         self.days_to_forecast = days_to_forecast
 
-        # Initialize common attributes
+        # Initialize common attributes that will be set during model lifecycle
         self.data: Optional[pd.DataFrame] = None
         self.fitted_model: Optional[Any] = None
         self.forecasting_results: Optional[Dict[str, Any]] = None
@@ -68,13 +68,22 @@ class BaseModel(ABC):
         pass
 
     @abstractmethod
-    def evaluate_forecast(self, testing_data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+    def evaluate_forecast(
+        self,
+        testing_data: pd.DataFrame,
+        compartment_codes: tuple[str, ...] = ("C", "D", "I"),
+        save_evaluation: bool = False,
+        filename: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """Evaluate forecast accuracy against testing data."""
         pass
 
     @abstractmethod
     def visualize_results(
-        self, compartment: str, testing_data: Optional[pd.DataFrame] = None, **kwargs
+        self,
+        compartment_code: str,
+        testing_data: Optional[pd.DataFrame] = None,
+        log_response: bool = True,
     ) -> None:
         """Visualize model results and forecasts."""
         pass

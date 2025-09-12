@@ -1,8 +1,10 @@
 """Transformation functions for epidemiological data."""
 
 import logging
+
 import numpy as np
 import pandas as pd
+
 from ..core.constants import logit_ratios
 
 
@@ -27,9 +29,7 @@ def prepare_for_logit_function(data: pd.DataFrame) -> pd.DataFrame:
             .apply(lambda x: x if x > 0 else np.nan)
             .apply(lambda x: x if x < 1 else np.nan)
         )
-        data[placeholder] = (
-            data[placeholder].fillna(method="ffill").fillna(method="bfill")
-        )
+        data[placeholder] = data[placeholder].ffill().bfill()
 
     return data
 
