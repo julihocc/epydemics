@@ -178,7 +178,7 @@ def reindex_data(
 
     try:
         # Use forward fill for missing values
-        reindexed_data = reindexed_data.fillna(method="ffill")
+        reindexed_data = reindexed_data.ffill()
     except Exception as e:
         raise Exception(f"Could not fill missing values: {e}")
 
@@ -266,7 +266,7 @@ def feature_engineering(data: pd.DataFrame) -> pd.DataFrame:
     engineered_data = add_logit_ratios(engineered_data)
 
     # Final cleanup: forward fill then zero fill any remaining NaN values
-    engineered_data = engineered_data.fillna(method="ffill").fillna(0)
+    engineered_data = engineered_data.ffill().fillna(0)
 
     logging.debug(
         f"When completing feature engineering, columns are {engineered_data.columns}"
