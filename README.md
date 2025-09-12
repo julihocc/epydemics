@@ -1,5 +1,31 @@
 # Epydemics: Forecasting COVID-19 using time series and machine learning
 
+**Version 0.5.0** - AI-Enhanced Documentation Release
+
+## What's New in v0.5.0
+
+This release introduces comprehensive AI agent support and enhanced developer experience:
+
+### 🤖 AI Agent Integration
+
+- **GitHub Copilot Instructions**: Complete guidance for AI coding assistants in `.github/copilot-instructions.md`
+- **Agent Prompt Templates**: Standardized workflows for development tasks in `.github/prompts/`
+- **Automated Documentation**: AI-powered documentation updates and version management
+
+### 📚 Documentation Enhancements
+
+- **Mathematical Foundation**: Detailed explanation of discrete SIRD models and logit transformations
+- **Development Patterns**: Essential constants, data pipeline flows, and coding conventions
+- **Integration Guides**: OWID data format requirements and external dependencies
+- **Workflow Documentation**: Submodule management and validation approaches
+
+### 🔧 Developer Experience
+
+- **Structured Workflows**: Commit management, version tagging, and release processes
+- **Project-Specific Patterns**: Rate calculation dependencies and feature engineering sequences
+- **Error Handling**: Custom exceptions and validation patterns
+- **Testing Guidelines**: Model evaluation metrics and validation approaches
+
 ## Introduction
 
 Let's consider the following SIRD Model
