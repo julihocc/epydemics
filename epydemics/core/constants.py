@@ -8,7 +8,7 @@ The constants are organized by their usage domain and properly typed
 for better code clarity and IDE support.
 """
 
-from typing import List, Final
+from typing import Final, List
 
 # Epidemic model rate names
 # These are the three key rates in the SIRD model
