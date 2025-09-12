@@ -33,6 +33,38 @@ However, the main problem seems to be that the classical models, as the one give
 
 In the present article, we shall inspect a possible and promising solution by using the above ideas to model time-dependent parameters in the SIR model as time series. As we want to make this approach as affordable for most people as possible, we will employ some tools from machine learning to give highly accurate predictions of the pandemia. To illustrate this idea, we have use data from the [Our World in Data](https://ourworldindata.org/coronavirus) project.
 
+## Getting Started with Examples and Tutorials
+
+This repository includes a comprehensive tutorial and examples as a submodule. To get started:
+
+### For New Clones
+If you're cloning this repository for the first time, use:
+
+```bash
+git clone --recurse-submodules https://github.com/julihocc/epydemics.git
+```
+
+### For Existing Clones
+If you already have the repository cloned, initialize and update the submodule:
+
+```bash
+git submodule update --init --recursive
+```
+
+### Accessing the Tutorial
+The tutorial and examples are available in the `epydemics-tutorial/` directory. This includes:
+- Jupyter notebooks with step-by-step examples
+- Sample datasets
+- Detailed explanations of the methodology
+- Practical implementations
+
+### Keeping the Tutorial Updated
+To update the tutorial to the latest version:
+
+```bash
+git submodule update --remote epydemics-tutorial
+```
+
 We will analyze the following discrete generalization of the SIR model.
 $$S(t+1)-S(t) = - \alpha(t) \dfrac{S(t)I(t)}{S(t)+I(t)}$$
 $$I(t+1)-I(t) = \alpha(t) \dfrac{S(t)I(t)}{S(t)+I(t)} - \beta(t) I(t) -\gamma(t)I(t)$$
