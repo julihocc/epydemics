@@ -1,5 +1,7 @@
 # GitHub Copilot Instructions for Epydemics
 
+**Version 0.5.0** - AI-Enhanced Documentation Release
+
 ## Project Overview
 Epydemics implements a novel epidemiological forecasting system that combines discrete SIRD (Susceptible-Infected-Recovered-Deaths) mathematical models with time series analysis. Unlike classical epidemiological models with constant parameters, this project models time-varying infection, recovery, and mortality rates (α, β, γ) using VAR (Vector Autoregression) time series on logit-transformed rates.
 
