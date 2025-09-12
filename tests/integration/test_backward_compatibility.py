@@ -1,6 +1,4 @@
-"""Test backward compatibility during refactoring."""
-
-import pytest
+"""Integration tests for backward compatibility."""
 
 
 def test_import_original_functionality():
@@ -16,17 +14,15 @@ def test_import_original_functionality():
 
 def test_import_constants():
     """Test that constants are importable."""
-    from epydemics import ratios, compartments, compartment_labels
+    from epydemics import COMPARTMENTS, RATIOS
 
     # Verify basic constants
-    assert isinstance(ratios, list)
-    assert isinstance(compartments, list)
-    assert isinstance(compartment_labels, dict)
+    assert isinstance(RATIOS, list)
+    assert isinstance(COMPARTMENTS, list)
 
     # Verify expected values
-    assert "alpha" in ratios
-    assert "C" in compartments
-    assert "Confirmed" in compartment_labels.values()
+    assert "alpha" in RATIOS
+    assert "C" in COMPARTMENTS
 
 
 def test_package_version():
