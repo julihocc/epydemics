@@ -1,7 +1,7 @@
 # AI Manifest for Epydemics
 
-**Version**: 0.5.0  
-**Date**: 2025-09-12  
+**Version**: 0.5.0
+**Date**: 2025-09-12
 **Type**: Epidemiological Modeling & Forecasting System
 
 ## AI Agent Capabilities
@@ -59,7 +59,7 @@ epydemics.py           # Single-file module with DataContainer and Model classes
 
 ### Key Constraints
 - Rates must be in (0,1) bounds before logit transformation
-- 14-day lag assumption for recovery calculations  
+- 14-day lag assumption for recovery calculations
 - Forward-fill strategy for missing data
 - 27-scenario simulation matrix (3³ confidence intervals)
 

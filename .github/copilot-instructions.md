@@ -16,7 +16,7 @@ Epydemics implements a novel epidemiological forecasting system that combines di
 The project uses a discrete SIRD model where rates vary over time:
 ```
 α(t) = (S(t)+I(t))/(S(t)I(t)) * ΔC(t)  # Infection rate
-β(t) = ΔR(t)/I(t)                      # Recovery rate  
+β(t) = ΔR(t)/I(t)                      # Recovery rate
 γ(t) = ΔD(t)/I(t)                      # Mortality rate
 ```
 
@@ -35,7 +35,7 @@ Key insight: Rates are logit-transformed before VAR modeling to ensure they stay
 Always use these predefined lists from the module:
 ```python
 ratios = ["alpha", "beta", "gamma"]
-logit_ratios = ["logit_alpha", "logit_beta", "logit_gamma"] 
+logit_ratios = ["logit_alpha", "logit_beta", "logit_gamma"]
 compartments = ["A", "C", "S", "I", "R", "D"]
 forecasting_levels = ["lower", "point", "upper"]
 central_tendency_methods = ["mean", "median", "gmean", "hmean"]
@@ -43,7 +43,7 @@ central_tendency_methods = ["mean", "median", "gmean", "hmean"]
 
 ### Key Method Patterns
 - **Data validation**: Always use `validate_data()` before processing
-- **Rate bounds**: Rates must be in (0,1) - use `prepare_for_logit_function()` 
+- **Rate bounds**: Rates must be in (0,1) - use `prepare_for_logit_function()`
 - **Forward fill**: Missing values filled with `fillna(method="ffill")`
 - **Box objects**: Results stored in `python-box` objects for nested attribute access
 
@@ -86,7 +86,7 @@ This project uses git submodules for tutorials and examples:
 
 ### OWID Data Format
 External data must match OWID structure:
-- Required columns: `date`, `total_cases`, `total_deaths`, `population`  
+- Required columns: `date`, `total_cases`, `total_deaths`, `population`
 - ISO codes for filtering: `OWID_WRL` (global), country codes like `MEX`
 - Data automatically reindexed to daily frequency with forward fill
 
@@ -99,7 +99,7 @@ alpha = (data.A * data.dC) / (data.I * data.S)  # Will fail if I=0 or S=0
 ### Feature Engineering Order
 Must follow this sequence in `feature_engineering()`:
 1. Calculate R (recovered) using 14-day lag: `R = C.shift(14) - D`
-2. Calculate I (infected): `I = C - R - D`  
+2. Calculate I (infected): `I = C - R - D`
 3. Calculate differences (dC, dI, etc.)
 4. Calculate rates (α, β, γ) from differences
 5. Apply logit transform
@@ -114,7 +114,7 @@ Must follow this sequence in `feature_engineering()`:
 ### Logging
 Uses Python logging at INFO level. Matplotlib warnings suppressed to reduce noise during analysis.
 
-### Simulation Architecture  
+### Simulation Architecture
 Forecasting generates 3×3×3=27 scenarios by combining confidence intervals (lower/point/upper) for each rate. Results stored in nested Box structure: `simulation[alpha_level][beta_level][gamma_level]`
 
 ### Visualization Standards
@@ -125,6 +125,13 @@ Forecasting generates 3×3×3=27 scenarios by combining confidence intervals (lo
 
 ## Critical Dependencies
 - `statsmodels.tsa.api.VAR` for time series modeling
-- `python-box` for nested result containers  
+- `python-box` for nested result containers
 - `scipy.stats.gmean/hmean` for robust central tendency
 - `pandas` with DatetimeIndex for time series operations
+
+## AI Coding Guidelines
+
+### Style Requirements
+- **NO EMOJIS**: Never use emojis in code, documentation, commit messages, or any output
+- Clean, professional text only in all communications
+- Focus on clear, descriptive language without decorative symbols

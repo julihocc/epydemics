@@ -9,11 +9,11 @@ of the constants module before implementation.
 def test_constants_module_imports():
     """Test that all constants can be imported from core.constants."""
     from epydemics.core.constants import (
-        RATIOS,
-        LOGIT_RATIOS,
+        CENTRAL_TENDENCY_METHODS,
         COMPARTMENTS,
         FORECASTING_LEVELS,
-        CENTRAL_TENDENCY_METHODS,
+        LOGIT_RATIOS,
+        RATIOS,
     )
 
     # Basic import verification
@@ -82,11 +82,11 @@ def test_central_tendency_methods_constants():
 def test_constants_immutability():
     """Test that constants are properly typed and documented."""
     from epydemics.core.constants import (
-        RATIOS,
-        LOGIT_RATIOS,
+        CENTRAL_TENDENCY_METHODS,
         COMPARTMENTS,
         FORECASTING_LEVELS,
-        CENTRAL_TENDENCY_METHODS,
+        LOGIT_RATIOS,
+        RATIOS,
     )
 
     # Test that all constants are lists of strings
@@ -104,7 +104,7 @@ def test_constants_immutability():
 
 def test_ratios_correspondence():
     """Test that RATIOS and LOGIT_RATIOS correspond correctly."""
-    from epydemics.core.constants import RATIOS, LOGIT_RATIOS
+    from epydemics.core.constants import LOGIT_RATIOS, RATIOS
 
     # Each logit ratio should correspond to a ratio
     for i, ratio in enumerate(RATIOS):
@@ -118,23 +118,23 @@ def test_backward_compatibility():
     import epydemics
 
     # These should exist in the original module
-    assert hasattr(epydemics, "ratios")
-    assert hasattr(epydemics, "logit_ratios")
-    assert hasattr(epydemics, "compartments")
-    assert hasattr(epydemics, "forecasting_levels")
-    assert hasattr(epydemics, "central_tendency_methods")
+    assert hasattr(epydemics, "RATIOS")
+    assert hasattr(epydemics, "LOGIT_RATIOS")
+    assert hasattr(epydemics, "COMPARTMENTS")
+    assert hasattr(epydemics, "FORECASTING_LEVELS")
+    assert hasattr(epydemics, "CENTRAL_TENDENCY_METHODS")
 
     # Values should match
     from epydemics.core.constants import (
-        RATIOS,
-        LOGIT_RATIOS,
+        CENTRAL_TENDENCY_METHODS,
         COMPARTMENTS,
         FORECASTING_LEVELS,
-        CENTRAL_TENDENCY_METHODS,
+        LOGIT_RATIOS,
+        RATIOS,
     )
 
-    assert epydemics.ratios == RATIOS
-    assert epydemics.logit_ratios == LOGIT_RATIOS
-    assert epydemics.compartments == COMPARTMENTS
-    assert epydemics.forecasting_levels == FORECASTING_LEVELS
-    assert epydemics.central_tendency_methods == CENTRAL_TENDENCY_METHODS
+    assert epydemics.RATIOS == RATIOS
+    assert epydemics.LOGIT_RATIOS == LOGIT_RATIOS
+    assert epydemics.COMPARTMENTS == COMPARTMENTS
+    assert epydemics.FORECASTING_LEVELS == FORECASTING_LEVELS
+    assert epydemics.CENTRAL_TENDENCY_METHODS == CENTRAL_TENDENCY_METHODS

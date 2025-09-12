@@ -1,13 +1,14 @@
 import itertools
+import json
 import logging
+
 import numpy as np
-from box import Box
 import pandas as pd
+from box import Box
 from matplotlib import pyplot as plt
 from scipy.stats import gmean, hmean
-from statsmodels.tsa.api import VAR
 from sklearn.metrics import mean_absolute_error, mean_squared_error
-import json
+from statsmodels.tsa.api import VAR
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("matplotlib").setLevel(logging.WARNING)
@@ -25,7 +26,12 @@ compartment_labels = {
     "D": "Deaths",
 }
 central_tendency_methods = ["mean", "median", "gmean", "hmean"]
-method_names = {"mean": "Mean", "median": "Median", "gmean": "Geometric Mean", "hmean": "Harmonic Mean"}
+method_names = {
+    "mean": "Mean",
+    "median": "Median",
+    "gmean": "Geometric Mean",
+    "hmean": "Harmonic Mean",
+}
 method_colors = {
     "mean": "blue",
     "median": "orange",
@@ -41,10 +47,14 @@ def prepare_for_logit_function(data):
     logging.debug(f"gamma min:{data['gamma'].min()} max:{data['gamma'].max()}")
 
     for placeholder in ["alpha", "beta", "gamma"]:
-        data[placeholder] = (data[placeholder]
-                             .apply(lambda x: x if x > 0 else np.nan)
-                             .apply(lambda x: x if x < 1 else np.nan))
-        data[placeholder] = data[placeholder].fillna(method="ffill").fillna(method="bfill")
+        data[placeholder] = (
+            data[placeholder]
+            .apply(lambda x: x if x > 0 else np.nan)
+            .apply(lambda x: x if x < 1 else np.nan)
+        )
+        data[placeholder] = (
+            data[placeholder].fillna(method="ffill").fillna(method="bfill")
+        )
 
     return data
 
@@ -76,8 +86,8 @@ def validate_data(training_data):
 
 
 def process_data_from_owid(
-        url="https://covid.ourworldindata.org/data/owid-covid-data.csv",
-        iso_code="OWID_WRL"):
+    url="https://covid.ourworldindata.org/data/owid-covid-data.csv", iso_code="OWID_WRL"
+):
     try:
         data = pd.read_csv(url)
     except Exception as e:
@@ -196,11 +206,7 @@ def feature_engineering(data):
 
 
 class DataContainer:
-    def __init__(
-            self,
-            raw_data,
-            window=7
-    ):
+    def __init__(self, raw_data, window=7):
         self.raw_data = raw_data
         self.window = window
 
@@ -255,8 +261,10 @@ class Model:
             freq="D",
         )
         try:
-            self.forecasted_logit_ratios_tuple_arrays = self.logit_ratios_model_fitted.forecast_interval(
-                self.logit_ratios_values, self.days_to_forecast, **kwargs
+            self.forecasted_logit_ratios_tuple_arrays = (
+                self.logit_ratios_model_fitted.forecast_interval(
+                    self.logit_ratios_values, self.days_to_forecast, **kwargs
+                )
             )
         except Exception as e:
             raise Exception(e)
@@ -279,34 +287,51 @@ class Model:
             ),
         }
 
-        self.forecasting_box["alpha"] = self.forecasting_box["logit_alpha"].apply(logistic_function)
-        self.forecasting_box["beta"] = self.forecasting_box["logit_beta"].apply(logistic_function)
-        self.forecasting_box["gamma"] = self.forecasting_box["logit_gamma"].apply(logistic_function)
+        self.forecasting_box["alpha"] = self.forecasting_box["logit_alpha"].apply(
+            logistic_function
+        )
+        self.forecasting_box["beta"] = self.forecasting_box["logit_beta"].apply(
+            logistic_function
+        )
+        self.forecasting_box["gamma"] = self.forecasting_box["logit_gamma"].apply(
+            logistic_function
+        )
 
         self.forecasting_box = Box(self.forecasting_box)
 
     def simulate_for_given_levels(self, simulation_levels):
 
-        simulation = self.data[["A", "C", "S", "I", "R", "D", "alpha", "beta", "gamma"]].iloc[-1:].copy()
+        simulation = (
+            self.data[["A", "C", "S", "I", "R", "D", "alpha", "beta", "gamma"]]
+            .iloc[-1:]
+            .copy()
+        )
 
         for t1 in self.forecasting_interval:
             t0 = t1 - pd.Timedelta(days=1)
             previous = simulation.loc[t0]
             S = previous.S - previous.I * previous.alpha * previous.S / previous.A
-            I = (previous.I
-                 + previous.I * previous.alpha * previous.S / previous.A
-                 - previous.beta * previous.I
-                 - previous.gamma * previous.I)
+            I = (
+                previous.I
+                + previous.I * previous.alpha * previous.S / previous.A
+                - previous.beta * previous.I
+                - previous.gamma * previous.I
+            )
             R = previous.R + previous.beta * previous.I
             D = previous.D + previous.gamma * previous.I
             C = I + R + D
             A = previous.A
 
             simulation.loc[t1] = [
-                A, C, S, I, R, D,
+                A,
+                C,
+                S,
+                I,
+                R,
+                D,
                 self.forecasting_box["alpha"][simulation_levels[0]].loc[t1],
                 self.forecasting_box["beta"][simulation_levels[1]].loc[t1],
-                self.forecasting_box["gamma"][simulation_levels[2]].loc[t1]
+                self.forecasting_box["gamma"][simulation_levels[2]].loc[t1],
             ]
 
         simulation = simulation.iloc[1:]
@@ -324,24 +349,38 @@ class Model:
             for logit_beta_level in forecasting_levels:
                 self.simulation[logit_alpha_level][logit_beta_level] = Box()
                 for logit_gamma_level in forecasting_levels:
-                    self.simulation[logit_alpha_level][logit_beta_level][logit_gamma_level] = None
+                    self.simulation[logit_alpha_level][logit_beta_level][
+                        logit_gamma_level
+                    ] = None
 
     def run_simulations(self):
         self.create_simulation_box()
-        for current_levels in itertools.product(forecasting_levels, forecasting_levels, forecasting_levels):
+        for current_levels in itertools.product(
+            forecasting_levels, forecasting_levels, forecasting_levels
+        ):
             logit_alpha_level, logit_beta_level, logit_gamma_level = current_levels
             current_simulation = self.simulate_for_given_levels(current_levels)
-            self.simulation[logit_alpha_level][logit_beta_level][logit_gamma_level] = current_simulation
+            self.simulation[logit_alpha_level][logit_beta_level][
+                logit_gamma_level
+            ] = current_simulation
 
     def create_results_dataframe(self, compartment):
         results_dataframe = pd.DataFrame()
         logging.debug(results_dataframe.head())
 
-        levels_interactions = itertools.product(forecasting_levels, forecasting_levels, forecasting_levels)
+        levels_interactions = itertools.product(
+            forecasting_levels, forecasting_levels, forecasting_levels
+        )
 
-        for logit_alpha_level, logit_beta_level, logit_gamma_level in levels_interactions:
+        for (
+            logit_alpha_level,
+            logit_beta_level,
+            logit_gamma_level,
+        ) in levels_interactions:
             column_name = f"{logit_alpha_level}|{logit_beta_level}|{logit_gamma_level}"
-            simulation = self.simulation[logit_alpha_level][logit_beta_level][logit_gamma_level]
+            simulation = self.simulation[logit_alpha_level][logit_beta_level][
+                logit_gamma_level
+            ]
             results_dataframe[column_name] = simulation[compartment].values
 
         results_dataframe["mean"] = results_dataframe.mean(axis=1)
@@ -360,12 +399,13 @@ class Model:
         for compartment in compartments:
             self.results[compartment] = self.create_results_dataframe(compartment)
 
-    def visualize_results(self,
-                          compartment_code,
-                          testing_data=None,
-                          log_response=True):
+    def visualize_results(self, compartment_code, testing_data=None, log_response=True):
         compartment = self.results[compartment_code]
-        compartment_levels = [column for column in compartment.columns if column not in central_tendency_methods]
+        compartment_levels = [
+            column
+            for column in compartment.columns
+            if column not in central_tendency_methods
+        ]
 
         for level in compartment_levels:
             plt.plot(
@@ -390,7 +430,7 @@ class Model:
                 testing_data.index,
                 testing_data[compartment_code].values,
                 color="red",
-                label="Actual data"
+                label="Actual data",
             )
 
         plt.title(f"{compartment_labels[compartment_code]}")
@@ -403,7 +443,13 @@ class Model:
         plt.legend(loc="upper left")
         plt.show()
 
-    def evaluate_forecast(self, testing_data, compartment_codes=("C", "D", "I"), save_evaluation=False, filename=None):
+    def evaluate_forecast(
+        self,
+        testing_data,
+        compartment_codes=("C", "D", "I"),
+        save_evaluation=False,
+        filename=None,
+    ):
 
         evaluation = {}
 
