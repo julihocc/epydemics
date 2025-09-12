@@ -21,14 +21,11 @@ from .core.exceptions import (
     NotDataFrameError,
 )
 
-# Import main functionality with specific imports
-from .epydemics import (
-    DataContainer,
-    Model,
-    prepare_for_logit_function,
-    process_data_from_owid,
-    validate_data,
-)
+# Import main functionality from modular structure
+from .data.container import DataContainer, validate_data
+from .models.sird import Model
+from .utils.transformations import prepare_for_logit_function
+from .epydemics import process_data_from_owid
 
 __version__ = "0.6.0-dev"
 __author__ = "Juliho David Castillo Colmenares"
