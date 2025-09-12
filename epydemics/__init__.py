@@ -23,9 +23,9 @@ from .core.exceptions import (
 
 # Import main functionality from modular structure
 from .data.container import DataContainer, validate_data
+from .epydemics import process_data_from_owid
 from .models.sird import Model
 from .utils.transformations import prepare_for_logit_function
-from .epydemics import process_data_from_owid
 
 __version__ = "0.6.0-dev"
 __author__ = "Juliho David Castillo Colmenares"
