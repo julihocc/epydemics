@@ -35,7 +35,7 @@ In the present article, we shall inspect a possible and promising solution by us
 
 ## Getting Started with Examples and Tutorials
 
-This repository includes a comprehensive tutorial and examples as a submodule. To get started:
+This repository includes comprehensive tutorials, examples, and a complete global model implementation as submodules. To get started:
 
 ### For New Clones
 If you're cloning this repository for the first time, use:
@@ -45,24 +45,41 @@ git clone --recurse-submodules https://github.com/julihocc/epydemics.git
 ```
 
 ### For Existing Clones
-If you already have the repository cloned, initialize and update the submodule:
+If you already have the repository cloned, initialize and update all submodules:
 
 ```bash
 git submodule update --init --recursive
 ```
 
-### Accessing the Tutorial
-The tutorial and examples are available in the `epydemics-tutorial/` directory. This includes:
+### Available Resources
+
+#### 1. Tutorial (`epydemics-tutorial/`)
 - Jupyter notebooks with step-by-step examples
 - Sample datasets
 - Detailed explanations of the methodology
 - Practical implementations
 
-### Keeping the Tutorial Updated
-To update the tutorial to the latest version:
+#### 2. Global Model (`epydemics_global_model/`)
+- Complete implementation of the global COVID-19 forecasting model
+- Real-world data analysis and results
+- Advanced examples and case studies
+- Production-ready code and notebooks
+
+### Managing Submodules
+Use the provided helper script for easy submodule management:
+
+```bash
+./manage_tutorial.sh help    # Show all available commands
+./manage_tutorial.sh init    # Initialize all submodules
+./manage_tutorial.sh update  # Update to latest versions
+```
+
+### Keeping Resources Updated
+To update specific submodules to the latest version:
 
 ```bash
 git submodule update --remote epydemics-tutorial
+git submodule update --remote epydemics_global_model
 ```
 
 We will analyze the following discrete generalization of the SIR model.

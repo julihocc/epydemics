@@ -5,7 +5,7 @@
 
 set -e
 
-SUBMODULE_PATH="epydemics-tutorial"
+SUBMODULES=("epydemics-tutorial" "epydemics_global_model")
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Colors for output
@@ -40,159 +40,262 @@ check_git_repo() {
     fi
 }
 
-# Function to initialize submodule
+# Function to initialize submodules
 init_submodule() {
-    print_header "Initializing submodule..."
+    print_header "Initializing submodules..."
     
-    if [ -d "$SUBMODULE_PATH" ] && [ "$(ls -A $SUBMODULE_PATH)" ]; then
-        print_status "Submodule already initialized and populated"
+    local all_initialized=true
+    
+    for submodule in "${SUBMODULES[@]}"; do
+        if [ -d "$submodule" ] && [ "$(ls -A $submodule 2>/dev/null)" ]; then
+            print_status "Submodule '$submodule' already initialized"
+        else
+            all_initialized=false
+            break
+        fi
+    done
+    
+    if $all_initialized; then
+        print_status "All submodules already initialized and populated"
     else
-        print_status "Initializing and updating submodule..."
+        print_status "Initializing and updating submodules..."
         git submodule update --init --recursive
-        print_status "Submodule initialized successfully!"
+        print_status "Submodules initialized successfully!"
     fi
 }
 
-# Function to update submodule to latest
+# Function to update submodules to latest
 update_submodule() {
-    print_header "Updating submodule to latest version..."
+    print_header "Updating submodules to latest version..."
     
-    if [ ! -d "$SUBMODULE_PATH" ]; then
-        print_error "Submodule not found. Run 'init' first."
+    local missing_submodules=()
+    for submodule in "${SUBMODULES[@]}"; do
+        if [ ! -d "$submodule" ]; then
+            missing_submodules+=("$submodule")
+        fi
+    done
+    
+    if [ ${#missing_submodules[@]} -gt 0 ]; then
+        print_error "Submodules not found: ${missing_submodules[*]}. Run 'init' first."
         exit 1
     fi
     
-    print_status "Fetching latest changes..."
-    git submodule update --remote --merge "$SUBMODULE_PATH"
+    print_status "Fetching latest changes for all submodules..."
+    git submodule update --remote --merge
     
     # Check if there are changes to commit
-    if git diff --quiet HEAD -- .gitmodules "$SUBMODULE_PATH"; then
-        print_status "Submodule is already up to date"
+    local changes_detected=false
+    for submodule in "${SUBMODULES[@]}"; do
+        if ! git diff --quiet HEAD -- .gitmodules "$submodule"; then
+            changes_detected=true
+            break
+        fi
+    done
+    
+    if $changes_detected; then
+        print_warning "Submodules have been updated. Consider committing the changes:"
+        echo "  git add .gitmodules ${SUBMODULES[*]}"
+        echo "  git commit -m \"Update submodules to latest version\""
     else
-        print_warning "Submodule has been updated. Consider committing the changes:"
-        echo "  git add .gitmodules $SUBMODULE_PATH"
-        echo "  git commit -m \"Update tutorial submodule to latest version\""
+        print_status "All submodules are already up to date"
     fi
 }
 
-# Function to check submodule status
+# Function to check submodules status
 status_submodule() {
-    print_header "Checking submodule status..."
+    print_header "Checking submodules status..."
     
-    if [ ! -d "$SUBMODULE_PATH" ]; then
-        print_warning "Submodule directory not found"
-        return
+    local missing_submodules=()
+    local uninitialized_submodules=()
+    
+    for submodule in "${SUBMODULES[@]}"; do
+        if [ ! -d "$submodule" ]; then
+            missing_submodules+=("$submodule")
+        elif [ ! -f "$submodule/.git" ] && [ ! -d "$submodule/.git" ]; then
+            uninitialized_submodules+=("$submodule")
+        fi
+    done
+    
+    if [ ${#missing_submodules[@]} -gt 0 ]; then
+        print_warning "Missing submodule directories: ${missing_submodules[*]}"
     fi
     
-    # Check if submodule is initialized
-    if [ ! -f "$SUBMODULE_PATH/.git" ] && [ ! -d "$SUBMODULE_PATH/.git" ]; then
-        print_warning "Submodule not initialized"
-        return
+    if [ ${#uninitialized_submodules[@]} -gt 0 ]; then
+        print_warning "Uninitialized submodules: ${uninitialized_submodules[*]}"
     fi
     
-    print_status "Submodule status:"
-    git submodule status "$SUBMODULE_PATH"
+    print_status "Submodules status:"
+    git submodule status
     
     # Check for uncommitted changes in main repo
-    if ! git diff --quiet HEAD -- .gitmodules "$SUBMODULE_PATH"; then
-        print_warning "There are uncommitted changes related to the submodule"
+    local main_repo_changes=false
+    for submodule in "${SUBMODULES[@]}"; do
+        if ! git diff --quiet HEAD -- .gitmodules "$submodule" 2>/dev/null; then
+            main_repo_changes=true
+            break
+        fi
+    done
+    
+    if $main_repo_changes; then
+        print_warning "There are uncommitted changes related to submodules"
     fi
     
-    # Check submodule's local status
-    cd "$SUBMODULE_PATH"
-    if ! git diff --quiet; then
-        print_warning "Submodule has uncommitted changes"
-    fi
-    cd - > /dev/null
+    # Check each submodule's local status
+    for submodule in "${SUBMODULES[@]}"; do
+        if [ -d "$submodule" ] && { [ -f "$submodule/.git" ] || [ -d "$submodule/.git" ]; }; then
+            cd "$submodule"
+            if ! git diff --quiet; then
+                print_warning "Submodule '$submodule' has uncommitted changes"
+            fi
+            cd - > /dev/null
+        fi
+    done
 }
 
-# Function to reset submodule
+# Function to reset submodules
 reset_submodule() {
-    print_header "Resetting submodule..."
+    print_header "Resetting submodules..."
     
-    if [ ! -d "$SUBMODULE_PATH" ]; then
-        print_error "Submodule not found"
+    local existing_submodules=()
+    for submodule in "${SUBMODULES[@]}"; do
+        if [ -d "$submodule" ]; then
+            existing_submodules+=("$submodule")
+        fi
+    done
+    
+    if [ ${#existing_submodules[@]} -eq 0 ]; then
+        print_error "No submodules found"
         exit 1
     fi
     
-    print_warning "This will reset the submodule to the committed state and lose any local changes!"
+    print_warning "This will reset all submodules to the committed state and lose any local changes!"
     read -p "Are you sure? (y/N): " -n 1 -r
     echo
     
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        cd "$SUBMODULE_PATH"
-        git reset --hard HEAD
-        git clean -fd
-        cd - > /dev/null
+        for submodule in "${existing_submodules[@]}"; do
+            print_status "Resetting $submodule..."
+            cd "$submodule"
+            git reset --hard HEAD
+            git clean -fd
+            cd - > /dev/null
+        done
         git submodule update --init --recursive
-        print_status "Submodule reset successfully"
+        print_status "All submodules reset successfully"
     else
         print_status "Reset cancelled"
     fi
 }
 
-# Function to open tutorial in default application
+# Function to open resources in default application
 open_tutorial() {
-    print_header "Opening tutorial..."
+    print_header "Opening resources..."
     
-    if [ ! -d "$SUBMODULE_PATH" ]; then
-        print_error "Submodule not found. Run 'init' first."
-        exit 1
-    fi
-    
-    # Look for common tutorial files
-    TUTORIAL_FILES=(
-        "$SUBMODULE_PATH/README.md"
-        "$SUBMODULE_PATH/tutorial.ipynb"
-        "$SUBMODULE_PATH/index.html"
-        "$SUBMODULE_PATH"
-    )
-    
-    for file in "${TUTORIAL_FILES[@]}"; do
-        if [ -e "$file" ]; then
-            print_status "Opening $file..."
-            if command -v code > /dev/null; then
-                code "$file"
-            elif command -v xdg-open > /dev/null; then
-                xdg-open "$file"
-            elif command -v open > /dev/null; then
-                open "$file"
-            else
-                print_status "Please open $file manually"
-            fi
-            return
+    local missing_submodules=()
+    for submodule in "${SUBMODULES[@]}"; do
+        if [ ! -d "$submodule" ]; then
+            missing_submodules+=("$submodule")
         fi
     done
     
-    print_warning "No tutorial files found. Opening submodule directory..."
-    if command -v code > /dev/null; then
-        code "$SUBMODULE_PATH"
-    else
-        print_status "Please navigate to $SUBMODULE_PATH manually"
+    if [ ${#missing_submodules[@]} -eq ${#SUBMODULES[@]} ]; then
+        print_error "No submodules found. Run 'init' first."
+        exit 1
     fi
+    
+    # Look for common files in each submodule
+    for submodule in "${SUBMODULES[@]}"; do
+        if [ -d "$submodule" ]; then
+            print_status "Checking $submodule for resources..."
+            
+            RESOURCE_FILES=(
+                "$submodule/README.md"
+                "$submodule/tutorial.ipynb"
+                "$submodule/global_model.ipynb"
+                "$submodule/index.html"
+                "$submodule/*.ipynb"
+                "$submodule"
+            )
+            
+            local found_file=false
+            for file_pattern in "${RESOURCE_FILES[@]}"; do
+                # Handle glob patterns
+                if [[ "$file_pattern" == *"*"* ]]; then
+                    for file in $file_pattern; do
+                        if [ -e "$file" ]; then
+                            print_status "Opening $file..."
+                            if command -v code > /dev/null; then
+                                code "$file"
+                            elif command -v xdg-open > /dev/null; then
+                                xdg-open "$file"
+                            elif command -v open > /dev/null; then
+                                open "$file"
+                            else
+                                print_status "Please open $file manually"
+                            fi
+                            found_file=true
+                            break
+                        fi
+                    done
+                else
+                    if [ -e "$file_pattern" ]; then
+                        print_status "Opening $file_pattern..."
+                        if command -v code > /dev/null; then
+                            code "$file_pattern"
+                        elif command -v xdg-open > /dev/null; then
+                            xdg-open "$file_pattern"
+                        elif command -v open > /dev/null; then
+                            open "$file_pattern"
+                        else
+                            print_status "Please open $file_pattern manually"
+                        fi
+                        found_file=true
+                        break
+                    fi
+                fi
+                
+                if $found_file; then
+                    break
+                fi
+            done
+            
+            if ! $found_file; then
+                print_warning "No specific files found in $submodule. Opening directory..."
+                if command -v code > /dev/null; then
+                    code "$submodule"
+                else
+                    print_status "Please navigate to $submodule manually"
+                fi
+            fi
+        fi
+    done
 }
 
 # Function to show help
 show_help() {
     cat << EOF
-Epydemics Tutorial Management Script
+Epydemics Resources Management Script
 
 USAGE:
     $0 <command>
 
 COMMANDS:
-    init        Initialize the tutorial submodule
-    update      Update submodule to latest version
-    status      Check submodule status
-    reset       Reset submodule to clean state (loses local changes!)
-    open        Open tutorial in default application
+    init        Initialize all submodules (tutorial and global model)
+    update      Update all submodules to latest version
+    status      Check status of all submodules
+    reset       Reset all submodules to clean state (loses local changes!)
+    open        Open resources in default application
     help        Show this help message
 
+AVAILABLE RESOURCES:
+    epydemics-tutorial       - Comprehensive tutorials and examples
+    epydemics_global_model   - Complete global COVID-19 forecasting model
+
 EXAMPLES:
-    $0 init     # Initialize submodule for first use
-    $0 update   # Get latest tutorial content
-    $0 status   # Check current state
-    $0 open     # Open tutorial files
+    $0 init     # Initialize all submodules for first use
+    $0 update   # Get latest content for all resources
+    $0 status   # Check current state of all submodules
+    $0 open     # Open available tutorial and model files
 
 EOF
 }

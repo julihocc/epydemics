@@ -1,3 +1,6 @@
 [submodule "epydemics-tutorial"]
 	path = epydemics-tutorial
 	url = https://github.com/julihocc/epydemics-tutorial
+[submodule "epydemics_global_model"]
+	path = epydemics_global_model
+	url = https://github.com/julihocc/epydemics_global_model
