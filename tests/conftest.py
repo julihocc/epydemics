@@ -42,3 +42,17 @@ def sample_processed_data():
     )
 
     return data
+
+
+@pytest.fixture
+def sample_data_container(sample_owid_data):
+    """DataContainer instance with processed sample data."""
+    from epydemics.data.container import DataContainer
+
+    # Process the data similar to process_data_from_owid
+    processed_data = sample_owid_data.copy()
+    processed_data.set_index("date", inplace=True)
+    processed_data.index = pd.DatetimeIndex(processed_data.index)
+    processed_data.columns = ["C", "D", "N"]
+
+    return DataContainer(processed_data)
