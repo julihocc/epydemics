@@ -1,0 +1,3 @@
+[submodule "epydemics-tutorial"]
+	path = epydemics-tutorial
+	url = https://github.com/julihocc/epydemics-tutorial
