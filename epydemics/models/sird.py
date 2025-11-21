@@ -12,7 +12,7 @@ from statsmodels.tsa.api import VAR
 from ..analysis.evaluation import evaluate_forecast as _evaluate_forecast
 from ..analysis.visualization import visualize_results as _visualize_results
 from ..core.constants import compartments, forecasting_levels, logit_ratios
-from ..data.container import reindex_data
+from ..data.preprocessing import reindex_data
 from ..utils.transformations import logistic_function
 from .base import BaseModel, SIRDModelMixin
 
