@@ -44,18 +44,15 @@ def visualize_results(
     compartment = results[compartment_code]
 
     # Plot individual simulation paths with low alpha
-    for alpha_key in compartment.keys():
-        if alpha_key not in central_tendency_methods:  # Skip central tendency methods
-            for beta_key in compartment[alpha_key].keys():
-                for gamma_key in compartment[alpha_key][beta_key].keys():
-                    simulation = compartment[alpha_key][beta_key][gamma_key]
-                    plt.plot(
-                        simulation.index,
-                        simulation.values,
-                        color="gray",
-                        alpha=alpha,
-                        linestyle="--",
-                    )
+    for col in compartment.columns:
+        if col not in central_tendency_methods:  # Skip central tendency methods
+            plt.plot(
+                compartment.index,
+                compartment[col].values,
+                color="gray",
+                alpha=alpha,
+                linestyle="--",
+            )
 
     # Plot central tendency methods
     for i, method in enumerate(central_tendency_methods):

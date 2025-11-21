@@ -18,7 +18,7 @@ from epydemics.analysis.visualization import visualize_results
 def sample_results():
     """Sample forecast results structure for testing."""
     dates = pd.date_range("2020-01-01", periods=10, freq="D")
-
+    
     # Create sample forecast data with central tendencies
     central_tendency_data = pd.DataFrame(
         {
@@ -29,27 +29,21 @@ def sample_results():
         },
         index=dates,
     )
-
+    
     # Add some simulation paths (non-central tendency columns)
     simulation_data = central_tendency_data.copy()
-    simulation_data["lower_lower_lower"] = simulation_data["mean"] * 0.8
-    simulation_data["upper_upper_upper"] = simulation_data["mean"] * 1.2
-    simulation_data["point_lower_point"] = simulation_data["mean"] * 0.9
-
+    simulation_data["lower|lower|lower"] = simulation_data["mean"] * 0.8
+    simulation_data["upper|upper|upper"] = simulation_data["mean"] * 1.2
+    simulation_data["point|lower|point"] = simulation_data["mean"] * 0.9
+    
     # Create results structure
     results = {
         "C": simulation_data,
         "D": simulation_data.copy() * 0.1,
         "I": simulation_data.copy() * 0.5,
     }
-
-    # Add nested structure for simulation paths (as used in real results)
-    results["C"]["lower"] = {}
-    results["C"]["lower"]["lower"] = {}
-    results["C"]["lower"]["lower"]["lower"] = simulation_data["lower_lower_lower"]
-
+    
     return results
-
 
 @pytest.fixture
 def sample_testing_data():

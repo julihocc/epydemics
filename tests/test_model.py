@@ -232,8 +232,8 @@ class TestModelSimulation:
         # Assert conservation laws
         for idx in result.index:
             row = result.loc[idx]
-            # Total population should be conserved
-            assert np.isclose(row["S"] + row["C"], row["A"])
+            # Total population should be conserved (A = S + I)
+            assert np.isclose(row["S"] + row["I"], row["A"])
             # Cases should equal I + R + D
             assert np.isclose(row["C"], row["I"] + row["R"] + row["D"])
 
@@ -497,8 +497,8 @@ class TestModelIntegration:
         # Act - Use Model the same way as legacy code
         model = Model(
             sample_data_container,
-            start="2020-01-10",
-            stop="2020-01-25",
+            start="2020-03-10",
+            stop="2020-03-25",
             days_to_forecast=7,
         )
 
