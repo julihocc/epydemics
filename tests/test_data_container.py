@@ -353,7 +353,7 @@ class TestDataContainerIntegration:
         for feature in epidemio_features:
             assert feature in container.data.columns, f"Missing feature: {feature}"
 
-    @patch("epydemics.logging")
+    @patch("epydemics.data.container.logging")
     def test_datacontainer_logging_behavior(self, mock_logging):
         """Test that DataContainer maintains proper logging behavior."""
         # Arrange

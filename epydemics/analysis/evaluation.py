@@ -44,11 +44,21 @@ def evaluate_forecast(
         for method in central_tendency_methods:
             forecast = np.asarray(compartment[method].values)
             actual = np.asarray(testing_data[compartment_code].values)
-            mae = mean_absolute_error(actual, forecast)
-            mse = mean_squared_error(actual, forecast)
-            rmse = np.sqrt(mse)
-            mape = np.mean(np.abs((actual - forecast) / actual)) * 100
-            smape = np.mean(np.abs((actual - forecast) / (actual + forecast))) * 100
+
+            # Replace NaN or inf with 0
+            if forecast.size > 0:
+                forecast[~np.isfinite(forecast)] = 0
+            if actual.size > 0:
+                actual[~np.isfinite(actual)] = 0
+            
+            if actual.size == 0 and forecast.size == 0:
+                mae, mse, rmse, mape, smape = 0, 0, 0, 0, 0
+            else:
+                mae = mean_absolute_error(actual, forecast)
+                mse = mean_squared_error(actual, forecast)
+                rmse = np.sqrt(mse)
+                mape = np.mean(np.abs((actual - forecast) / actual)) * 100
+                smape = np.mean(np.abs((actual - forecast) / (actual + forecast))) * 100
 
             evaluation[compartment_code][method] = {
                 "mae": mae,

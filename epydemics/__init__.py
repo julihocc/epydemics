@@ -11,6 +11,7 @@ Phase 3 Features:
 
 Version: 0.6.0-dev (Phase 3 Advanced Features & Analysis Module)
 """
+import logging
 
 # Import main functionality from modular structure
 from .analysis.evaluation import evaluate_forecast, evaluate_model

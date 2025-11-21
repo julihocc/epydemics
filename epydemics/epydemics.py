@@ -10,6 +10,9 @@ from scipy.stats import gmean, hmean
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from statsmodels.tsa.api import VAR
 
+from epydemics.core.exceptions import NotDataFrameError
+
+
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("matplotlib").setLevel(logging.WARNING)
 
@@ -71,11 +74,6 @@ def add_logit_ratios(data):
     data.loc[:, "logit_gamma"] = logit_function(data["gamma"])
     return data
 
-
-class NotDataFrameError(Exception):
-    """Custom exception for when the input is not a Pandas DataFrame."""
-
-    pass
 
 
 def validate_data(training_data):

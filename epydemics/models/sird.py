@@ -199,7 +199,7 @@ class Model(BaseModel, SIRDModelMixin):
             R = previous.R + previous.beta * previous.I
             D = previous.D + previous.gamma * previous.I
             C = I + R + D
-            A = previous.A
+            A = S + I
 
             simulation.loc[t1] = [
                 A,
