@@ -10,41 +10,20 @@ from scipy.stats import gmean, hmean
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from statsmodels.tsa.api import VAR
 
+from epydemics.core.constants import (
+    CENTRAL_TENDENCY_METHODS,
+    COMPARTMENT_LABELS,
+    COMPARTMENTS,
+    FORECASTING_LEVELS,
+    LOGIT_RATIOS,
+    METHOD_COLORS,
+    METHOD_NAMES,
+)
 from epydemics.core.exceptions import NotDataFrameError
 
 
-logging.basicConfig(level=logging.INFO)
-logging.getLogger("matplotlib").setLevel(logging.WARNING)
-
-ratios = ["alpha", "beta", "gamma"]
-logit_ratios = ["logit_alpha", "logit_beta", "logit_gamma"]
-forecasting_levels = ["lower", "point", "upper"]
-compartments = ["A", "C", "S", "I", "R", "D"]
-compartment_labels = {
-    "A": "Active",
-    "C": "Confirmed",
-    "S": "Susceptible",
-    "I": "Infected",
-    "R": "Recovered",
-    "D": "Deaths",
-}
-central_tendency_methods = ["mean", "median", "gmean", "hmean"]
-method_names = {
-    "mean": "Mean",
-    "median": "Median",
-    "gmean": "Geometric Mean",
-    "hmean": "Harmonic Mean",
-}
-method_colors = {
-    "mean": "blue",
-    "median": "orange",
-    "gmean": "green",
-    "hmean": "purple",
-}
-
-
 def prepare_for_logit_function(data):
-    logging.debug(f"Filtering data for {logit_ratios}")
+    logging.debug(f"Filtering data for {LOGIT_RATIOS}")
     logging.debug(f"alpha min:{data['alpha'].min()} max:{data['alpha'].max()}")
     logging.debug(f"beta min:{data['beta'].min()} max:{data['beta'].max()}")
     logging.debug(f"gamma min:{data['gamma'].min()} max:{data['gamma'].max()}")
@@ -73,7 +52,6 @@ def add_logit_ratios(data):
     data.loc[:, "logit_beta"] = logit_function(data["beta"])
     data.loc[:, "logit_gamma"] = logit_function(data["gamma"])
     return data
-
 
 
 def validate_data(training_data):
@@ -235,7 +213,7 @@ class Model:
         self.forecasted_logit_ratios = None
 
         self.data = reindex_data(data_container.data, start, stop)
-        self.logit_ratios_values = self.data[logit_ratios].values
+        self.logit_ratios_values = self.data[LOGIT_RATIOS].values
 
     def create_logit_ratios_model(self, *args, **kwargs):
         self.logit_ratios_model = VAR(self.logit_ratios_values, *args, **kwargs)
@@ -266,20 +244,20 @@ class Model:
             raise Exception(e)
 
         self.forecasting_box = {
-            logit_ratios[0]: pd.DataFrame(
+            LOGIT_RATIOS[0]: pd.DataFrame(
                 self.forecasted_logit_ratios_tuple_arrays[0],
                 index=self.forecasting_interval,
-                columns=forecasting_levels,
+                columns=FORECASTING_LEVELS,
             ),
-            logit_ratios[1]: pd.DataFrame(
+            LOGIT_RATIOS[1]: pd.DataFrame(
                 self.forecasted_logit_ratios_tuple_arrays[1],
                 index=self.forecasting_interval,
-                columns=forecasting_levels,
+                columns=FORECASTING_LEVELS,
             ),
-            logit_ratios[2]: pd.DataFrame(
+            LOGIT_RATIOS[2]: pd.DataFrame(
                 self.forecasted_logit_ratios_tuple_arrays[2],
                 index=self.forecasting_interval,
-                columns=forecasting_levels,
+                columns=FORECASTING_LEVELS,
             ),
         }
 
@@ -307,7 +285,7 @@ class Model:
             t0 = t1 - pd.Timedelta(days=1)
             previous = simulation.loc[t0]
             S = previous.S - previous.I * previous.alpha * previous.S / previous.A
-            I = (
+            I_val = (
                 previous.I
                 + previous.I * previous.alpha * previous.S / previous.A
                 - previous.beta * previous.I
@@ -315,14 +293,14 @@ class Model:
             )
             R = previous.R + previous.beta * previous.I
             D = previous.D + previous.gamma * previous.I
-            C = I + R + D
+            C = I_val + R + D
             A = previous.A
 
             simulation.loc[t1] = [
                 A,
                 C,
                 S,
-                I,
+                I_val,
                 R,
                 D,
                 self.forecasting_box["alpha"][simulation_levels[0]].loc[t1],
@@ -340,11 +318,11 @@ class Model:
 
     def create_simulation_box(self):
         self.simulation = Box()
-        for logit_alpha_level in forecasting_levels:
+        for logit_alpha_level in FORECASTING_LEVELS:
             self.simulation[logit_alpha_level] = Box()
-            for logit_beta_level in forecasting_levels:
+            for logit_beta_level in FORECASTING_LEVELS:
                 self.simulation[logit_alpha_level][logit_beta_level] = Box()
-                for logit_gamma_level in forecasting_levels:
+                for logit_gamma_level in FORECASTING_LEVELS:
                     self.simulation[logit_alpha_level][logit_beta_level][
                         logit_gamma_level
                     ] = None
@@ -352,7 +330,7 @@ class Model:
     def run_simulations(self):
         self.create_simulation_box()
         for current_levels in itertools.product(
-            forecasting_levels, forecasting_levels, forecasting_levels
+            FORECASTING_LEVELS, FORECASTING_LEVELS, FORECASTING_LEVELS
         ):
             logit_alpha_level, logit_beta_level, logit_gamma_level = current_levels
             current_simulation = self.simulate_for_given_levels(current_levels)
@@ -365,7 +343,7 @@ class Model:
         logging.debug(results_dataframe.head())
 
         levels_interactions = itertools.product(
-            forecasting_levels, forecasting_levels, forecasting_levels
+            FORECASTING_LEVELS, FORECASTING_LEVELS, FORECASTING_LEVELS
         )
 
         for (
@@ -392,7 +370,7 @@ class Model:
 
         self.results = Box()
 
-        for compartment in compartments:
+        for compartment in COMPARTMENTS:
             self.results[compartment] = self.create_results_dataframe(compartment)
 
     def visualize_results(self, compartment_code, testing_data=None, log_response=True):
@@ -400,7 +378,7 @@ class Model:
         compartment_levels = [
             column
             for column in compartment.columns
-            if column not in central_tendency_methods
+            if column not in CENTRAL_TENDENCY_METHODS
         ]
 
         for level in compartment_levels:
@@ -412,12 +390,12 @@ class Model:
                 alpha=0.25,
             )
 
-        for method in central_tendency_methods:
+        for method in CENTRAL_TENDENCY_METHODS:
             plt.plot(
                 compartment.index,
                 compartment[method].values,
-                label=method_names[method],
-                color=method_colors[method],
+                label=METHOD_NAMES[method],
+                color=METHOD_COLORS[method],
                 linestyle="dashed",
             )
 
@@ -429,10 +407,10 @@ class Model:
                 label="Actual data",
             )
 
-        plt.title(f"{compartment_labels[compartment_code]}")
+        plt.title(f"{COMPARTMENT_LABELS[compartment_code]}")
 
         if log_response:
-            plt.title(f"{compartment_labels[compartment_code]} (logarithmic response)")
+            plt.title(f"{COMPARTMENT_LABELS[compartment_code]} (logarithmic response)")
             plt.yscale("log")
 
         plt.grid(True)
@@ -454,7 +432,7 @@ class Model:
 
             evaluation[compartment_code] = {}
 
-            for method in central_tendency_methods:
+            for method in CENTRAL_TENDENCY_METHODS:
 
                 forecast = compartment[method].values
                 actual = testing_data[compartment_code].values

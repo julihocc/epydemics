@@ -18,7 +18,7 @@ from epydemics.analysis.visualization import visualize_results
 def sample_results():
     """Sample forecast results structure for testing."""
     dates = pd.date_range("2020-01-01", periods=10, freq="D")
-    
+
     # Create sample forecast data with central tendencies
     central_tendency_data = pd.DataFrame(
         {
@@ -29,21 +29,22 @@ def sample_results():
         },
         index=dates,
     )
-    
+
     # Add some simulation paths (non-central tendency columns)
     simulation_data = central_tendency_data.copy()
     simulation_data["lower|lower|lower"] = simulation_data["mean"] * 0.8
     simulation_data["upper|upper|upper"] = simulation_data["mean"] * 1.2
     simulation_data["point|lower|point"] = simulation_data["mean"] * 0.9
-    
+
     # Create results structure
     results = {
         "C": simulation_data,
         "D": simulation_data.copy() * 0.1,
         "I": simulation_data.copy() * 0.5,
     }
-    
+
     return results
+
 
 @pytest.fixture
 def sample_testing_data():
@@ -207,24 +208,24 @@ def test_visualize_results_alpha_parameter(mock_plot, mock_show, sample_results)
 def test_visualize_results_constants_usage():
     """Test that visualization uses the correct constants."""
     # This test ensures that constants are properly imported and used
-    from epydemics.analysis.visualization import (
-        central_tendency_methods,
-        compartment_labels,
-        method_colors,
-        method_names,
+    from epydemics.core.constants import (
+        CENTRAL_TENDENCY_METHODS,
+        COMPARTMENT_LABELS,
+        METHOD_COLORS,
+        METHOD_NAMES,
     )
 
     # Constants should be available
-    assert central_tendency_methods is not None
-    assert compartment_labels is not None
-    assert method_colors is not None
-    assert method_names is not None
+    assert CENTRAL_TENDENCY_METHODS is not None
+    assert COMPARTMENT_LABELS is not None
+    assert METHOD_COLORS is not None
+    assert METHOD_NAMES is not None
 
     # Should be the correct types
-    assert isinstance(central_tendency_methods, (list, tuple))
-    assert isinstance(compartment_labels, dict)
-    assert isinstance(method_colors, dict)
-    assert isinstance(method_names, dict)
+    assert isinstance(CENTRAL_TENDENCY_METHODS, (list, tuple))
+    assert isinstance(COMPARTMENT_LABELS, dict)
+    assert isinstance(METHOD_COLORS, dict)
+    assert isinstance(METHOD_NAMES, dict)
 
 
 @patch("matplotlib.pyplot.show")

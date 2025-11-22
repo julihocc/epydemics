@@ -11,10 +11,10 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from ..core.constants import (
-    central_tendency_methods,
-    compartment_labels,
-    method_colors,
-    method_names,
+    CENTRAL_TENDENCY_METHODS,
+    COMPARTMENT_LABELS,
+    METHOD_COLORS,
+    METHOD_NAMES,
 )
 
 
@@ -45,7 +45,7 @@ def visualize_results(
 
     # Plot individual simulation paths with low alpha
     for col in compartment.columns:
-        if col not in central_tendency_methods:  # Skip central tendency methods
+        if col not in CENTRAL_TENDENCY_METHODS:  # Skip central tendency methods
             plt.plot(
                 compartment.index,
                 compartment[col].values,
@@ -55,14 +55,14 @@ def visualize_results(
             )
 
     # Plot central tendency methods
-    for i, method in enumerate(central_tendency_methods):
+    for i, method in enumerate(CENTRAL_TENDENCY_METHODS):
         if method in compartment:
             central_tendency = compartment[method]
             plt.plot(
                 central_tendency.index,
                 central_tendency.values,
-                color=method_colors[method],
-                label=method_names[method],
+                color=METHOD_COLORS[method],
+                label=METHOD_NAMES[method],
                 linewidth=2,
             )
 
@@ -77,8 +77,8 @@ def visualize_results(
         )
 
     plt.xlabel("Date")
-    plt.ylabel(f"{compartment_labels[compartment_code]} Cases")
-    plt.title(f"Forecast for {compartment_labels[compartment_code]}")
+    plt.ylabel(f"{COMPARTMENT_LABELS[compartment_code]} Cases")
+    plt.title(f"Forecast for {COMPARTMENT_LABELS[compartment_code]}")
     plt.legend()
     plt.grid(True, alpha=0.3)
 

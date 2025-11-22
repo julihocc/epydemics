@@ -5,7 +5,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-from ..core.constants import logit_ratios
+from ..core.constants import LOGIT_RATIOS
 
 
 def prepare_for_logit_function(data: pd.DataFrame) -> pd.DataFrame:
@@ -18,7 +18,7 @@ def prepare_for_logit_function(data: pd.DataFrame) -> pd.DataFrame:
     Returns:
         DataFrame with ratios bounded and missing values forward/backward filled
     """
-    logging.debug(f"Filtering data for {logit_ratios}")
+    logging.debug(f"Filtering data for {LOGIT_RATIOS}")
     logging.debug(f"alpha min:{data['alpha'].min()} max:{data['alpha'].max()}")
     logging.debug(f"beta min:{data['beta'].min()} max:{data['beta'].max()}")
     logging.debug(f"gamma min:{data['gamma'].min()} max:{data['gamma'].max()}")
