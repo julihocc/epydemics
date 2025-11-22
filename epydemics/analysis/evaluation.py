@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
-from ..core.constants import central_tendency_methods
+from ..core.constants import CENTRAL_TENDENCY_METHODS
 
 
 def evaluate_forecast(
@@ -41,7 +41,7 @@ def evaluate_forecast(
         compartment = results[compartment_code]
         evaluation[compartment_code] = {}
 
-        for method in central_tendency_methods:
+        for method in CENTRAL_TENDENCY_METHODS:
             forecast = np.asarray(compartment[method].values)
             actual = np.asarray(testing_data[compartment_code].values)
 
@@ -50,7 +50,7 @@ def evaluate_forecast(
                 forecast[~np.isfinite(forecast)] = 0
             if actual.size > 0:
                 actual[~np.isfinite(actual)] = 0
-            
+
             if actual.size == 0 and forecast.size == 0:
                 mae, mse, rmse, mape, smape = 0, 0, 0, 0, 0
             else:

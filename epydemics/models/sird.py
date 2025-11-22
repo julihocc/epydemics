@@ -11,7 +11,7 @@ from statsmodels.tsa.api import VAR
 
 from ..analysis.evaluation import evaluate_forecast as _evaluate_forecast
 from ..analysis.visualization import visualize_results as _visualize_results
-from ..core.constants import compartments, forecasting_levels, logit_ratios
+from ..core.constants import COMPARTMENTS, FORECASTING_LEVELS, LOGIT_RATIOS
 from ..data.preprocessing import reindex_data
 from ..utils.transformations import logistic_function
 from .base import BaseModel, SIRDModelMixin
@@ -67,7 +67,7 @@ class Model(BaseModel, SIRDModelMixin):
         self.forecasted_logit_ratios: Optional[pd.DataFrame] = None
 
         self.data = reindex_data(data_container.data, start, stop)
-        self.logit_ratios_values = self.data[logit_ratios].values
+        self.logit_ratios_values = self.data[LOGIT_RATIOS].values
 
     def create_model(self, *args, **kwargs) -> None:
         """Create the VAR model for logit-transformed rates."""
@@ -139,20 +139,20 @@ class Model(BaseModel, SIRDModelMixin):
             raise Exception(e)
 
         self.forecasting_box = {
-            logit_ratios[0]: pd.DataFrame(
+            LOGIT_RATIOS[0]: pd.DataFrame(
                 self.forecasted_logit_ratios_tuple_arrays[0],
                 index=self.forecasting_interval,
-                columns=forecasting_levels,
+                columns=FORECASTING_LEVELS,
             ),
-            logit_ratios[1]: pd.DataFrame(
+            LOGIT_RATIOS[1]: pd.DataFrame(
                 self.forecasted_logit_ratios_tuple_arrays[1],
                 index=self.forecasting_interval,
-                columns=forecasting_levels,
+                columns=FORECASTING_LEVELS,
             ),
-            logit_ratios[2]: pd.DataFrame(
+            LOGIT_RATIOS[2]: pd.DataFrame(
                 self.forecasted_logit_ratios_tuple_arrays[2],
                 index=self.forecasting_interval,
-                columns=forecasting_levels,
+                columns=FORECASTING_LEVELS,
             ),
         }
 
@@ -190,7 +190,7 @@ class Model(BaseModel, SIRDModelMixin):
             t0 = t1 - pd.Timedelta(days=1)
             previous = simulation.loc[t0]
             S = previous.S - previous.I * previous.alpha * previous.S / previous.A
-            I = (
+            I_val = (
                 previous.I
                 + previous.I * previous.alpha * previous.S / previous.A
                 - previous.beta * previous.I
@@ -198,14 +198,14 @@ class Model(BaseModel, SIRDModelMixin):
             )
             R = previous.R + previous.beta * previous.I
             D = previous.D + previous.gamma * previous.I
-            C = I + R + D
-            A = S + I
+            C = I_val + R + D
+            A = S + I_val
 
             simulation.loc[t1] = [
                 A,
                 C,
                 S,
-                I,
+                I_val,
                 R,
                 D,
                 self.forecasting_box["alpha"][simulation_levels[0]].loc[t1],
@@ -224,11 +224,11 @@ class Model(BaseModel, SIRDModelMixin):
     def create_simulation_box(self) -> None:
         """Create nested Box structure for storing simulation results."""
         self.simulation = Box()
-        for logit_alpha_level in forecasting_levels:
+        for logit_alpha_level in FORECASTING_LEVELS:
             self.simulation[logit_alpha_level] = Box()
-            for logit_beta_level in forecasting_levels:
+            for logit_beta_level in FORECASTING_LEVELS:
                 self.simulation[logit_alpha_level][logit_beta_level] = Box()
-                for logit_gamma_level in forecasting_levels:
+                for logit_gamma_level in FORECASTING_LEVELS:
                     self.simulation[logit_alpha_level][logit_beta_level][
                         logit_gamma_level
                     ] = None
@@ -237,7 +237,7 @@ class Model(BaseModel, SIRDModelMixin):
         """Run epidemic simulations for all combinations of rate confidence levels."""
         self.create_simulation_box()
         for current_levels in itertools.product(
-            forecasting_levels, forecasting_levels, forecasting_levels
+            FORECASTING_LEVELS, FORECASTING_LEVELS, FORECASTING_LEVELS
         ):
             logit_alpha_level, logit_beta_level, logit_gamma_level = current_levels
             current_simulation = self.simulate_for_given_levels(current_levels)
@@ -259,7 +259,7 @@ class Model(BaseModel, SIRDModelMixin):
         logging.debug(results_dataframe.head())
 
         levels_interactions = itertools.product(
-            forecasting_levels, forecasting_levels, forecasting_levels
+            FORECASTING_LEVELS, FORECASTING_LEVELS, FORECASTING_LEVELS
         )
 
         for (
@@ -286,7 +286,7 @@ class Model(BaseModel, SIRDModelMixin):
         """Generate results for all compartments."""
         self.results = Box()
 
-        for compartment in compartments:
+        for compartment in COMPARTMENTS:
             self.results[compartment] = self.create_results_dataframe(compartment)
 
     def visualize_results(
