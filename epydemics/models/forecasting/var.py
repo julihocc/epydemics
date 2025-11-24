@@ -31,19 +31,15 @@ class VARForecaster:
         self.fitted_model: Optional[Any] = None
         self.k_ar: int = 0
 
-    def create_model(self, *args, **kwargs) -> None:
+    def create_model(self) -> None:
         """
         Create the underlying VAR model.
-
-        Args:
-            *args: Positional arguments for VAR constructor
-            **kwargs: Keyword arguments for VAR constructor
         """
         # statsmodels VAR handles both array and dataframe, but usually expects array-like
         # If it's a DataFrame, .values extracts the numpy array.
         # If it's already an array, we use it directly.
         data_values = self.data.values if isinstance(self.data, pd.DataFrame) else self.data
-        self.model = VAR(data_values, *args, **kwargs)
+        self.model = VAR(data_values)
 
     def fit(self, *args, **kwargs) -> None:
         """
@@ -56,8 +52,21 @@ class VARForecaster:
         if self.model is None:
             self.create_model()
             
-        self.fitted_model = self.model.fit(*args, **kwargs)
-        self.k_ar = self.fitted_model.k_ar
+        max_lag = kwargs.pop("max_lag", None)
+        ic = kwargs.pop("ic", None)
+
+        if max_lag is not None and ic is not None:
+            # Select optimal lag order
+            selector = self.model.select_order(maxlags=max_lag, ic=ic)
+            # The chosen lag is stored in the 'selected_lags' attribute
+            # We need to get the lag for the chosen information criterion
+            optimal_lag = getattr(selector, f"bic" if ic == "bic" else "aic")
+            self.fitted_model = self.model.fit(optimal_lag, *args, **kwargs)
+            self.k_ar = optimal_lag
+        else:
+            # Fit with default lag (or already specified lag)
+            self.fitted_model = self.model.fit(*args, **kwargs)
+            self.k_ar = self.fitted_model.k_ar
 
     def forecast_interval(
         self, steps: int, **kwargs
