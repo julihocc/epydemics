@@ -153,3 +153,10 @@ cython_debug/
 
 # Temporary files and refactoring plans
 .temp/
+
+
+# AI Context
+CLAUDE.md
+GEMINI.md
+.claude/
+.github/
