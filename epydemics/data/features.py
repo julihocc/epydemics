@@ -10,6 +10,8 @@ from typing import Union
 
 import pandas as pd
 
+from epydemics.core.config import get_settings
+
 # Import constants from the core module
 from ..core.constants import LOGIT_RATIOS, RATIOS
 
@@ -119,9 +121,13 @@ def feature_engineering(data: pd.DataFrame) -> pd.DataFrame:
     engineered_data = data.copy()
 
     # Calculate SIRD compartments
-    # R: Recovered (using 14-day lag approximation)
+    # R: Recovered (using recovery_lag from settings)
+    settings = get_settings()
     engineered_data = engineered_data.assign(
-        R=engineered_data["C"].shift(14).fillna(0) - engineered_data["D"]
+        R=engineered_data["C"]
+        .shift(settings.RECOVERY_LAG)
+        .fillna(0)
+        - engineered_data["D"]
     )
 
     # I: Currently infected (active cases)

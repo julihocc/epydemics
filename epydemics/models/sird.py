@@ -15,6 +15,8 @@ from .var_forecasting import VARForecasting
 from .simulation import EpidemicSimulation
 
 
+from epydemics.core.config import get_settings
+
 class Model(BaseModel, SIRDModelMixin):
     """
     SIRD epidemiological model with VAR time series forecasting.
@@ -76,10 +78,13 @@ class Model(BaseModel, SIRDModelMixin):
 
     def create_model(self, *args, **kwargs) -> None:
         """Create the VAR model for logit-transformed rates."""
-        self.var_forecasting.create_logit_ratios_model(*args, **kwargs)
+        self.var_forecasting.create_logit_ratios_model()
 
     def fit_model(self, *args, **kwargs) -> None:
         """Fit the VAR model to the data."""
+        settings = get_settings()
+        kwargs.setdefault("max_lag", settings.VAR_MAX_LAG)
+        kwargs.setdefault("ic", settings.VAR_CRITERION)
         self.var_forecasting.fit_logit_ratios_model(*args, **kwargs)
         self.days_to_forecast = self.var_forecasting.days_to_forecast
 

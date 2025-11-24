@@ -49,6 +49,7 @@ dependencies = [
     "scikit-learn>=1.2.0",
     "python-box>=7.0.0",
     "pytest>=8.4.2",
+    "pydantic-settings>=2.0.0",
 ]
 
 [project.optional-dependencies]
