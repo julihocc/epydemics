@@ -2,7 +2,6 @@
 
 We use the data from the [Our World in Data](https://ourworldindata.org/coronavirus-source-data) project. The data is available in the `data_sample` folder. The data is processed using the `process_data_from_owid` function. The function returns a `DataContainer` object. The `DataContainer` object contains the data and the information about the data. The `DataContainer` object is used to create a `Model` object. The `Model` object is used to create a model, fit the model, forecast the model, run simulations, and generate results. The `Model` object is also used to evaluate the forecast. The `Model` object is used to visualize the results.
 
-
 ```python
 # !pip install epydemics
 import matplotlib.pyplot as plt
@@ -10,7 +9,6 @@ from epydemics import process_data_from_owid, DataContainer, Model
 ```
 
 To make the exposition clearer, `warnings` is used to suppress warnings.
-
 
 ```python
 
@@ -22,14 +20,10 @@ At first, we retrieve the global data from the `owid-covid-data.csv` file. The d
 
 Other sources could be used as long as they have the same structure as the `owid-covid-data.csv` file. By default, the retrieve data is filtered to make use only of global data, by setting the parameter `iso_code` to `OWID_WRL`. The `iso_code` parameter could be used to filter the data by country. For example, `iso_code="MEX"` retrieves the data for Mexico.
 
-
 ```python
 global_dataframe = process_data_from_owid()
 global_dataframe.head()
 ```
-
-
-
 
 <div>
 <style scoped>
@@ -95,10 +89,7 @@ global_dataframe.head()
 </table>
 </div>
 
-
-
 Using the `global_dataframe`, we create a `DataContainer` object. The `DataContainer` object contains the data and the information about the data. The `DataContainer` object is used to create a `Model` object. As soon as the raw data is received by `DataContainer`, it is processed to create the `DataContainer` object. The `DataContainer` object contains the data and the information about the data. The `DataContainer` object is used to create a `Model` object.
-
 
 ```python
 
@@ -117,7 +108,6 @@ print(f"Global data container has {global_data_container.data.isna().sum().sum()
 
 The attribute `data` from a `DataContainer` object is just a Pandas DataFrame object containing the processed data. Because of this, we can use the Pandas DataFrame methods to visualize the data.
 
-
 ```python
 global_data_container.data[["C", "D", "N"]].plot(
     subplots=True
@@ -125,22 +115,14 @@ global_data_container.data[["C", "D", "N"]].plot(
 plt.show()
 ```
 
-
-    
 ![png](global_model_files/global_model_10_0.png)
-    
 
-
-The dictionary containing the meaning of every label could be retrieved from the `compartment_labels` attribute from the module itself.
-
+The dictionary containing the meaning of every label could be retrieved from the `COMPARTMENT_LABELS` attribute from the module itself.
 
 ```python
-from epydemics import compartment_labels
-compartment_labels
+from epydemics import COMPARTMENT_LABELS
+COMPARTMENT_LABELS
 ```
-
-
-
 
     {'A': 'Active',
      'C': 'Confirmed',
@@ -149,11 +131,6 @@ compartment_labels
      'R': 'Recovered',
      'D': 'Deaths'}
 
-
-
-
-
-
 ```python
 global_data_container.data[["A", "S", "I", "R"]].plot(
     subplots=True
@@ -161,14 +138,9 @@ global_data_container.data[["A", "S", "I", "R"]].plot(
 plt.show()
 ```
 
-
-    
 ![png](global_model_files/global_model_14_0.png)
-    
-
 
 As it was stated in the introduction, the non-constant but time-depending nature of the rate is the core of this model.
-
 
 ```python
 global_data_container.data[["alpha", "beta", "gamma"]].plot(
@@ -177,14 +149,9 @@ global_data_container.data[["alpha", "beta", "gamma"]].plot(
 plt.show()
 ```
 
-
-    
 ![png](global_model_files/global_model_16_0.png)
-    
-
 
 Create a model using the `global_data_container` object, using information from March 01, 2020, to December 31, 2020.
-
 
 ```python
 
@@ -198,7 +165,6 @@ global_model = Model(
 
 In the following, we apply these methods to create and to a time series model for the logit of the rates $\alpha$, $\beta$ and $\gamma$. This is the core of the model. Please refer to the documentation for more information.
 
-
 ```python
 global_model.create_logit_ratios_model()
 global_model.fit_logit_ratios_model()
@@ -206,15 +172,11 @@ global_model.fit_logit_ratios_model()
 
 Now that we have a model these rate, we can adjust the numbers of days (`steps`) to forecast. The `forecast_logit_ratios` method returns a Pandas DataFrame object containing the forecasted logit ratios. The `forecasting_interval` attribute contains the forecasting interval.
 
-
 ```python
 
 global_model.forecast_logit_ratios(steps=30)
 global_model.forecasting_interval
 ```
-
-
-
 
     DatetimeIndex(['2021-01-01', '2021-01-02', '2021-01-03', '2021-01-04',
                    '2021-01-05', '2021-01-06', '2021-01-07', '2021-01-08',
@@ -226,10 +188,7 @@ global_model.forecasting_interval
                    '2021-01-29', '2021-01-30'],
                   dtype='datetime64[ns]', freq='D')
 
-
-
 Run the simulations and generate the results. The `generate_result` method returns a Pandas DataFrame object `global_model.results` containing the results.
-
 
 ```python
 
@@ -238,8 +197,7 @@ global_model.generate_result()
 
 ```
 
-Finally, we can visualize the results. The `visualize_results` method returns a Matplotlib Figure object. At first, create a testing dataset using global data container and the global model forecasting interval. The `global_testing_data` is a Pandas DataFrame object containing the testing data.
-
+Finally, we can visualize the results. The `visualize_results` method displays a plot using Matplotlib. At first, create a testing dataset using global data container and the global model forecasting interval. The `global_testing_data` is a Pandas DataFrame object containing the testing data.
 
 ```python
 
@@ -252,36 +210,22 @@ for compartment in ["C", "D", "I"]:
         log_response=True)
 ```
 
-
-    
 ![png](global_model_files/global_model_26_0.png)
-    
 
-
-
-    
 ![png](global_model_files/global_model_26_1.png)
-    
 
-
-
-    
 ![png](global_model_files/global_model_26_2.png)
-    
-
 
 The gray dotted lines are several forecasting depending on the confidence interval for the time series model for the logit of the rates $\alpha$, $\beta$ and $\gamma$. The solid red line is the actual data in the forecasting interval. To make it clearer, we add many methods of central tendency to compare the forecasting with the actual data.
 
 A very peculiar feature of this model is that the forecasting is not a single value but a distribution. For example, although the averages of forecasted deaths are not so close to the actual data, the lower forecasting series are very close to the actual data.
 
-A tool for evaluare forecast in a more rigours manner is provided, using several criteria, and this analysis could be saved for further analysis.
-
+A tool for evaluate forecast in a more rigours manner is provided, using several criteria, and this analysis could be saved for further analysis.
 
 ```python
 import json
 evaluation = global_model.evaluate_forecast(global_testing_data, save_evaluation=True, filename="global_evaluation")
 ```
-
 
 ```python
 for category, info in evaluation.items():

@@ -60,7 +60,7 @@ def reindex_data(
     if start_date > stop_date:
         raise ValueError("Start date is after stop date")
 
-    print(f"start_date: {start_date}, data.index[0]: {data.index[0]}")
+    logging.debug(f"start_date: {start_date}, data.index[0]: {data.index[0]}")
     if start_date < data.index[0]:
         raise ValueError("Start date is before first date on confirmed cases")
 

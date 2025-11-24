@@ -7,6 +7,7 @@ The DataContainer class is responsible for data preprocessing, validation, and f
 ## Current Structure
 
 ### Constructor
+
 ```python
 def __init__(self, raw_data, window=7):
     self.raw_data = raw_data
@@ -18,6 +19,7 @@ def __init__(self, raw_data, window=7):
 ```
 
 ### Attributes
+
 - `raw_data`: Original input data (pandas DataFrame)
 - `window`: Rolling window size for smoothing (default: 7 days)
 - `data`: Processed and engineered data with SIRD compartments
@@ -25,6 +27,7 @@ def __init__(self, raw_data, window=7):
 ## Dependencies
 
 ### Functions Used
+
 1. **validate_data(training_data)** - Line 73
    - Validates that input is a pandas DataFrame
    - Raises NotDataFrameError if not DataFrame
@@ -40,6 +43,7 @@ def __init__(self, raw_data, window=7):
    - Applies logit transformations
 
 ### External Dependencies
+
 - pandas (pd.DataFrame operations)
 - logging (for debug messages)
 - NotDataFrameError (from exceptions module)
@@ -55,6 +59,7 @@ def __init__(self, raw_data, window=7):
 ## Key Features
 
 ### SIRD Compartments
+
 - **S**: Susceptible population
 - **I**: Infected (active cases)
 - **R**: Recovered cases
@@ -63,16 +68,19 @@ def __init__(self, raw_data, window=7):
 - **A**: Total population
 
 ### Rate Calculations
+
 - **alpha**: Infection rate α(t) = (S(t)+I(t))/(S(t)I(t)) * ΔC(t)
 - **beta**: Recovery rate β(t) = ΔR(t)/I(t)
 - **gamma**: Mortality rate γ(t) = ΔD(t)/I(t)
 
 ### Logit Transformations
+
 - logit_alpha, logit_beta, logit_gamma for VAR modeling
 
 ## Extraction Strategy
 
 ### New Module Structure
+
 ```
 epydemics/data/
 ├── __init__.py
@@ -83,6 +91,7 @@ epydemics/data/
 ```
 
 ### Testing Requirements
+
 1. **Input Validation Tests**
    - Test with valid DataFrame
    - Test with invalid inputs (non-DataFrame)
@@ -124,6 +133,7 @@ The Model class implements a sophisticated epidemiological forecasting system th
 ## Current Structure
 
 ### Constructor and Attributes
+
 ```python
 def __init__(self, data_container, start=None, stop=None, days_to_forecast=None):
     # Data management
@@ -156,26 +166,31 @@ def __init__(self, data_container, start=None, stop=None, days_to_forecast=None)
 ## Key Methods and Functionality
 
 ### 1. VAR Model Management
+
 - **create_logit_ratios_model()** - Creates VAR model on logit-transformed rates
 - **fit_logit_ratios_model()** - Fits VAR model and sets forecast horizon
 - **forecast_logit_ratios()** - Generates VAR forecasts with confidence intervals
 
 ### 2. SIRD Simulation Engine
+
 - **simulate_for_given_levels()** - Runs SIRD simulation for specific rate scenarios
 - **create_simulation_box()** - Creates nested Box structure for 27 scenarios (3x3x3)
 - **run_simulations()** - Executes all 27 simulation scenarios
 
 ### 3. Results Processing
+
 - **create_results_dataframe()** - Aggregates simulation results with central tendencies
 - **generate_result()** - Creates complete results for all SIRD compartments
 
 ### 4. Visualization and Evaluation
+
 - **visualize_results()** - Plots forecasts with uncertainty bands and actual data
 - **evaluate_forecast()** - Computes MAE, MSE, RMSE, MAPE, SMAPE metrics
 
 ## Dependencies
 
 ### External Libraries
+
 - **statsmodels.tsa.api.VAR** - Vector Autoregression modeling
 - **python-box.Box** - Nested result containers
 - **itertools.product** - Cartesian product for scenario combinations
@@ -186,6 +201,7 @@ def __init__(self, data_container, start=None, stop=None, days_to_forecast=None)
 - **pandas** - Data manipulation
 
 ### Internal Dependencies
+
 - **reindex_data()** - Data reindexing function
 - **logistic_function()** - Inverse logit transformation
 - **Constants**: logit_ratios, forecasting_levels, compartments, central_tendency_methods
@@ -194,6 +210,7 @@ def __init__(self, data_container, start=None, stop=None, days_to_forecast=None)
 ## Mathematical Foundation
 
 ### SIRD Discrete Model
+
 ```
 S(t+1) = S(t) - I(t) * α(t) * S(t) / A(t)
 I(t+1) = I(t) + I(t) * α(t) * S(t) / A(t) - β(t) * I(t) - γ(t) * I(t)
@@ -202,6 +219,7 @@ D(t+1) = D(t) + γ(t) * I(t)
 ```
 
 ### Rate Modeling
+
 - Rates α, β, γ are logit-transformed for VAR modeling
 - VAR provides forecasts with confidence intervals (lower, point, upper)
 - 27 scenarios combine all confidence level combinations
@@ -210,6 +228,7 @@ D(t+1) = D(t) + γ(t) * I(t)
 ## Extraction Strategy
 
 ### New Module Structure
+
 ```
 epydemics/models/
 ├── __init__.py
@@ -220,12 +239,14 @@ epydemics/models/
 ```
 
 ### Key Challenges
+
 1. **Complex State Management** - Many interconnected attributes
 2. **Box Dependencies** - Nested result structures
 3. **Visualization Integration** - matplotlib plotting logic
 4. **Multiple Responsibilities** - VAR modeling + SIRD simulation + visualization
 
 ### Proposed Refactoring
+
 1. **Separate Concerns** - Split VAR modeling from SIRD simulation
 2. **Interface Abstraction** - Use BaseModel for common patterns
 3. **Composition over Inheritance** - VAR forecaster as component
@@ -234,6 +255,7 @@ epydemics/models/
 ## Testing Requirements
 
 ### Core Functionality Tests
+
 1. **Model Creation and Fitting**
    - VAR model initialization with logit rates
    - Model fitting with different parameters
@@ -266,6 +288,7 @@ epydemics/models/
    - Comparison against known results
 
 ### Integration Tests
+
 1. **End-to-End Workflow**
    - DataContainer -> Model -> Results pipeline
    - Real data processing
@@ -279,18 +302,21 @@ epydemics/models/
 ## Implementation Notes
 
 ### Phase 1: Core Extraction
+
 - Extract main Model class to models/sird.py
 - Implement BaseModel interface
 - Maintain exact API compatibility
 - Move visualization constants to appropriate module
 
 ### Phase 2: Refactoring
+
 - Separate VAR forecasting logic
 - Extract simulation engine
 - Improve error handling and type safety
 - Add comprehensive documentation
 
 ### Phase 3: Enhancement
+
 - Optional result caching
 - Parallel simulation execution
 - Advanced visualization options
@@ -301,6 +327,7 @@ epydemics/models/
 # NO EMOJIS INSTRUCTION
 
 **CRITICAL RULE**: Never use emojis in:
+
 - Code comments or docstrings
 - Documentation files
 - Commit messages
@@ -315,54 +342,55 @@ This is a strict requirement from the user.
 
 This plan outlines the steps to refactor the monolithic `epydemics/epydemics.py` file to improve module structure, separation of concerns, and overall architecture.
 
-## Objectives:
+## Objectives
+
 - Enhance code readability and maintainability.
 - Improve modularity and reusability of components.
 - Align with best coding practices and a solid architectural design.
 
-## Proposed Steps:
+## Proposed Steps
 
-1.  **Move Constants:**
-    -   Remove constant definitions (e.g., `ratios`, `logit_ratios`, `forecasting_levels`, `compartments`, `compartment_labels`, `central_tendency_methods`, `method_names`, `method_colors`) from `epydemics/epydemics.py`.
-    -   Add an import statement in `epydemics/epydemics.py` to import these constants from `epydemics.core.constants`.
+1. **Move Constants:**
+    - Remove constant definitions (e.g., `ratios`, `logit_ratios`, `forecasting_levels`, `compartments`, `compartment_labels`, `central_tendency_methods`, `method_names`, `method_colors`) from `epydemics/epydemics.py`.
+    - Add an import statement in `epydemics/epydemics.py` to import these constants from `epydemics.core.constants`.
 
-2.  **Move Exceptions:**
-    -   Move the `NotDataFrameError` exception from `epydemics/epydemics.py` to `epydemics/core/exceptions.py`.
-    -   Update imports in `epydemics/epydemics.py` and any other affected files to reflect the new location.
+2. **Move Exceptions:**
+    - Move the `NotDataFrameError` exception from `epydemics/epydemics.py` to `epydemics/core/exceptions.py`.
+    - Update imports in `epydemics/epydemics.py` and any other affected files to reflect the new location.
 
-3.  **Move Data Processing Functions:**
-    -   Relocate functions related to data processing (`prepare_for_logit_function`, `logit_function`, `logistic_function`, `add_logit_ratios`, `validate_data`, `process_data_from_owid`, `preprocess_data`, `reindex_data`, `feature_engineering`) from `epydemics/epydemics.py`.
-    -   These functions should be moved to `epydemics/data/container.py` or a newly created `epydemics/data/processing.py` if `container.py` becomes too large or specific to the `DataContainer` class. For now, the initial target is `epydemics/data/container.py`.
-    -   Update imports as necessary.
+3. **Move Data Processing Functions:**
+    - Relocate functions related to data processing (`prepare_for_logit_function`, `logit_function`, `logistic_function`, `add_logit_ratios`, `validate_data`, `process_data_from_owid`, `preprocess_data`, `reindex_data`, `feature_engineering`) from `epydemics/epydemics.py`.
+    - These functions should be moved to `epydemics/data/container.py` or a newly created `epydemics/data/processing.py` if `container.py` becomes too large or specific to the `DataContainer` class. For now, the initial target is `epydemics/data/container.py`.
+    - Update imports as necessary.
 
-4.  **Move `DataContainer` class:**
-    -   Move the `DataContainer` class definition from `epydemics/epydemics.py` to `epydemics/data/container.py`.
-    -   Ensure all necessary imports for `DataContainer` are present in `epydemics/data/container.py` and removed from `epydemics/epydemics.py`.
+4. **Move `DataContainer` class:**
+    - Move the `DataContainer` class definition from `epydemics/epydemics.py` to `epydemics/data/container.py`.
+    - Ensure all necessary imports for `DataContainer` are present in `epydemics/data/container.py` and removed from `epydemics/epydemics.py`.
 
-5.  **Move `Model` class:**
-    -   Move the `Model` class (and all its associated methods) from `epydemics/epydemics.py` to `epydemics/models/base.py`.
-    -   Adjust imports in `epydemics/epydemics.py` and `epydemics/models/base.py` accordingly.
+5. **Move `Model` class:**
+    - Move the `Model` class (and all its associated methods) from `epydemics/epydemics.py` to `epydemics/models/base.py`.
+    - Adjust imports in `epydemics/epydemics.py` and `epydemics/models/base.py` accordingly.
 
-6.  **Move Analysis/Visualization Functions:**
-    -   Relocate `visualize_results` function from `epydemics/epydemics.py` to `epydemics/analysis/visualization.py`.
-    -   Relocate `evaluate_forecast` function from `epydemics/epydemics.epydemics.py` to `epydemics/analysis/evaluation.py`.
-    -   Update imports in all affected files.
+6. **Move Analysis/Visualization Functions:**
+    - Relocate `visualize_results` function from `epydemics/epydemics.py` to `epydemics/analysis/visualization.py`.
+    - Relocate `evaluate_forecast` function from `epydemics/epydemics.epydemics.py` to `epydemics/analysis/evaluation.py`.
+    - Update imports in all affected files.
 
-7.  **Handle Logging Configuration:**
-    -   Review the logging configuration (`logging.basicConfig(...)`) in `epydemics/epydemics.py`.
-    -   Decide whether it should be moved to `epydemics/__init__.py` for package-wide configuration, or to a dedicated utility module (e.g., `epydemics/utils/logging.py`), or remain in a main entry point if `epydemics.py` retains that role.
+7. **Handle Logging Configuration:**
+    - Review the logging configuration (`logging.basicConfig(...)`) in `epydemics/epydemics.py`.
+    - Decide whether it should be moved to `epydemics/__init__.py` for package-wide configuration, or to a dedicated utility module (e.g., `epydemics/utils/logging.py`), or remain in a main entry point if `epydemics.py` retains that role.
 
-8.  **Clean up `epydemics/epydemics.py`:**
-    -   After all functionalities are moved, `epydemics/epydemics.py` should primarily contain package-level imports or remain empty if its purpose is entirely subsumed by other modules.
-    -   Remove any unused imports.
+8. **Clean up `epydemics/epydemics.py`:**
+    - After all functionalities are moved, `epydemics/epydemics.py` should primarily contain package-level imports or remain empty if its purpose is entirely subsumed by other modules.
+    - Remove any unused imports.
 
-9.  **Verification and Testing:**
-    -   After each significant move, ensure that existing tests still pass.
-    -   Add new unit tests for any functionality that was previously untestable or that has new responsibilities.
-    -   Run integration tests to ensure the overall application flow remains intact.
+9. **Verification and Testing:**
+    - After each significant move, ensure that existing tests still pass.
+    - Add new unit tests for any functionality that was previously untestable or that has new responsibilities.
+    - Run integration tests to ensure the overall application flow remains intact.
 
 10. **Update Documentation:**
-    -   Reflect all changes in module structure, function locations, and class responsibilities within the project's documentation.
+    - Reflect all changes in module structure, function locations, and class responsibilities within the project's documentation.
 
 ---
 
@@ -378,11 +406,13 @@ This plan outlines the steps to refactor the monolithic `epydemics/epydemics.py`
 The existing code is a **400+ line single-file module** (`epydemics.py`) with:
 
 ### **Current Architecture**
+
 - **2 main classes**: `DataContainer`, `Model`
 - **15+ utility functions**: data processing, transformations, validation
 - **Mixed responsibilities**: data ingestion, preprocessing, mathematical modeling, time series analysis, simulation, visualization, and evaluation
 
 ### **Technical Debt**
+
 - Deprecated pandas methods: `fillna(method="ffill")` → should use `ffill()`
 - Hard-coded values: 14-day recovery lag, window sizes
 - Broad exception handling: bare `Exception` catches
@@ -391,6 +421,7 @@ The existing code is a **400+ line single-file module** (`epydemics.py`) with:
 - Large methods with multiple responsibilities
 
 ### **Current Public API (Must Maintain)**
+
 ```python
 # Functions
 process_data_from_owid()
@@ -462,11 +493,13 @@ epydemics/
 ### **Module Responsibilities**
 
 #### **core/**
+
 - `constants.py`: All project constants and enums
 - `exceptions.py`: Custom exception hierarchy
 - `config.py`: Configuration management and validation
 
 #### **data/**
+
 - `ingestion.py`: External data source handling (OWID, etc.)
 - `preprocessing.py`: Data cleaning, smoothing, reindexing
 - `validation.py`: Input validation and data quality checks
@@ -474,6 +507,7 @@ epydemics/
 - `container.py`: Refactored DataContainer with clear responsibilities
 
 #### **models/**
+
 - `base.py`: Abstract base classes and interfaces
 - `sird.py`: SIRD mathematical model implementation
 - `forecasting.py`: Time series modeling (VAR) and forecasting
@@ -481,21 +515,25 @@ epydemics/
 - `orchestrator.py`: High-level Model class that coordinates components
 
 #### **analysis/**
+
 - `evaluation.py`: Model evaluation metrics and validation
 - `visualization.py`: Plotting, charts, and result visualization
 
 #### **utils/**
+
 - `transforms.py`: Mathematical transformations (logit, logistic)
 - `helpers.py`: Utility functions and common operations
 
 ## 🎯 Phased Implementation Strategy
 
 ### **Phase 1: Foundation Setup** (v0.6.0)
+
 **🎯 Goal**: Modern development infrastructure and basic modularization
 **Timeline**: 2-3 weeks
 **Risk Level**: Low
 
 #### **Deliverables**
+
 - [ ] Create new package structure directories
 - [ ] Migrate from `setup.py` to `pyproject.toml` (modern Python packaging)
 - [ ] Set up development tooling:
@@ -511,6 +549,7 @@ epydemics/
 - [ ] Add `.temp/` to `.gitignore`
 
 #### **Technical Tasks**
+
 ```python
 # Example: core/constants.py
 """Core constants for epidemiological modeling."""
@@ -534,17 +573,20 @@ COMPARTMENT_LABELS: Dict[str, str] = {
 ```
 
 #### **Success Criteria**
+
 - [ ] All existing code still works identically
 - [ ] New development tools are integrated and enforced
 - [ ] CI/CD pipeline runs successfully
 - [ ] Test framework is ready for future phases
 
 ### **Phase 2: Data Layer Refactoring** (v0.7.0)
+
 **🎯 Goal**: Clean data processing pipeline with proper separation of concerns
 **Timeline**: 3-4 weeks
 **Risk Level**: Medium
 
 #### **Deliverables**
+
 - [ ] Extract data processing functions to `data/` modules
 - [ ] Refactor `DataContainer` class:
   - [ ] Separate concerns (ingestion vs preprocessing vs validation)
@@ -563,6 +605,7 @@ COMPARTMENT_LABELS: Dict[str, str] = {
 - [ ] Comprehensive data validation
 
 #### **New Architecture Example**
+
 ```python
 # data/container.py
 from typing import Optional
@@ -596,6 +639,7 @@ class DataContainer:
 ```
 
 #### **Success Criteria**
+
 - [ ] DataContainer API remains unchanged for existing users
 - [ ] All data processing is properly tested with >90% coverage
 - [ ] Configuration is externalized and documented
@@ -603,11 +647,13 @@ class DataContainer:
 - [ ] Logging provides useful debugging information
 
 ### **Phase 3: Model Layer Refactoring** (v0.8.0)
+
 **🎯 Goal**: Modular, testable, and extensible modeling components
 **Timeline**: 4-5 weeks
 **Risk Level**: High (core functionality)
 
 #### **Deliverables**
+
 - [ ] Create abstract base classes for extensibility:
   - [ ] `BaseEpidemicModel` for different model types
   - [ ] `BaseForecaster` for different forecasting methods
@@ -631,6 +677,7 @@ class DataContainer:
   - [ ] Optional parallel processing
 
 #### **New Architecture Example**
+
 ```python
 # models/orchestrator.py
 from typing import Optional
@@ -666,6 +713,7 @@ class Model(BaseEpidemicModel):
 ```
 
 #### **Success Criteria**
+
 - [ ] Model API remains 100% backward compatible
 - [ ] Components are individually testable with mocking
 - [ ] Performance is maintained or improved by 10%+
@@ -673,11 +721,13 @@ class Model(BaseEpidemicModel):
 - [ ] Parallel processing option is available
 
 ### **Phase 4: Analysis and Visualization** (v0.9.0)
+
 **🎯 Goal**: Clean separation of analysis concerns and enhanced capabilities
 **Timeline**: 3-4 weeks
 **Risk Level**: Low-Medium
 
 #### **Deliverables**
+
 - [ ] Move visualization to `analysis/visualization.py`:
   - [ ] Extract plotting functions from Model class
   - [ ] Add more chart types and options
@@ -698,23 +748,27 @@ class Model(BaseEpidemicModel):
   - [ ] Memory-efficient processing for large datasets
 
 #### **New Features**
+
 - [ ] Model comparison and selection tools
 - [ ] Automated hyperparameter tuning
 - [ ] Export capabilities (JSON, HDF5, CSV)
 - [ ] Integration with Jupyter notebooks
 
 #### **Success Criteria**
+
 - [ ] All visualization and evaluation functions work identically
 - [ ] New capabilities are added without breaking existing code
 - [ ] Performance is improved, especially for large datasets
 - [ ] User experience is significantly enhanced
 
 ### **Phase 5: Polish and Documentation** (v1.0.0)
+
 **🎯 Goal**: Production-ready package with comprehensive documentation
 **Timeline**: 4-6 weeks
 **Risk Level**: Low
 
 #### **Deliverables**
+
 - [ ] Complete API documentation with Sphinx:
   - [ ] Auto-generated API reference
   - [ ] Mathematical background documentation
@@ -737,6 +791,7 @@ class Model(BaseEpidemicModel):
   - [ ] Version compatibility testing
 
 #### **Documentation Structure**
+
 ```
 docs/
 ├── api/                 # Auto-generated API reference
@@ -748,6 +803,7 @@ docs/
 ```
 
 #### **Success Metrics**
+
 - **Code Quality**: 95%+ test coverage, type hints throughout
 - **Performance**: No regressions, 10%+ improvement in key operations
 - **Maintainability**: Cyclomatic complexity <10, clear separation of concerns
@@ -759,6 +815,7 @@ docs/
 ### **Code Quality Enhancements**
 
 #### **Type Hints and Static Analysis**
+
 ```python
 from typing import Optional, Dict, List, Union, Tuple
 import pandas as pd
@@ -774,6 +831,7 @@ def process_data_from_owid(
 ```
 
 #### **Docstrings (NumPy Style)**
+
 ```python
 def feature_engineering(data: pd.DataFrame) -> pd.DataFrame:
     """
@@ -807,6 +865,7 @@ def feature_engineering(data: pd.DataFrame) -> pd.DataFrame:
 ```
 
 #### **Enhanced Error Handling**
+
 ```python
 # core/exceptions.py
 class EpidemicsError(Exception):
@@ -834,6 +893,7 @@ if data['C'].isna().any():
 ```
 
 #### **Configuration Management**
+
 ```python
 # core/config.py
 from dataclasses import dataclass
@@ -868,6 +928,7 @@ class EpidemicsConfig:
 ### **Performance Optimizations**
 
 #### **Parallel Processing for Simulations**
+
 ```python
 # models/simulation.py
 import concurrent.futures
@@ -899,6 +960,7 @@ class MonteCarloSimulator:
 ```
 
 #### **Caching for Expensive Operations**
+
 ```python
 from functools import lru_cache
 import hashlib
@@ -919,6 +981,7 @@ class DataContainer:
 ### **Development Experience Improvements**
 
 #### **Modern Development Tooling**
+
 ```toml
 # pyproject.toml
 [build-system]
@@ -996,7 +1059,9 @@ addopts = "--cov=epydemics --cov-report=html --cov-report=term"
 ## 🔄 Backward Compatibility Strategy
 
 ### **API Preservation Approach**
+
 1. **100% Import Compatibility**: All current imports continue to work
+
    ```python
    # This must continue to work identically
    from epydemics import DataContainer, Model, process_data_from_owid
@@ -1008,6 +1073,7 @@ addopts = "--cov=epydemics --cov-report=html --cov-report=term"
 4. **Deprecation Strategy**: Clear warnings and migration paths for future cleanup
 
 ### **Migration Support**
+
 ```python
 # __init__.py - Compatibility layer
 import warnings
@@ -1036,6 +1102,7 @@ def deprecated_function(*args, **kwargs) -> Any:
 ## 📈 Version Roadmap and Milestones
 
 ### **Release Schedule**
+
 - **v0.5.0** ✅ **Current** - AI-Enhanced Documentation (September 2025)
 - **v0.6.0** 🎯 **Foundation Setup** - Q1 2026 (January-March)
   - Modern tooling and infrastructure
@@ -1059,6 +1126,7 @@ def deprecated_function(*args, **kwargs) -> Any:
   - Full test coverage
 
 ### **Success Metrics**
+
 - **Code Quality**: 95%+ test coverage, type hints throughout
 - **Performance**: No regressions, 10%+ improvement in key operations
 - **Maintainability**: Cyclomatic complexity <10, clear separation of concerns
@@ -1068,6 +1136,7 @@ def deprecated_function(*args, **kwargs) -> Any:
 ## 🧪 Testing Strategy
 
 ### **Test Structure**
+
 ```
 tests/
 ├── unit/                    # Fast unit tests
@@ -1090,22 +1159,26 @@ tests/
 ### **Test Categories**
 
 #### **Unit Tests**
+
 - **Mathematical Functions**: Property-based testing for logit/logistic
 - **Data Processing**: Validation, preprocessing, feature engineering
 - **Model Components**: Forecasting, simulation, evaluation
 - **Utilities**: Helper functions, transformations
 
 #### **Integration Tests**
+
 - **End-to-End Workflows**: Complete modeling pipeline
 - **API Compatibility**: Ensure backward compatibility
 - **External Dependencies**: OWID data fetching, file I/O
 
 #### **Performance Tests**
+
 - **Benchmark Existing Performance**: Establish baselines
 - **Regression Testing**: Ensure no performance degradation
 - **Scalability Testing**: Large dataset handling
 
 #### **Property-Based Testing**
+
 ```python
 from hypothesis import given, strategies as st
 import numpy as np
@@ -1119,20 +1192,23 @@ def test_logit_logistic_inverse(x):
 ## 🚀 Implementation Priorities
 
 ### **Immediate Next Steps (Phase 1)**
+
 1. **Create branch**: `git checkout -b refactor/v1.0-foundation`
 2. **Set up directory structure**: Create all module directories
 3. **Configure tooling**: pyproject.toml, pre-commit, CI/CD
 4. **Move constants**: Extract to core/constants.py
-5. **Update imports**: Maintain backward compatibility in __init__.py
+5. **Update imports**: Maintain backward compatibility in **init**.py
 6. **Add gitignore**: Ensure .temp/ is ignored
 
 ### **Quick Wins**
+
 - Fix deprecated pandas methods immediately
 - Add type hints to utility functions
 - Set up basic test framework
 - Configure automated formatting and linting
 
 ### **Risk Mitigation**
+
 - **Branch Strategy**: Use feature branches for each phase
 - **Incremental Testing**: Test each module extraction thoroughly
 - **Performance Monitoring**: Benchmark before/after each change
@@ -1141,6 +1217,7 @@ def test_logit_logistic_inverse(x):
 ## 📚 Documentation Requirements
 
 ### **User Documentation**
+
 - **Getting Started Guide**: Quick tutorial for new users
 - **API Reference**: Complete function/class documentation
 - **Mathematical Background**: SIRD model theory and implementation
@@ -1148,12 +1225,14 @@ def test_logit_logistic_inverse(x):
 - **Migration Guide**: How to upgrade from older versions
 
 ### **Developer Documentation**
+
 - **Contributing Guide**: How to contribute to the project
 - **Architecture Overview**: Package design and module responsibilities
 - **Testing Guide**: How to run and write tests
 - **Release Process**: How releases are managed and published
 
 ### **Academic Documentation**
+
 - **Methodology**: Mathematical foundations and assumptions
 - **Validation**: Model validation approaches and results
 - **Limitations**: Known constraints and appropriate use cases
@@ -1162,6 +1241,7 @@ def test_logit_logistic_inverse(x):
 ## 🔍 Quality Assurance
 
 ### **Code Quality Gates**
+
 - **Type Checking**: mypy passes with no errors
 - **Linting**: flake8 passes with no warnings
 - **Formatting**: black formatting enforced
@@ -1169,6 +1249,7 @@ def test_logit_logistic_inverse(x):
 - **Performance**: No regression in benchmarks
 
 ### **Review Process**
+
 - **Pull Request Reviews**: All changes reviewed by maintainer
 - **Automated Testing**: CI runs full test suite on all PRs
 - **Performance Testing**: Benchmarks run on significant changes
@@ -1219,6 +1300,7 @@ The refactoring will be considered successful when:
 ### ✅ COMPLETED TASKS
 
 #### ✅ Task 5: Extract exceptions to core module
+
 - **Status:** COMPLETED ✅
 - **Date:** Sept 12, 2025
 - **Details:**
@@ -1238,6 +1320,7 @@ The refactoring will be considered successful when:
 - **Backward Compatibility:** Maintained through main module imports
 
 #### ✅ Task 3: Migrate to pyproject.toml
+
 - **Status:** COMPLETED ✅
 - **Date:** Sept 12, 2025
 - **Details:**
@@ -1254,6 +1337,7 @@ The refactoring will be considered successful when:
   - Modern packaging standards compliance
 
 #### ✅ Task 7: Configure development tools
+
 - **Status:** COMPLETED ✅
 - **Date:** Sept 12, 2025
 - **Details:**
@@ -1277,6 +1361,7 @@ The refactoring will be considered successful when:
   - Eliminated unused imports
 
 #### ✅ Task 1: Set up basic package structure
+
 - **Status:** COMPLETED ✅
 - **Date:** Sept 12, 2025
 - **Details:**
@@ -1293,6 +1378,7 @@ The refactoring will be considered successful when:
 - **Test Coverage:** Integration tests validate structure
 
 #### ✅ Task 2: Initialize test framework
+
 - **Status:** COMPLETED ✅
 - **Date:** Sept 12, 2025
 - **Details:**
@@ -1309,13 +1395,14 @@ The refactoring will be considered successful when:
 - **Test Results:** 4 integration tests passing
 
 #### ✅ Task 4: Extract constants to core module
+
 - **Status:** COMPLETED ✅
 - **Date:** Sept 12, 2025
 - **Details:**
   - Followed TDD approach: tests first, implementation second
   - Extracted 5 constant lists from original epydemics.py
   - Added proper type hints using `typing.Final`
-  - Comprehensive documentation and __all__ exports
+  - Comprehensive documentation and **all** exports
 - **Files Created:**
   - `epydemics/core/constants.py`
   - `tests/unit/core/test_constants.py`
@@ -1329,6 +1416,7 @@ The refactoring will be considered successful when:
 - **Backward Compatibility:** Original constants still accessible via main module
 
 #### ✅ Task 8: Set up CI/CD pipeline
+
 - **Status:** COMPLETED ✅
 - **Date:** Sept 12, 2025
 - **Details:**
@@ -1347,14 +1435,16 @@ The refactoring will be considered successful when:
 - **Test Results:** CI pipeline ready for pull requests
 
 #### ✅ Task 9: Finalize package imports
+
 - **Status:** COMPLETED ✅
 - **Date:** Sept 12, 2025
 - **Details:**
   - Organized main `epydemics/__init__.py` with specific imports
   - Removed star imports for better code quality
-  - Added comprehensive __all__ exports list
+  - Added comprehensive **all** exports list
   - Verified all backward compatibility maintained
 - **Import Strategy:**
+
   ```python
   # Specific imports for clean namespace
   from .core.constants import (RATIOS, LOGIT_RATIOS, ...)
@@ -1363,6 +1453,7 @@ The refactoring will be considered successful when:
   ```
 
 #### ✅ Task 10: Phase 1 validation
+
 - **Status:** COMPLETED ✅
 - **Date:** Sept 12, 2025
 - **Details:**
@@ -1385,6 +1476,7 @@ The refactoring will be considered successful when:
 ### 🎯 Phase 2 Achievements (11/11 tasks)
 
 #### ✅ Task 1: Extract DataContainer class
+
 - **Status:** COMPLETED ✅
 - **Date:** September 12, 2025
 - **Files:** `epydemics/data/container.py`, `tests/test_data_container.py`
@@ -1392,63 +1484,75 @@ The refactoring will be considered successful when:
 - **Test Results:** 19/20 tests passing (1 minor logging issue)
 
 #### ✅ Task 2: Create abstract base classes
+
 - **Status:** COMPLETED ✅
 - **Files:** `epydemics/models/base.py`
 - **Features:** BaseModel ABC, SIRDModelMixin, proper inheritance patterns
 - **Interface:** Standardized model API with type hints
 
 #### ✅ Task 3: Extract Model class
+
 - **Status:** COMPLETED ✅
 - **Files:** `epydemics/models/sird.py`
 - **Functionality:** VAR time series modeling, SIRD simulation, forecasting, evaluation
 - **Test Results:** 19/23 tests passing (4 minor setup issues)
 
 #### ✅ Task 4: Extract transformation utilities
+
 - **Status:** COMPLETED ✅
 - **Files:** `epydemics/utils/transformations.py`
 - **Functions:** logit/logistic transformations, data preparation, ratio bounds handling
 
 #### ✅ Task 5: Enhanced constants organization
+
 - **Status:** COMPLETED ✅
 - **Files:** `epydemics/core/constants.py`
 - **Features:** Added visualization constants, method mappings, backward compatibility
 
 #### ✅ Task 6: Update modular imports
+
 - **Status:** COMPLETED ✅
 - **Files:** `epydemics/__init__.py`, `epydemics/models/__init__.py`, `epydemics/utils/__init__.py`
 - **Achievement:** Clean modular structure with backward compatibility
 
 #### ✅ Task 7: Clean main module
+
 - **Status:** COMPLETED ✅
 - **Achievement:** Reduced from 440+ lines to 84 lines, maintained process_data_from_owid
 
 #### ✅ Task 8: Comprehensive test coverage
+
 - **Status:** COMPLETED ✅
 - **Files:** `tests/test_model.py`, enhanced `tests/conftest.py`
 - **Coverage:** Model initialization, VAR functionality, simulation, evaluation
 
 #### ✅ Task 9: Validation and integration
+
 - **Status:** COMPLETED ✅
 - **Result:** Backward compatibility confirmed, imports working, modular architecture validated
 
 #### ✅ Task 10: Documentation and preservation
+
 - **Status:** COMPLETED ✅
 - **Files:** `epydemics_original.py.bak`
 - **Achievement:** Original implementation preserved, comprehensive documentation
 
 #### ✅ Task 11: Phase 2 finalization
+
 - **Status:** COMPLETED ✅
 - **Result:** Professional modular architecture achieved, 440+ lines successfully extracted
 
 ### 📊 Phase 2 Results Summary
 
 **Architectural Transformation:**
+
 - **Before:** Single monolithic file (440+ lines)
 - **After:** Professional modular structure (7 focused modules)
 - **Backward Compatibility:** 100% maintained
 - **Test Coverage:** Comprehensive TDD approach with dedicated test suites
 
 **Key Extracted Components:**
+
 - `DataContainer`: Complete data preprocessing pipeline
 - `Model`: SIRD epidemiological modeling with VAR forecasting
 - `BaseModel`/`SIRDModelMixin`: Abstract interfaces for future extensions
@@ -1456,6 +1560,7 @@ The refactoring will be considered successful when:
 - Enhanced constants: Visualization support and method mappings
 
 **Technical Validation:**
+
 - Import validation: ✅ `from epydemics import DataContainer, Model` works
 - Model initialization: ✅ All 4 initialization tests passing
 - Core functionality: ✅ DataContainer and Model creation successful
@@ -1468,6 +1573,7 @@ The refactoring will be considered successful when:
 **ALL TASKS COMPLETED SUCCESSFULLY**
 
 Phase 1 Foundation Setup completed with 100% success rate:
+
 - 10/10 tasks completed
 - 24/24 tests passing
 - Package builds successfully
@@ -1481,6 +1587,7 @@ Phase 1 Foundation Setup completed with 100% success rate:
 ## 📊 Test Suite Status
 
 ### Current Test Coverage
+
 - **Total Tests:** 24
 - **Passing Tests:** 24 ✅
 - **Integration Tests:** 4 (backward compatibility)
@@ -1488,6 +1595,7 @@ Phase 1 Foundation Setup completed with 100% success rate:
 - **Code Coverage:** 26% (focused on new modular components)
 
 ### Test Breakdown
+
 ```
 tests/integration/test_backward_compatibility.py
 ├── test_import_original_functionality ✅
@@ -1512,6 +1620,7 @@ tests/unit/core/test_constants.py
 ## 🎯 Next Steps - Phase 3 Planning
 
 ### Status: Phase 3 COMPLETE ✅
+
 **Achievement:** Successfully extracted analysis module with visualization and evaluation functions, modernized pandas syntax, enhanced type safety, and created comprehensive test coverage while maintaining 100% backward compatibility.
 
 ## 🎯 Phase 3: Advanced Features & Analysis Module (COMPLETED)
@@ -1519,6 +1628,7 @@ tests/unit/core/test_constants.py
 ### ✅ COMPLETED TASKS
 
 #### ✅ Analysis Module Extraction
+
 - **Status:** COMPLETED ✅
 - **Date:** Sept 12, 2025
 - **Details:**
@@ -1534,6 +1644,7 @@ tests/unit/core/test_constants.py
   - `tests/unit/analysis/test_evaluation.py`
 
 #### ✅ Modern Pandas Syntax Migration
+
 - **Status:** COMPLETED ✅
 - **Date:** Sept 12, 2025
 - **Details:**
@@ -1543,6 +1654,7 @@ tests/unit/core/test_constants.py
   - No more deprecation warnings in pandas operations
 
 #### ✅ Type Safety & Interface Improvements
+
 - **Status:** COMPLETED ✅
 - **Date:** Sept 12, 2025
 - **Details:**
@@ -1552,6 +1664,7 @@ tests/unit/core/test_constants.py
   - Fixed method signature mismatches between base and concrete classes
 
 #### ✅ Package Integration & Documentation
+
 - **Status:** COMPLETED ✅
 - **Date:** Sept 12, 2025
 - **Details:**
@@ -1565,24 +1678,28 @@ tests/unit/core/test_constants.py
 ## 🏗️ Future Phases (from REFACTORING_PLAN.md)
 
 ### Phase 2: Core Functionality Extraction (v0.7.0)
+
 - Extract DataContainer class to data/container.py
 - Extract Model class to models/epidemiological.py
 - Extract utility functions to utils/
 - Maintain API compatibility
 
 ### Phase 3: API Modernization (v0.8.0)
+
 - Implement new clean API design
 - Add comprehensive documentation
 - Enhanced error handling
 - Performance optimizations
 
 ### Phase 4: Advanced Features (v0.9.0)
+
 - Plugin system for models
 - Advanced visualization tools
 - Enhanced data validation
 - Configuration management
 
 ### Phase 5: Release Preparation (v1.0.0)
+
 - Final API polish
 - Complete documentation
 - Performance benchmarking
@@ -1626,18 +1743,21 @@ tests/
 ## 🎨 Development Workflow
 
 ### TDD Approach Established ✅
+
 1. **Red Phase:** Write failing tests first
 2. **Green Phase:** Implement minimal code to pass tests
 3. **Refactor Phase:** Improve code quality while keeping tests green
 4. **Verify Phase:** Run full test suite to ensure backward compatibility
 
 ### Chunk Size Strategy ✅
+
 - Small, verifiable pieces (1-2 hours each)
 - Each chunk includes tests + implementation + verification
 - Commit points after each successful chunk
 - Progress tracking via todo lists
 
 ### Quality Gates ✅
+
 - All tests must pass before proceeding
 - Backward compatibility must be maintained
 - Code must have proper type hints and documentation
@@ -1671,6 +1791,7 @@ tests/
 With Phase 1 foundation complete (100%), we're ready to tackle the core functionality extraction. The infrastructure is solid and all systems are validated.
 
 **Immediate Phase 2 objectives:**
+
 1. **DataContainer Extraction** - Extract from epydemics.py to data/container.py
 2. **Model Class Extraction** - Extract to models/sird.py with VAR implementation
 3. **API Design** - Create new clean interfaces alongside legacy support
@@ -1678,6 +1799,7 @@ With Phase 1 foundation complete (100%), we're ready to tackle the core function
 5. **Performance Validation** - Ensure no regression in computational performance
 
 **Ready for execution:**
+
 - TDD framework established and proven (24/24 tests passing)
 - CI/CD pipeline operational
 - Development tooling configured
@@ -1692,7 +1814,8 @@ With Phase 1 foundation complete (100%), we're ready to tackle the core function
 
 The comprehensive refactoring of Epydemics has successfully completed Phase 2, transforming a 440+ line monolithic codebase into a professional, modular architecture:
 
-### Key Achievements:
+### Key Achievements
+
 - ✅ **Complete Modular Architecture**: 7 focused modules with clear separation of concerns
 - ✅ **100% Backward Compatibility**: All existing code continues to work unchanged
 - ✅ **All core functionality extracted and validated**
@@ -1700,14 +1823,16 @@ The comprehensive refactoring of Epydemics has successfully completed Phase 2, t
 - ✅ **Professional Structure**: Abstract base classes, proper inheritance, type hints
 - ✅ **Enhanced Maintainability**: 440+ lines reduced to focused, documented modules
 
-### Technical Transformation:
+### Technical Transformation
+
 - **DataContainer**: Complete data pipeline (preprocessing, feature engineering, SIRD calculations)
 - **Model**: Advanced SIRD modeling with VAR time series forecasting and Monte Carlo simulation
 - **Utilities**: Logit transformations and data preparation functions
 - **Constants**: Enhanced with visualization support and backward compatibility
 - **Base Classes**: Abstract interfaces for future extensibility
 
-### Validation Results:
+### Validation Results
+
 - Import compatibility: ✅ `from epydemics import DataContainer, Model` working
 - Core functionality: ✅ DataContainer and Model initialization successful
 - Test coverage: ✅ 19/20 DataContainer tests, 19/23 Model tests passing
@@ -1722,6 +1847,7 @@ The comprehensive refactoring of Epydemics has successfully completed Phase 2, t
 **Current State:** Phase 2 successfully completed, refactoring paused at optimal checkpoint
 
 **What's Working:**
+
 - ✅ Complete modular architecture established
 - ✅ 100% backward compatibility maintained
 - ✅ All core functionality extracted and validated
@@ -1729,6 +1855,7 @@ The comprehensive refactoring of Epydemics has successfully completed Phase 2, t
 - ✅ Professional development workflow configured
 
 **When Resuming Phase 3:**
+
 1. Start with analysis module extraction from remaining visualization/evaluation functions
 2. Address deprecated pandas methods (fillna warnings)
 3. Improve type safety and abstract base class interfaces
@@ -1736,6 +1863,7 @@ The comprehensive refactoring of Epydemics has successfully completed Phase 2, t
 5. Implement performance optimizations
 
 **Resume Commands:**
+
 ```bash
 git checkout first-ai-major-refactorization
 # Continue from Phase 3 planning in this ROADMAP

@@ -20,9 +20,12 @@ from .analysis.visualization import visualize_results
 # Import specific constants and exceptions to avoid star imports
 from .core.constants import (
     CENTRAL_TENDENCY_METHODS,
+    COMPARTMENT_LABELS,
     COMPARTMENTS,
     FORECASTING_LEVELS,
     LOGIT_RATIOS,
+    METHOD_COLORS,
+    METHOD_NAMES,
     RATIOS,
 )
 from .core.exceptions import (
@@ -50,8 +53,11 @@ __all__ = [
     "RATIOS",
     "LOGIT_RATIOS",
     "COMPARTMENTS",
+    "COMPARTMENT_LABELS",
     "FORECASTING_LEVELS",
     "CENTRAL_TENDENCY_METHODS",
+    "METHOD_NAMES",
+    "METHOD_COLORS",
     # Exceptions
     "EpydemicsError",
     "NotDataFrameError",
