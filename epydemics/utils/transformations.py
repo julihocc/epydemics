@@ -24,11 +24,10 @@ def prepare_for_logit_function(data: pd.DataFrame) -> pd.DataFrame:
     logging.debug(f"gamma min:{data['gamma'].min()} max:{data['gamma'].max()}")
 
     for placeholder in ["alpha", "beta", "gamma"]:
-        data[placeholder] = (
-            data[placeholder]
-            .apply(lambda x: x if x > 0 else np.nan)
-            .apply(lambda x: x if x < 1 else np.nan)
-        )
+        series = data[placeholder]
+        series = series.mask(series <= 0, np.nan)
+        series = series.mask(series >= 1, np.nan)
+        data[placeholder] = series
         data[placeholder] = data[placeholder].ffill().bfill()
 
     return data

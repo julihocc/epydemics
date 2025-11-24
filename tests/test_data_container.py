@@ -172,6 +172,21 @@ class TestDataContainerProcessing:
                 diff in container.data.columns
             ), f"Difference {diff} missing from processed data"
 
+    def test_datacontainer_manual_process_call(self, sample_owid_data):
+        """Test that process() can be called manually to update results."""
+        # Act
+        container = DataContainer(sample_owid_data, window=7)
+        initial_data = container.data.copy()
+        
+        # Change window and re-process
+        container.window = 14
+        container.process()
+        
+        # Assert
+        assert container.data is not None
+        # Data should be different due to different smoothing window
+        assert not container.data.equals(initial_data)
+
 
 class TestDataContainerEdgeCases:
     """Test DataContainer behavior with edge cases and boundary conditions."""

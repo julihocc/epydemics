@@ -4,10 +4,10 @@ import itertools
 import logging
 from typing import Any, Dict, Optional, Tuple
 
+import numpy as np
 import pandas as pd
 from box import Box
 from scipy.stats import gmean, hmean
-from statsmodels.tsa.api import VAR
 
 from ..analysis.evaluation import evaluate_forecast as _evaluate_forecast
 from ..analysis.visualization import visualize_results as _visualize_results
@@ -15,6 +15,7 @@ from ..core.constants import COMPARTMENTS, FORECASTING_LEVELS, LOGIT_RATIOS
 from ..data.preprocessing import reindex_data
 from ..utils.transformations import logistic_function
 from .base import BaseModel, SIRDModelMixin
+from .forecasting.var import VARForecaster
 
 
 class Model(BaseModel, SIRDModelMixin):
@@ -61,13 +62,22 @@ class Model(BaseModel, SIRDModelMixin):
         # Model parameters
         self.days_to_forecast = days_to_forecast
 
-        # VAR model attributes
-        self.logit_ratios_model: Optional[VAR] = None
-        self.logit_ratios_model_fitted: Optional[Any] = None
+        # Forecasting component
+        self.forecaster: Optional[VARForecaster] = None
         self.forecasted_logit_ratios: Optional[pd.DataFrame] = None
 
         self.data = reindex_data(data_container.data, start, stop)
         self.logit_ratios_values = self.data[LOGIT_RATIOS].values
+
+    @property
+    def logit_ratios_model(self):
+        """Get the underlying VAR model from the forecaster (for backward compatibility)."""
+        return self.forecaster.model if self.forecaster else None
+
+    @property
+    def logit_ratios_model_fitted(self):
+        """Get the fitted VAR model from the forecaster (for backward compatibility)."""
+        return self.forecaster.fitted_model if self.forecaster else None
 
     def create_model(self, *args, **kwargs) -> None:
         """Create the VAR model for logit-transformed rates."""
@@ -97,7 +107,8 @@ class Model(BaseModel, SIRDModelMixin):
             *args: Positional arguments for VAR constructor
             **kwargs: Keyword arguments for VAR constructor
         """
-        self.logit_ratios_model = VAR(self.logit_ratios_values, *args, **kwargs)
+        self.forecaster = VARForecaster(self.logit_ratios_values)
+        self.forecaster.create_model(*args, **kwargs)
 
     def fit_logit_ratios_model(self, *args, **kwargs) -> None:
         """
@@ -107,9 +118,13 @@ class Model(BaseModel, SIRDModelMixin):
             *args: Positional arguments for VAR.fit()
             **kwargs: Keyword arguments for VAR.fit()
         """
-        self.logit_ratios_model_fitted = self.logit_ratios_model.fit(*args, **kwargs)
+        if self.forecaster is None:
+            self.create_logit_ratios_model()
+            
+        self.forecaster.fit(*args, **kwargs)
+        
         if self.days_to_forecast is None:
-            self.days_to_forecast = self.logit_ratios_model_fitted.k_ar + self.window
+            self.days_to_forecast = self.forecaster.k_ar + self.window
 
     def forecast_logit_ratios(self, steps: Optional[int] = None, **kwargs) -> None:
         """
@@ -131,8 +146,8 @@ class Model(BaseModel, SIRDModelMixin):
         )
         try:
             self.forecasted_logit_ratios_tuple_arrays = (
-                self.logit_ratios_model_fitted.forecast_interval(
-                    self.logit_ratios_values, self.days_to_forecast, **kwargs
+                self.forecaster.forecast_interval(
+                    self.days_to_forecast, **kwargs
                 )
             )
         except Exception as e:
@@ -180,46 +195,90 @@ class Model(BaseModel, SIRDModelMixin):
         Returns:
             DataFrame with simulated compartment values
         """
-        simulation = (
-            self.data[["A", "C", "S", "I", "R", "D", "alpha", "beta", "gamma"]]
-            .iloc[-1:]
-            .copy()
+        # Get initial state from the last historical data point
+        last_hist = self.data.iloc[-1]
+
+        # Current state variables
+        S = last_hist.S
+        I = last_hist.I
+        R = last_hist.R
+        D = last_hist.D
+        # A and C are also needed (A used in alpha term)
+        A = last_hist.A
+        C = last_hist.C
+
+        # Current rates (from history) used for the first step calculation
+        alpha = last_hist.alpha
+        beta = last_hist.beta
+        gamma = last_hist.gamma
+
+        # Get forecasted rates as numpy arrays for performance
+        forecast_alphas = (
+            self.forecasting_box["alpha"][simulation_levels[0]]
+            .loc[self.forecasting_interval]
+            .values
+        )
+        forecast_betas = (
+            self.forecasting_box["beta"][simulation_levels[1]]
+            .loc[self.forecasting_interval]
+            .values
+        )
+        forecast_gammas = (
+            self.forecasting_box["gamma"][simulation_levels[2]]
+            .loc[self.forecasting_interval]
+            .values
         )
 
-        for t1 in self.forecasting_interval:
-            t0 = t1 - pd.Timedelta(days=1)
-            previous = simulation.loc[t0]
-            S = previous.S - previous.I * previous.alpha * previous.S / previous.A
-            I_val = (
-                previous.I
-                + previous.I * previous.alpha * previous.S / previous.A
-                - previous.beta * previous.I
-                - previous.gamma * previous.I
-            )
-            R = previous.R + previous.beta * previous.I
-            D = previous.D + previous.gamma * previous.I
-            C = I_val + R + D
-            A = S + I_val
+        n_steps = len(self.forecasting_interval)
 
-            simulation.loc[t1] = [
-                A,
-                C,
-                S,
-                I_val,
-                R,
-                D,
-                self.forecasting_box["alpha"][simulation_levels[0]].loc[t1],
-                self.forecasting_box["beta"][simulation_levels[1]].loc[t1],
-                self.forecasting_box["gamma"][simulation_levels[2]].loc[t1],
-            ]
+        # Pre-allocate result arrays
+        # Columns: A, C, S, I, R, D, alpha, beta, gamma
+        results = np.zeros((n_steps, 9))
 
-        simulation = simulation.iloc[1:]
-        try:
-            simulation.index = self.forecasting_interval
-        except Exception as e:
-            raise Exception(e)
+        for i in range(n_steps):
+            # Dynamics using CURRENT (previous step's) state and rates
+            # S(t) = S(t-1) - I(t-1)*alpha(t-1)*S(t-1)/A(t-1)
+            new_S = S - I * alpha * S / A
 
-        return simulation
+            # I(t) = I(t-1) + infection - recovery - death
+            infection = I * alpha * S / A
+            recovery = beta * I
+            death = gamma * I
+
+            new_I = I + infection - recovery - death
+            new_R = R + recovery
+            new_D = D + death
+
+            new_C = new_I + new_R + new_D
+            new_A = new_S + new_I
+
+            # Get the rates for THIS forecasted step (to be used in NEXT iteration)
+            new_alpha = forecast_alphas[i]
+            new_beta = forecast_betas[i]
+            new_gamma = forecast_gammas[i]
+
+            # Store results
+            results[i, 0] = new_A
+            results[i, 1] = new_C
+            results[i, 2] = new_S
+            results[i, 3] = new_I
+            results[i, 4] = new_R
+            results[i, 5] = new_D
+            results[i, 6] = new_alpha
+            results[i, 7] = new_beta
+            results[i, 8] = new_gamma
+
+            # Update state for next iteration
+            S, I, R, D, A, C = new_S, new_I, new_R, new_D, new_A, new_C
+            alpha, beta, gamma = new_alpha, new_beta, new_gamma
+
+        # Create DataFrame from results
+        columns = ["A", "C", "S", "I", "R", "D", "alpha", "beta", "gamma"]
+        simulation_df = pd.DataFrame(
+            results, index=self.forecasting_interval, columns=columns
+        )
+
+        return simulation_df
 
     def create_simulation_box(self) -> None:
         """Create nested Box structure for storing simulation results."""
