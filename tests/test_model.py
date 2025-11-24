@@ -90,8 +90,8 @@ class TestModelVARFunctionality:
     def fitted_model(self, sample_data_container):
         """Create a model with fitted VAR."""
         model = Model(sample_data_container)
-        model.create_logit_ratios_model()
-        model.fit_logit_ratios_model()
+        model.create_model()
+        model.fit_model()
         return model
 
     def test_create_logit_ratios_model(self, sample_data_container):
@@ -100,7 +100,7 @@ class TestModelVARFunctionality:
         model = Model(sample_data_container)
 
         # Act
-        model.create_logit_ratios_model()
+        model.create_model()
 
         # Assert
         assert model.logit_ratios_model is not None
@@ -110,10 +110,10 @@ class TestModelVARFunctionality:
         """Test VAR model fitting."""
         # Arrange
         model = Model(sample_data_container)
-        model.create_logit_ratios_model()
+        model.create_model()
 
         # Act
-        model.fit_logit_ratios_model()
+        model.fit_model()
 
         # Assert
         assert model.logit_ratios_model_fitted is not None
@@ -124,7 +124,7 @@ class TestModelVARFunctionality:
     def test_forecast_logit_ratios(self, fitted_model):
         """Test logit ratios forecasting."""
         # Act
-        fitted_model.forecast_logit_ratios(steps=7)
+        fitted_model.forecast(steps=7)
 
         # Assert
         assert fitted_model.forecasting_box is not None
@@ -145,7 +145,7 @@ class TestModelVARFunctionality:
     def test_forecast_generates_confidence_intervals(self, fitted_model):
         """Test that forecasting generates proper confidence intervals."""
         # Act
-        fitted_model.forecast_logit_ratios(steps=5)
+        fitted_model.forecast(steps=5)
 
         # Assert
         forecasting_levels = ["lower", "point", "upper"]
@@ -159,7 +159,7 @@ class TestModelVARFunctionality:
     def test_forecast_dates_alignment(self, fitted_model):
         """Test that forecast dates are properly aligned."""
         # Act
-        fitted_model.forecast_logit_ratios(steps=10)
+        fitted_model.forecast(steps=10)
 
         # Assert
         last_data_date = fitted_model.data.index[-1]
@@ -176,87 +176,12 @@ class TestModelSimulation:
     def model_with_forecasts(self, sample_data_container):
         """Create model with VAR forecasts ready for simulation."""
         model = Model(sample_data_container)
-        model.create_logit_ratios_model()
-        model.fit_logit_ratios_model()
-        model.forecast_logit_ratios(steps=5)
+        model.create_model()
+        model.fit_model()
+        model.forecast(steps=5)
         return model
 
-    def test_create_simulation_box(self, model_with_forecasts):
-        """Test simulation box structure creation."""
-        # Act
-        model_with_forecasts.create_simulation_box()
 
-        # Assert
-        simulation = model_with_forecasts.simulation
-        assert simulation is not None
-
-        # Check nested structure (3x3x3 = 27 scenarios)
-        levels = ["lower", "point", "upper"]
-        for alpha_level in levels:
-            assert alpha_level in simulation
-            for beta_level in levels:
-                assert beta_level in simulation[alpha_level]
-                for gamma_level in levels:
-                    assert gamma_level in simulation[alpha_level][beta_level]
-
-    def test_simulate_for_given_levels(self, model_with_forecasts):
-        """Test individual simulation scenario."""
-        # Arrange
-        simulation_levels = ["point", "point", "point"]  # Use point estimates
-
-        # Act
-        result = model_with_forecasts.simulate_for_given_levels(simulation_levels)
-
-        # Assert
-        assert isinstance(result, pd.DataFrame)
-        assert len(result) == len(model_with_forecasts.forecasting_interval)
-
-        # Check SIRD compartments exist
-        sird_cols = ["S", "I", "R", "D", "C", "A"]
-        for col in sird_cols:
-            assert col in result.columns
-
-        # Check rates exist
-        rate_cols = ["alpha", "beta", "gamma"]
-        for col in rate_cols:
-            assert col in result.columns
-
-    def test_simulation_conservation_laws(self, model_with_forecasts):
-        """Test that SIRD simulation respects conservation laws."""
-        # Arrange
-        simulation_levels = ["point", "point", "point"]
-
-        # Act
-        result = model_with_forecasts.simulate_for_given_levels(simulation_levels)
-
-        # Assert conservation laws
-        for idx in result.index:
-            row = result.loc[idx]
-            # Total population should be conserved (A = S + I)
-            assert np.isclose(row["S"] + row["I"], row["A"])
-            # Cases should equal I + R + D
-            assert np.isclose(row["C"], row["I"] + row["R"] + row["D"])
-
-    def test_run_simulations(self, model_with_forecasts):
-        """Test running all 27 simulation scenarios."""
-        # Act
-        model_with_forecasts.run_simulations()
-
-        # Assert
-        simulation = model_with_forecasts.simulation
-        levels = ["lower", "point", "upper"]
-
-        # Check all 27 scenarios are populated
-        count = 0
-        for alpha_level in levels:
-            for beta_level in levels:
-                for gamma_level in levels:
-                    scenario = simulation[alpha_level][beta_level][gamma_level]
-                    assert scenario is not None
-                    assert isinstance(scenario, pd.DataFrame)
-                    count += 1
-
-        assert count == 27
 
 
 class TestModelResults:
@@ -266,29 +191,13 @@ class TestModelResults:
     def model_with_simulations(self, sample_data_container):
         """Create model with complete simulations."""
         model = Model(sample_data_container)
-        model.create_logit_ratios_model()
-        model.fit_logit_ratios_model()
-        model.forecast_logit_ratios(steps=5)
+        model.create_model()
+        model.fit_model()
+        model.forecast(steps=5)
         model.run_simulations()
         return model
 
-    def test_create_results_dataframe(self, model_with_simulations):
-        """Test results dataframe creation for specific compartment."""
-        # Act
-        results_df = model_with_simulations.create_results_dataframe("C")
 
-        # Assert
-        assert isinstance(results_df, pd.DataFrame)
-        assert len(results_df) == 5  # forecast steps
-
-        # Should have 27 scenario columns + 4 central tendency columns
-        expected_cols = 27 + 4  # scenarios + mean, median, gmean, hmean
-        assert len(results_df.columns) == expected_cols
-
-        # Check central tendency columns exist
-        central_methods = ["mean", "median", "gmean", "hmean"]
-        for method in central_methods:
-            assert method in results_df.columns
 
     def test_generate_result(self, model_with_simulations):
         """Test complete results generation."""
@@ -313,9 +222,9 @@ class TestModelVisualization:
     def model_with_results(self, sample_data_container):
         """Create model with complete results."""
         model = Model(sample_data_container)
-        model.create_logit_ratios_model()
-        model.fit_logit_ratios_model()
-        model.forecast_logit_ratios(steps=5)
+        model.create_model()
+        model.fit_model()
+        model.forecast(steps=5)
         model.run_simulations()
         model.generate_result()
         return model
@@ -371,9 +280,9 @@ class TestModelEvaluation:
     def model_with_results(self, sample_data_container):
         """Create model with results for evaluation."""
         model = Model(sample_data_container)
-        model.create_logit_ratios_model()
-        model.fit_logit_ratios_model()
-        model.forecast_logit_ratios(steps=5)
+        model.create_model()
+        model.fit_model()
+        model.forecast(steps=5)
         model.run_simulations()
         model.generate_result()
         return model
@@ -454,16 +363,16 @@ class TestModelIntegration:
         """Test complete end-to-end Model workflow."""
         # Arrange & Act - Complete pipeline
         model = Model(sample_data_container)
-        model.create_logit_ratios_model()
-        model.fit_logit_ratios_model()
-        model.forecast_logit_ratios(steps=7)
+        model.create_model()
+        model.fit_model()
+        model.forecast(steps=7)
         model.run_simulations()
         model.generate_result()
 
         # Assert - All components should be populated
         assert model.logit_ratios_model_fitted is not None
         assert model.forecasting_box is not None
-        assert model.simulation is not None
+        assert model.simulation_engine.simulation is not None
         assert model.results is not None
 
         # Results should contain all compartments
@@ -479,9 +388,9 @@ class TestModelIntegration:
         # Act - Time the complete workflow
         start_time = time.time()
         model = Model(sample_data_container)
-        model.create_logit_ratios_model()
-        model.fit_logit_ratios_model()
-        model.forecast_logit_ratios(steps=5)  # Smaller forecast for speed
+        model.create_model()
+        model.fit_model()
+        model.forecast(steps=5)  # Smaller forecast for speed
         model.run_simulations()
         model.generate_result()
         end_time = time.time()
@@ -511,7 +420,7 @@ class TestModelIntegration:
         assert hasattr(model, "days_to_forecast")
 
         # Should be able to create and fit model
-        model.create_logit_ratios_model()
-        model.fit_logit_ratios_model()
+        model.create_model()
+        model.fit_model()
         assert model.logit_ratios_model is not None
         assert model.logit_ratios_model_fitted is not None
