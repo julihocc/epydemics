@@ -84,10 +84,10 @@ Repository = "https://github.com/julihocc/epydemics.git"
 Changelog = "https://github.com/julihocc/epydemics/blob/main/CHANGELOG.md"
 
 [tool.setuptools]
-package-dir = {"" = "."}
+package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 include = ["epydemics*"]
 exclude = ["tests*"]
 
@@ -121,7 +121,7 @@ filterwarnings = [
 ]
 
 [tool.coverage.run]
-source = ["epydemics"]
+source = ["src/epydemics"]
 omit = [
     "*/tests/*",
     "*/test_*.py",
