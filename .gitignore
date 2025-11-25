@@ -161,3 +161,7 @@ GEMINI.md
 .claude/
 .github/copilot-instructions
 .github/prompts/
+
+# Local directories not to be tracked
+epydemics-tutorial/
+epydemics_global_model/
