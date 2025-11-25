@@ -4,5 +4,8 @@
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"editor.defaultFormatter": "charliermarsh.ruff",
+		"notebook.defaultFormatter": "charliermarsh.ruff"
+	}
 }
