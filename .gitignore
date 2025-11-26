@@ -154,15 +154,6 @@ cython_debug/
 # Temporary files and refactoring plans
 .temp/
 
-
-# AI Context
-CLAUDE.md
-GEMINI.md
-.github/copilot-instructions.md
-.claude/
-.github/prompts/
-conversation-*.txt
-
 # Local directories not to be tracked
 epydemics-tutorial/
 epydemics_global_model/
