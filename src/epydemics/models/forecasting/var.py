@@ -12,7 +12,7 @@ from statsmodels.tsa.api import VAR
 class VARForecaster:
     """
     Wrapper around statsmodels VAR for epidemiological rate forecasting.
-    
+
     This class handles the creation, fitting, and forecasting of Vector
     Autoregression models specifically designed for multivariate time series
     of epidemiological rates (or their transforms).
@@ -38,7 +38,9 @@ class VARForecaster:
         # statsmodels VAR handles both array and dataframe, but usually expects array-like
         # If it's a DataFrame, .values extracts the numpy array.
         # If it's already an array, we use it directly.
-        data_values = self.data.values if isinstance(self.data, pd.DataFrame) else self.data
+        data_values = (
+            self.data.values if isinstance(self.data, pd.DataFrame) else self.data
+        )
         self.model = VAR(data_values)
 
     def fit(self, *args, **kwargs) -> None:
@@ -51,16 +53,16 @@ class VARForecaster:
         """
         if self.model is None:
             self.create_model()
-            
+
         max_lag = kwargs.pop("max_lag", None)
         ic = kwargs.pop("ic", None)
 
         if max_lag is not None and ic is not None:
             # Select optimal lag order
-            selector = self.model.select_order(maxlags=max_lag, ic=ic)
-            # The chosen lag is stored in the 'selected_lags' attribute
-            # We need to get the lag for the chosen information criterion
-            optimal_lag = getattr(selector, f"bic" if ic == "bic" else "aic")
+            selector = self.model.select_order(maxlags=max_lag)
+            # The chosen lag is stored in different attributes depending on IC
+            # selector.aic, selector.bic, selector.hqic, selector.fpe
+            optimal_lag = getattr(selector, ic.lower(), selector.aic)
             self.fitted_model = self.model.fit(optimal_lag, *args, **kwargs)
             self.k_ar = optimal_lag
         else:
@@ -83,8 +85,8 @@ class VARForecaster:
         """
         if self.fitted_model is None:
             raise ValueError("Model must be fitted before forecasting")
-            
-        data_values = self.data.values if isinstance(self.data, pd.DataFrame) else self.data
-        return self.fitted_model.forecast_interval(
-            data_values, steps, **kwargs
+
+        data_values = (
+            self.data.values if isinstance(self.data, pd.DataFrame) else self.data
         )
+        return self.fitted_model.forecast_interval(data_values, steps, **kwargs)

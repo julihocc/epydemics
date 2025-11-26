@@ -101,11 +101,30 @@ class Model(BaseModel, SIRDModelMixin):
             self.data, self.forecasting_box, self.forecasting_interval
         )
 
-    def run_simulations(self) -> None:
-        """Run epidemic simulations based on forecasted rates."""
+    def run_simulations(self, n_jobs: Optional[int] = None) -> None:
+        """
+        Run epidemic simulations based on forecasted rates.
+
+        This method supports both sequential and parallel execution modes for improved performance.
+
+        Args:
+            n_jobs: Number of parallel jobs to use:
+                - None: Use config default (auto-detect CPU count if PARALLEL_SIMULATIONS=True)
+                - 1: Sequential execution
+                - >1: Parallel execution with specified number of workers
+
+        Raises:
+            RuntimeError: If forecast has not been generated yet
+            ValueError: If n_jobs < 1
+
+        Examples:
+            >>> model.run_simulations()  # Use config default
+            >>> model.run_simulations(n_jobs=1)  # Force sequential
+            >>> model.run_simulations(n_jobs=4)  # Use 4 parallel workers
+        """
         if self.simulation_engine is None:
             raise RuntimeError("Forecast must be generated before simulating epidemic.")
-        self.simulation_engine.run_simulations()
+        self.simulation_engine.run_simulations(n_jobs=n_jobs)
         self.simulation = self.simulation_engine.simulation
         self.results = self.simulation_engine.results
 
