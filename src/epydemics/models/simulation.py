@@ -3,6 +3,8 @@ Epidemic simulation engine.
 """
 import itertools
 import logging
+import multiprocessing as mp
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
@@ -11,6 +13,33 @@ from box import Box
 from scipy.stats import gmean, hmean
 
 from ..core.constants import COMPARTMENTS, FORECASTING_LEVELS
+from ..core.config import get_settings
+
+
+def _run_single_simulation(
+    data: pd.DataFrame,
+    forecasting_box: Dict[str, pd.DataFrame],
+    forecasting_interval: pd.DatetimeIndex,
+    simulation_levels: Tuple[str, str, str],
+) -> Tuple[Tuple[str, str, str], pd.DataFrame]:
+    """
+    Helper function to run a single simulation scenario.
+
+    This function is defined at module level to support pickling for multiprocessing.
+
+    Args:
+        data: Historical epidemic data
+        forecasting_box: Dictionary with forecasted rate values
+        forecasting_interval: Time index for forecast period
+        simulation_levels: Tuple of (alpha_level, beta_level, gamma_level)
+
+    Returns:
+        Tuple of (simulation_levels, simulation_dataframe)
+    """
+    # Create temporary simulation object to use its method
+    temp_sim = EpidemicSimulation(data, forecasting_box, forecasting_interval)
+    result = temp_sim.simulate_for_given_levels(simulation_levels)
+    return (simulation_levels, result)
 
 
 class EpidemicSimulation:
@@ -140,17 +169,83 @@ class EpidemicSimulation:
                         logit_gamma_level
                     ] = None
 
-    def run_simulations(self) -> None:
-        """Run epidemic simulations for all combinations of rate confidence levels."""
+    def run_simulations(self, n_jobs: Optional[int] = None) -> None:
+        """
+        Run epidemic simulations for all combinations of rate confidence levels.
+
+        This method supports both sequential and parallel execution modes:
+        - n_jobs=1: Sequential execution (original behavior)
+        - n_jobs>1: Parallel execution with specified number of workers
+        - n_jobs=None: Auto-detect CPU count and use parallel execution
+
+        Args:
+            n_jobs: Number of parallel jobs to use:
+                - None: Auto-detect CPU count (default from config)
+                - 1: Sequential execution
+                - >1: Parallel execution with specified workers
+
+        Raises:
+            ValueError: If n_jobs < 1
+
+        Examples:
+            >>> sim.run_simulations(n_jobs=1)  # Sequential
+            >>> sim.run_simulations(n_jobs=4)  # 4 parallel workers
+            >>> sim.run_simulations(n_jobs=None)  # Auto-detect CPUs
+        """
+        # Validate n_jobs parameter
+        if n_jobs is not None and n_jobs < 1:
+            raise ValueError("n_jobs must be None or >= 1")
+
+        # Get default from config if not specified
+        if n_jobs is None:
+            settings = get_settings()
+            if settings.PARALLEL_SIMULATIONS:
+                n_jobs = settings.N_SIMULATION_JOBS or mp.cpu_count()
+            else:
+                n_jobs = 1
+
         self.create_simulation_box()
-        for current_levels in itertools.product(
-            FORECASTING_LEVELS, FORECASTING_LEVELS, FORECASTING_LEVELS
-        ):
-            logit_alpha_level, logit_beta_level, logit_gamma_level = current_levels
-            current_simulation = self.simulate_for_given_levels(current_levels)
-            self.simulation[logit_alpha_level][logit_beta_level][
-                logit_gamma_level
-            ] = current_simulation
+
+        # Generate all scenario combinations
+        scenarios = list(
+            itertools.product(
+                FORECASTING_LEVELS, FORECASTING_LEVELS, FORECASTING_LEVELS
+            )
+        )
+
+        if n_jobs == 1:
+            # Sequential execution (original behavior)
+            for current_levels in scenarios:
+                logit_alpha_level, logit_beta_level, logit_gamma_level = current_levels
+                current_simulation = self.simulate_for_given_levels(current_levels)
+                self.simulation[logit_alpha_level][logit_beta_level][
+                    logit_gamma_level
+                ] = current_simulation
+        else:
+            # Parallel execution
+            with ProcessPoolExecutor(max_workers=n_jobs) as executor:
+                # Submit all simulation jobs
+                future_to_scenario = {
+                    executor.submit(
+                        _run_single_simulation,
+                        self.data,
+                        self.forecasting_box,
+                        self.forecasting_interval,
+                        scenario,
+                    ): scenario
+                    for scenario in scenarios
+                }
+
+                # Collect results as they complete
+                for future in as_completed(future_to_scenario):
+                    (
+                        logit_alpha_level,
+                        logit_beta_level,
+                        logit_gamma_level,
+                    ), simulation_result = future.result()
+                    self.simulation[logit_alpha_level][logit_beta_level][
+                        logit_gamma_level
+                    ] = simulation_result
 
     def create_results_dataframe(self, compartment: str) -> pd.DataFrame:
         """

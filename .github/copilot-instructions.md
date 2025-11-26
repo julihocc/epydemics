@@ -1,137 +1,251 @@
 # GitHub Copilot Instructions for Epydemics
 
-**Version 0.6.0** - AI-Enhanced Documentation Release
+**Version 0.6.0** - AI-Enhanced with Parallel Simulation Support
 
 ## Project Overview
-Epydemics implements a novel epidemiological forecasting system that combines discrete SIRD (Susceptible-Infected-Recovered-Deaths) mathematical models with time series analysis. Unlike classical epidemiological models with constant parameters, this project models time-varying infection, recovery, and mortality rates (α, β, γ) using VAR (Vector Autoregression) time series on logit-transformed rates.
+Epydemics implements epidemiological forecasting by combining discrete SIRD (Susceptible-Infected-Recovered-Deaths) models with VAR (Vector Autoregression) time series on **logit-transformed rates**. Unlike classical models with constant parameters, this models time-varying infection (α), recovery (β), and mortality (γ) rates.
 
-## Core Architecture
+**Key Innovation**: Rates are logit-transformed before VAR modeling to ensure (0,1) bounds, then inverse-transformed for Monte Carlo epidemic simulations across 27 scenarios (3³ confidence levels).
 
-### Main Components
-- **`epydemics/`**: Package root containing modular structure
-- **`epydemics.data.container.DataContainer`**: Handles data preprocessing, feature engineering, and SIRD compartment calculations
-- **`epydemics.models.sird.Model`**: Implements VAR time series modeling on logit-transformed rates and epidemic simulations
+## Architecture at a Glance
 
-### Mathematical Foundation
-The project uses a discrete SIRD model where rates vary over time:
+### Data Flow Pipeline
 ```
-α(t) = (S(t)+I(t))/(S(t)I(t)) * ΔC(t)  # Infection rate
-β(t) = ΔR(t)/I(t)                      # Recovery rate
-γ(t) = ΔD(t)/I(t)                      # Mortality rate
+OWID CSV → DataContainer → Feature Engineering → Model → VAR Forecast → Simulation → Results
+  ↓           ↓                 ↓                  ↓          ↓             ↓
+Validate   Smooth(7d)      SIRD+Rates        Logit→VAR   27 Scenarios  Evaluation
+          Rename→C,D,N    α,β,γ+Logit      Confidence   MonteCarlo    Viz+Metrics
 ```
 
-Key insight: Rates are logit-transformed before VAR modeling to ensure they stay within (0,1) bounds.
+### Critical Module Structure
+- **`src/epydemics/core/`**: Constants (`RATIOS`, `COMPARTMENTS`), config (pydantic-settings), exceptions
+- **`src/epydemics/data/container.py`**: `DataContainer` - orchestrates preprocessing pipeline
+- **`src/epydemics/models/sird.py`**: `Model` - main API delegating to forecasting/simulation engines
+- **`src/epydemics/models/simulation.py`**: `EpidemicSimulation` - **parallel/sequential** simulation with `n_jobs`
+- **`src/epydemics/models/forecasting/var.py`**: `VARForecaster` - statsmodels VAR wrapper
+- **`src/epydemics/analysis/`**: Evaluation metrics + visualization with professional formatting
 
-## Development Patterns
+## Mathematical Foundation
 
-### Data Pipeline Flow
-1. **Raw Data**: OWID CSV format with columns `['date', 'total_cases', 'total_deaths', 'population']`
-2. **DataContainer**: Renames to `['C', 'D', 'N']`, applies rolling window smoothing, feature engineering
-3. **Feature Engineering**: Calculates SIRD compartments (S, I, R, D), differences (dC, dI, etc), rates (α, β, γ)
-4. **Logit Transform**: `logit_alpha = log(alpha/(1-alpha))` for VAR modeling
-5. **Model**: VAR on logit rates → forecast → inverse transform → epidemic simulation
-
-### Essential Constants
-Always use these predefined lists from the `epydemics.core.constants` module:
+### SIRD Compartments (Order-Dependent Calculation)
 ```python
-RATIOS = ["alpha", "beta", "gamma"]
-LOGIT_RATIOS = ["logit_alpha", "logit_beta", "logit_gamma"]
-COMPARTMENTS = ["A", "C", "S", "I", "R", "D"]
-FORECASTING_LEVELS = ["lower", "point", "upper"]
-CENTRAL_TENDENCY_METHODS = ["mean", "median", "gmean", "hmean"]
+# MUST follow this sequence in feature_engineering():
+R = C.shift(14) - D  # 1. Recovered (14-day lag assumption)
+I = C - R - D        # 2. Infected (active cases)
+S = N - I - R - D    # 3. Susceptible (remaining population)
+A = S + I            # 4. Active (for rate calculations)
 ```
 
-### Key Method Patterns
-- **Data validation**: Always use `validate_data()` before processing
-- **Rate bounds**: Rates must be in (0,1) - use `prepare_for_logit_function()`
-- **Forward fill**: Missing values filled with `ffill()`
-- **Box objects**: Results stored in `python-box` objects for nested attribute access
-
-## Development Workflows
-
-### Typical Analysis Pattern
+### Time-Varying Rates
 ```python
-# 1. Load and prepare data
-data = process_data_from_owid(iso_code="OWID_WRL")  # Global data
-container = DataContainer(data)
+α(t) = (A * dC) / (I * S)  # Infection rate (requires I>0, S>0)
+β(t) = dR / I              # Recovery rate
+γ(t) = dD / I              # Mortality rate
+# All rates → prepare_for_logit_function() → clip to (ε, 1-ε) → logit transform
+```
 
-# 2. Create and fit model
+**Critical Constraint**: Rates MUST be (0,1) for logit transform. Use `prepare_for_logit_function()` to clip rates, then `ffill()` for NaN propagation.
+
+## Essential Development Patterns
+
+### Standard Analysis Workflow
+```python
+from epydemics import DataContainer, Model, process_data_from_owid
+
+# 1. Load data (auto-validates OWID format)
+raw = process_data_from_owid(iso_code="OWID_WRL")  # or "MEX", "USA"
+container = DataContainer(raw, window=7)
+
+# 2. Create model with date range
 model = Model(container, start="2020-03-01", stop="2020-12-31")
-model.create_logit_ratios_model()
-model.fit_logit_ratios_model()
+model.create_model()
+model.fit_model(max_lag=10, ic="aic")  # VAR lag selection
 
-# 3. Forecast and simulate
-model.forecast_logit_ratios(steps=30)
-model.run_simulations()
+# 3. Forecast and simulate (NEW: parallel support)
+model.forecast(steps=30)
+model.run_simulations(n_jobs=None)  # None=auto-detect CPUs, 1=sequential
 model.generate_result()
 
-# 4. Evaluate and visualize
+# 4. Evaluate
 testing_data = container.data.loc[model.forecasting_interval]
-model.visualize_results("C", testing_data, log_response=True)
 evaluation = model.evaluate_forecast(testing_data)
+model.visualize_results("C", testing_data, log_response=True)
 ```
 
-### Submodule Management
-This project uses git submodules for tutorials and examples:
-- Use `./manage_tutorial.sh init` to initialize submodules
-- Use `./manage_tutorial.sh update` to get latest content
-- **Never modify** submodule content directly in this repo
-
-### Testing and Validation
-- Model validation uses multiple metrics: MAE, MSE, RMSE, MAPE, SMAPE
-- Forecasts generate uncertainty bands through Monte Carlo simulation across rate confidence intervals
-- Always test on held-out data using `model.evaluate_forecast()`
-
-## Data Integration
-
-### OWID Data Format
-External data must match OWID structure:
-- Required columns: `date`, `total_cases`, `total_deaths`, `population`
-- ISO codes for filtering: `OWID_WRL` (global), country codes like `MEX`
-- Data automatically reindexed to daily frequency with forward fill
-
-### Rate Calculation Dependencies
-Critical constraint: Infection rate calculation requires both S(t) and I(t) > 0:
+### Always Use Constants from `epydemics.core.constants`
 ```python
-alpha = (data.A * data.dC) / (data.I * data.S)  # Will fail if I=0 or S=0
+from epydemics.core.constants import (
+    RATIOS,              # ["alpha", "beta", "gamma"]
+    LOGIT_RATIOS,        # ["logit_alpha", "logit_beta", "logit_gamma"]
+    COMPARTMENTS,        # ["A", "C", "S", "I", "R", "D"]
+    FORECASTING_LEVELS,  # ["lower", "point", "upper"]
+    CENTRAL_TENDENCY_METHODS  # ["mean", "median", "gmean", "hmean"]
+)
 ```
 
-### Feature Engineering Order
-Must follow this sequence in `feature_engineering()`:
-1. Calculate R (recovered) using 14-day lag: `R = C.shift(14) - D`
-2. Calculate I (infected): `I = C - R - D`
-3. Calculate differences (dC, dI, etc.)
-4. Calculate rates (α, β, γ) from differences
-5. Apply logit transform
+### Configuration via Pydantic Settings
+```python
+from epydemics.core.config import get_settings
+
+settings = get_settings()  # Cached singleton
+# Configure via environment variables or .env:
+# WINDOW_SIZE=7, RECOVERY_LAG=14, PARALLEL_SIMULATIONS=True
+# N_SIMULATION_JOBS=4 (or None for CPU auto-detect)
+```
+
+## Critical Development Workflows
+
+### Testing Commands
+```bash
+# Run all tests (uses pytest.ini markers)
+pytest
+
+# Specific test types
+pytest -m unit              # Unit tests only
+pytest -m integration       # Integration tests only
+pytest -m "not slow"        # Skip slow tests
+
+# With coverage (configured in pyproject.toml)
+pytest --cov=src/epydemics --cov-report=html
+
+# Parallel execution
+pytest -n auto
+```
+
+### Code Quality Pipeline (Pre-commit)
+```bash
+# Format + lint (order matters)
+black src/ tests/           # Line length: 88
+isort src/ tests/           # Import sorting (black profile)
+flake8 src/ tests/          # Linting (E203, W503 ignored)
+mypy src/                   # Type checking (strict mode)
+
+# Run all pre-commit hooks
+pre-commit run --all-files
+
+# Install hooks (runs on git commit)
+pre-commit install
+```
+
+### VAR Model API Pattern (Recent Fix)
+```python
+# INCORRECT (old usage - will fail):
+selector = model.select_order(maxlags=max_lag, ic="aic")  # ic NOT accepted
+
+# CORRECT (current implementation in var.py):
+selector = model.select_order(maxlags=max_lag)
+optimal_lag = getattr(selector, "aic", selector.aic)  # Access .aic, .bic, .hqic attributes
+fitted = model.fit(optimal_lag)
+```
 
 ## Project-Specific Conventions
 
-### Error Handling
-- Custom exception: `NotDataFrameError` for type validation
-- Extensive try-catch blocks with descriptive error messages
-- Rate bounds checking with NaN replacement and forward fill
+### Parallel Simulation Pattern (v0.6.0+)
+```python
+# Module-level function for pickling (multiprocessing requirement)
+def _run_single_simulation(data, forecasting_box, interval, levels):
+    temp_sim = EpidemicSimulation(data, forecasting_box, interval)
+    return (levels, temp_sim.simulate_for_given_levels(levels))
 
-### Logging
-Uses Python logging at INFO level. Matplotlib warnings suppressed to reduce noise during analysis.
+# In EpidemicSimulation.run_simulations():
+with ProcessPoolExecutor(max_workers=n_jobs) as executor:
+    futures = {executor.submit(_run_single_simulation, ...): scenario}
+    # Collect results via as_completed()
+```
 
-### Simulation Architecture
-Forecasting generates 3×3×3=27 scenarios by combining confidence intervals (lower/point/upper) for each rate. Results stored in nested Box structure: `simulation[alpha_level][beta_level][gamma_level]`
+### Result Storage with python-box
+```python
+# Nested attribute access (not dict keys)
+model.forecasting_box.alpha.lower   # Lower CI
+model.forecasting_box.alpha.point   # Point forecast  
+model.forecasting_box.alpha.upper   # Upper CI
 
-### Visualization Standards
-- Gray dotted lines for individual simulation paths
-- Colored lines for central tendencies (mean=blue, median=orange, gmean=green, hmean=purple)
-- Red solid line for actual data comparison
-- Logarithmic scale recommended for case/death counts
+# 27 simulation scenarios (3×3×3 confidence levels)
+model.simulation["lower"]["point"]["upper"]  # DataFrame with SIRD compartments
+```
 
-## Critical Dependencies
-- `statsmodels.tsa.api.VAR` for time series modeling
-- `python-box` for nested result containers
-- `scipy.stats.gmean/hmean` for robust central tendency
-- `pandas` with DatetimeIndex for time series operations
+### Type Hints (Enforced by mypy)
+```python
+from typing import Optional, Dict, List, Tuple
 
-## AI Coding Guidelines
+def forecast(self, steps: int, alpha: float = 0.05) -> None:
+    """Type hints required for all public methods."""
+    pass
 
-### Style Requirements
-- **NO EMOJIS**: Never use emojis in code, documentation, commit messages, or any output
-- Clean, professional text only in all communications
-- Focus on clear, descriptive language without decorative symbols
+# Exception: Python 3.9+ tuples in signatures OK
+def process(data: pd.DataFrame) -> tuple[str, ...]:
+    pass
+```
+
+## Common Pitfalls & Solutions
+
+### 1. "Cannot calculate alpha when S or I is zero"
+**Cause**: Early epidemic data where S ≈ N or I = 0  
+**Solution**: Use `.loc[start:stop]` to select date range after epidemic starts (I > 0)
+
+### 2. "NaN values in logit transform"
+**Cause**: Zeros or out-of-bounds rates  
+**Solution**: Pipeline auto-applies `prepare_for_logit_function()` + `ffill()` - ensure feature engineering order is correct
+
+### 3. VAR model fails with "singular matrix"
+**Cause**: Insufficient data for lag order  
+**Solution**: Reduce `max_lag` parameter or increase training period length
+
+### 4. Slow simulation performance
+**Solution**: Use `model.run_simulations(n_jobs=None)` for auto-detected parallel execution (4-7x speedup on multi-core)
+
+## Style Requirements (Critical)
+
+### NO EMOJIS Rule
+Never use emojis in:
+- Code comments/docstrings
+- Commit messages
+- Documentation
+- Any output
+
+Use clear, professional text only.
+
+### Docstrings (Google Style)
+```python
+def forecast(self, steps: int) -> None:
+    """
+    Generate VAR forecasts for epidemic rates.
+
+    Args:
+        steps: Number of time steps to forecast
+
+    Raises:
+        RuntimeError: If model not fitted
+        ValueError: If steps < 1
+
+    Example:
+        >>> model.forecast(steps=30)
+    """
+```
+
+## Key Files for Common Tasks
+
+**Modify Data Processing**: `src/epydemics/data/features.py` (feature engineering logic)  
+**Modify Modeling API**: `src/epydemics/models/sird.py` (main Model class)  
+**Modify Simulation Logic**: `src/epydemics/models/simulation.py` (parallel/sequential execution)  
+**Add Configuration**: `src/epydemics/core/config.py` (pydantic Settings)  
+**View Examples**: `examples/global_forecasting.ipynb` (complete COVID-19 analysis)  
+**Test Patterns**: `tests/conftest.py` (fixtures: `sample_data`, `sample_container`)
+
+## Integration Points
+
+- **External Data**: OWID GitHub repo (auto-fetched by `process_data_from_owid()`)
+- **Time Series**: statsmodels VAR (wrapped in `VARForecaster`)
+- **Parallel Processing**: `concurrent.futures.ProcessPoolExecutor` (Python stdlib)
+- **Config Management**: Environment variables via pydantic-settings (`.env` file support)
+
+## Recent Major Changes (v0.6.0)
+
+1. **Parallel Simulations**: Added `n_jobs` parameter to `run_simulations()` with auto-CPU detection
+2. **VAR API Fix**: Corrected `select_order()` usage (no `ic` parameter - use attribute access)
+3. **Modular Architecture**: Extracted analysis functions to `epydemics/analysis/` module
+4. **Modern Pandas**: Replaced deprecated `fillna(method="ffill")` with `.ffill()`
+5. **Enhanced Config**: Added `PARALLEL_SIMULATIONS` and `N_SIMULATION_JOBS` settings
+
+## Testing New Features
+See `tests/test_parallel_simulations.py` for comprehensive parallel simulation test patterns (sequential vs parallel equivalence, n_jobs validation, backward compatibility).

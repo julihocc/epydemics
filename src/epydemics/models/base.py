@@ -63,8 +63,13 @@ class BaseModel(ABC):
         pass
 
     @abstractmethod
-    def run_simulations(self) -> None:
-        """Run epidemic simulations based on model forecasts."""
+    def run_simulations(self, n_jobs: Optional[int] = None) -> None:
+        """
+        Run epidemic simulations based on model forecasts.
+
+        Args:
+            n_jobs: Number of parallel jobs (None for config default, 1 for sequential)
+        """
         pass
 
     @abstractmethod

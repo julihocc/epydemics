@@ -52,6 +52,14 @@ class Settings(BaseSettings):
         description="Default logging format.",
     )
 
+    # --- Parallelization Settings ---
+    PARALLEL_SIMULATIONS: bool = Field(
+        True, description="Enable parallel simulation execution by default."
+    )
+    N_SIMULATION_JOBS: Optional[int] = Field(
+        None, description="Number of parallel jobs for simulations (None = auto-detect CPU count, 1 = sequential)."
+    )
+
 
 @lru_cache
 def get_settings() -> Settings:
