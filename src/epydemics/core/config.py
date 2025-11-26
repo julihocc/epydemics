@@ -57,7 +57,22 @@ class Settings(BaseSettings):
         True, description="Enable parallel simulation execution by default."
     )
     N_SIMULATION_JOBS: Optional[int] = Field(
-        None, description="Number of parallel jobs for simulations (None = auto-detect CPU count, 1 = sequential)."
+        None,
+        description="Number of parallel jobs for simulations (None = auto-detect CPU count, 1 = sequential).",
+    )
+
+    # --- Result Caching Settings ---
+    RESULT_CACHING_ENABLED: bool = Field(
+        False,
+        description="Enable disk caching of generated results (per-configuration cache).",
+    )
+    CACHE_DIR: str = Field(
+        ".epydemics_cache",
+        description="Directory to store cache artifacts (per project/machine).",
+    )
+    CACHE_STRICT_VERSION: bool = Field(
+        False,
+        description="If true, invalidate cache when package version changes.",
     )
 
 
@@ -69,4 +84,3 @@ def get_settings() -> Settings:
     Uses lru_cache to ensure settings are loaded only once.
     """
     return Settings()
-
