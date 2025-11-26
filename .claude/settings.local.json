@@ -5,7 +5,10 @@
       "Bash(pytest:*)",
       "Bash(python -m pytest:*)",
       "Bash(pip install:*)",
-      "Bash(timeout 180 python -m pytest:*)"
+      "Bash(timeout 180 python -m pytest:*)",
+      "Bash(dir:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
