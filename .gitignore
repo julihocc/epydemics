@@ -166,6 +166,5 @@ GEMINI.md
 epydemics-tutorial/
 epydemics_global_model/
 
-# Large data files (download via scripts instead)
-examples/data/*.csv
-!examples/data/.gitkeep
+# Large data files handled by Git LFS (see .gitattributes)
+# Download via scripts: python examples/download_data.py
