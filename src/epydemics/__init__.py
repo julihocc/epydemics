@@ -16,6 +16,12 @@ import logging
 # Import main functionality from modular structure
 from .analysis.evaluation import evaluate_forecast, evaluate_model
 from .analysis.visualization import visualize_results
+from .analysis.formatting import (
+    format_time_axis,
+    format_subplot_grid,
+    add_forecast_highlight,
+    set_professional_style,
+)
 
 # Import specific constants and exceptions to avoid star imports
 from .core.constants import (
@@ -72,6 +78,11 @@ __all__ = [
     "evaluate_forecast",
     "evaluate_model",
     "visualize_results",
+    # Formatting utilities
+    "format_time_axis",
+    "format_subplot_grid",
+    "add_forecast_highlight",
+    "set_professional_style",
     # Main classes and functions
     "DataContainer",
     "Model",
