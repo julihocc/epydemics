@@ -60,17 +60,89 @@ def validate_data(training_data):
 
 
 def process_data_from_owid(
-    url="https://covid.ourworldindata.org/data/owid-covid-data.csv", iso_code="OWID_WRL"
+    url="https://catalog.ourworldindata.org/garden/covid/latest/compact/compact.csv",
+    iso_code="OWID_WRL",
+    country=None
 ):
+    """
+    Load and process COVID-19 data from Our World in Data.
+
+    Parameters
+    ----------
+    url : str, optional
+        URL to the OWID COVID-19 dataset. Defaults to the latest compact dataset.
+        Legacy URL: https://covid.ourworldindata.org/data/owid-covid-data.csv
+    iso_code : str, optional
+        ISO code for filtering data (e.g., 'OWID_WRL' for World, 'USA', 'MEX').
+        Defaults to 'OWID_WRL' (World). Only used if country is not specified.
+    country : str, optional
+        Country name for filtering data (e.g., 'World', 'United States', 'Mexico').
+        If specified, takes precedence over iso_code parameter.
+
+    Returns
+    -------
+    pd.DataFrame
+        Processed dataframe with date index and columns C, D, N.
+    """
     try:
         data = pd.read_csv(url)
     except Exception as e:
-        raise Exception(f"Could not download data from {url}: {e}")
+        # Try local fallback if network fails
+        import os
 
+        local_path = os.path.join(
+            os.path.dirname(__file__),
+            "..",
+            "..",
+            "examples",
+            "data",
+            "owid-covid-data.csv",
+        )
+        if os.path.exists(local_path):
+            print(f"Network error: {e}")
+            print(f"Using local fallback data from {local_path}")
+            data = pd.read_csv(local_path)
+        else:
+            raise Exception(
+                f"Could not download data from {url} and no local fallback found: {e}"
+            )
+
+    # Filter data by country or iso_code
     try:
-        data = data[data["iso_code"] == iso_code]
+        if country is not None:
+            # New format: filter by country name
+            if "country" in data.columns:
+                data = data[data["country"] == country]
+            else:
+                raise ValueError(f"Column 'country' not found in dataset")
+        else:
+            # Try both old and new format
+            if "iso_code" in data.columns:
+                # Old format
+                data = data[data["iso_code"] == iso_code]
+            elif "code" in data.columns:
+                # New format: use 'code' column for ISO codes
+                data = data[data["code"] == iso_code]
+            elif "country" in data.columns:
+                # New format fallback: map common ISO codes to country names
+                iso_to_country = {
+                    "OWID_WRL": "World",
+                    "USA": "United States",
+                    "GBR": "United Kingdom",
+                    "MEX": "Mexico",
+                }
+                if iso_code in iso_to_country:
+                    data = data[data["country"] == iso_to_country[iso_code]]
+                else:
+                    raise ValueError(
+                        f"Could not find column for filtering. "
+                        f"Use country='{iso_code}' parameter instead of iso_code."
+                    )
+            else:
+                raise ValueError("No suitable column found for filtering data")
+
     except Exception as e:
-        raise Exception(f"Could not filter data for {iso_code}: {e}")
+        raise Exception(f"Could not filter data for {country or iso_code}: {e}")
 
     try:
         data = data[["date", "total_cases", "total_deaths", "population"]]
@@ -194,7 +266,6 @@ class DataContainer:
 
 class Model:
     def __init__(self, data_container, start=None, stop=None, days_to_forecast=None):
-
         self.data = None
         self.data_container = data_container
         self.window = data_container.window
@@ -274,7 +345,6 @@ class Model:
         self.forecasting_box = Box(self.forecasting_box)
 
     def simulate_for_given_levels(self, simulation_levels):
-
         simulation = (
             self.data[["A", "C", "S", "I", "R", "D", "alpha", "beta", "gamma"]]
             .iloc[-1:]
@@ -334,9 +404,9 @@ class Model:
         ):
             logit_alpha_level, logit_beta_level, logit_gamma_level = current_levels
             current_simulation = self.simulate_for_given_levels(current_levels)
-            self.simulation[logit_alpha_level][logit_beta_level][
-                logit_gamma_level
-            ] = current_simulation
+            self.simulation[logit_alpha_level][logit_beta_level][logit_gamma_level] = (
+                current_simulation
+            )
 
     def create_results_dataframe(self, compartment):
         results_dataframe = pd.DataFrame()
@@ -367,7 +437,6 @@ class Model:
         return results_dataframe
 
     def generate_result(self):
-
         self.results = Box()
 
         for compartment in COMPARTMENTS:
@@ -424,7 +493,6 @@ class Model:
         save_evaluation=False,
         filename=None,
     ):
-
         evaluation = {}
 
         for compartment_code in compartment_codes:
@@ -433,7 +501,6 @@ class Model:
             evaluation[compartment_code] = {}
 
             for method in CENTRAL_TENDENCY_METHODS:
-
                 forecast = compartment[method].values
                 actual = testing_data[compartment_code].values
                 mae = mean_absolute_error(actual, forecast)
