@@ -244,9 +244,9 @@ class Model(BaseModel, SIRDModelMixin):
 
         Examples:
             >>> model = Model(container, start="2020-03-01", stop="2020-12-31")
-            >>> model.create_logit_ratios_model()
-            >>> model.fit_logit_ratios_model()
-            >>> model.forecast_logit_ratios(steps=30)
+            >>> model.create_model()
+            >>> model.fit_model()
+            >>> model.forecast(steps=30)
             >>> R0_forecast = model.forecast_R0()
             >>> print(R0_forecast.shape)
             (30, 27)
@@ -264,7 +264,7 @@ class Model(BaseModel, SIRDModelMixin):
         if not hasattr(self, "forecasting_box") or self.forecasting_box is None:
             raise ValueError(
                 "Forecast must be generated before calculating R₀. "
-                "Call forecast_logit_ratios() first."
+                "Call forecast() first."
             )
 
         R0_forecasts = {}
