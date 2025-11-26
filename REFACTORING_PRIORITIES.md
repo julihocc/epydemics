@@ -31,7 +31,7 @@
 
 ## Priority 1: Critical Documentation and Examples
 
-### 1.1 Verify and Test Example Notebook
+### 1.1 Verify and Test Example Notebook (Tracking: #63)
 **Status:** HIGH PRIORITY
 **Rationale:** The notebook is the primary demonstration of the library
 
@@ -46,7 +46,7 @@
 - `examples/global_forecasting.ipynb`
 - `examples/README.md`
 
-### 1.2 Add Method Deprecation Warnings
+### 1.2 Add Method Deprecation Warnings (Tracking: #64)
 **Status:** RECOMMENDED
 **Rationale:** Help users transition from old API to new API
 
@@ -94,7 +94,7 @@ class Model:
 
 ## Priority 2: Enhanced Functionality
 
-### 2.1 Add R₀ Calculation Methods
+### 2.1 Add R₀ Calculation Methods (Tracking: #65)
 **Status:** ALREADY IMPLEMENTED (verify in sird.py)
 **Rationale:** R₀ is a critical epidemiological metric
 
@@ -117,7 +117,7 @@ def test_forecast_R0_scenarios(fitted_model):
     assert R0_forecast.shape[1] >= 27  # At least 27 scenarios
 ```
 
-### 2.2 Enhance Visualization Utilities
+### 2.2 Enhance Visualization Utilities (Tracking: #66)
 **Status:** PARTIALLY IMPLEMENTED
 **Rationale:** Notebook has superior formatting not in library
 
@@ -145,7 +145,7 @@ def add_forecast_highlight(ax, start, end, color="#FBD38D", alpha=0.12):
 
 ## Priority 3: Code Quality and Maintenance
 
-### 3.1 API Consistency Audit
+### 3.1 API Consistency Audit (Tracking: #67)
 **Status:** NEEDED
 **Rationale:** Ensure all method names follow consistent patterns
 
@@ -155,7 +155,7 @@ def add_forecast_highlight(ax, start, end, color="#FBD38D", alpha=0.12):
 - [ ] Ensure all internal delegation works correctly
 - [ ] Verify VARForecasting class methods
 
-### 3.2 Documentation Completeness
+### 3.2 Documentation Completeness (Tracking: #68)
 **Status:** IN PROGRESS
 
 **Tasks:**
@@ -166,7 +166,7 @@ def add_forecast_highlight(ax, start, end, color="#FBD38D", alpha=0.12):
 - [ ] Create API reference documentation
 - [ ] Add migration guide (old API → new API)
 
-### 3.3 Test Coverage for API Changes
+### 3.3 Test Coverage for API Changes (Tracking: #69)
 **Status:** NEEDED
 
 **Tasks:**
@@ -179,7 +179,7 @@ def add_forecast_highlight(ax, start, end, color="#FBD38D", alpha=0.12):
 
 ## Priority 4: Performance and Scalability
 
-### 4.1 Parallel Simulation Execution
+### 4.1 Parallel Simulation Execution (Tracking: #70)
 **Status:** FUTURE ENHANCEMENT
 **Rationale:** 27 scenarios run sequentially is slow
 
@@ -197,7 +197,7 @@ def run_simulations(self, n_jobs=None):
     pass
 ```
 
-### 4.2 Result Caching
+### 4.2 Result Caching (Tracking: #71)
 **Status:** FUTURE ENHANCEMENT
 **Rationale:** Avoid recomputing identical forecasts
 
@@ -205,14 +205,14 @@ def run_simulations(self, n_jobs=None):
 
 ## Priority 5: Extended Functionality
 
-### 5.1 Alternative Time Series Models
+### 5.1 Alternative Time Series Models (Tracking: #72)
 **Status:** FUTURE RESEARCH
 **Options:**
 - SARIMAX for seasonal patterns
 - Prophet for automated forecasting
 - LSTM for deep learning approaches
 
-### 5.2 Regional Comparison Utilities
+### 5.2 Regional Comparison Utilities (Tracking: #73)
 **Status:** FUTURE FEATURE
 **Purpose:** Easy multi-region analysis and comparison
 
