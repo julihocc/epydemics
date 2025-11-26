@@ -158,8 +158,8 @@ cython_debug/
 # AI Context
 CLAUDE.md
 GEMINI.md
+.github/copilot-instructions.md
 .claude/
-.github/copilot-instructions
 .github/prompts/
 
 # Local directories not to be tracked
