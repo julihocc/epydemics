@@ -6,6 +6,9 @@ from typing import Any, Dict, Optional, Tuple
 
 import pandas as pd
 from box import Box
+import hashlib
+import json
+from pathlib import Path
 
 from ..analysis.evaluation import evaluate_forecast as _evaluate_forecast
 from ..analysis.visualization import visualize_results as _visualize_results
@@ -17,6 +20,13 @@ from .simulation import EpidemicSimulation
 
 
 from epydemics.core.config import get_settings
+
+
+# Import __version__ after full module initialization to avoid circular import
+def _get_pkg_version() -> str:
+    from epydemics import __version__
+
+    return __version__
 
 
 class Model(BaseModel, SIRDModelMixin):
@@ -79,7 +89,19 @@ class Model(BaseModel, SIRDModelMixin):
         return self.var_forecasting.logit_ratios_model_fitted
 
     def create_model(self, *args, **kwargs) -> None:
-        """Create the VAR model for logit-transformed rates."""
+        """
+        Create the VAR model for logit-transformed rates.
+
+        This prepares the internal VAR forecaster on the logit-transformed
+        α, β, γ rates using the configured smoothing window.
+
+        Examples:
+            >>> from epydemics import Model, process_data_from_owid
+            >>> raw = process_data_from_owid("OWID_WRL")
+            >>> container = DataContainer(raw, window=7)
+            >>> model = Model(container, start="2020-03-01", stop="2020-12-31")
+            >>> model.create_model()
+        """
         self.var_forecasting.create_logit_ratios_model()
 
     def create_logit_ratios_model(self, *args, **kwargs) -> None:
@@ -97,7 +119,17 @@ class Model(BaseModel, SIRDModelMixin):
         return self.create_model(*args, **kwargs)
 
     def fit_model(self, *args, **kwargs) -> None:
-        """Fit the VAR model to the data."""
+        """
+        Fit the VAR model to the data.
+
+        Args:
+            max_lag: Optional maximum lag order for VAR selection (default from settings)
+            ic: Information criterion for lag selection (e.g., "aic", from settings)
+
+        Examples:
+            >>> model.create_model()
+            >>> model.fit_model(max_lag=10)
+        """
         settings = get_settings()
         kwargs.setdefault("max_lag", settings.VAR_MAX_LAG)
         kwargs.setdefault("ic", settings.VAR_CRITERION)
@@ -119,7 +151,20 @@ class Model(BaseModel, SIRDModelMixin):
         return self.fit_model(*args, **kwargs)
 
     def forecast(self, steps: Optional[int] = None, **kwargs) -> None:
-        """Generate forecasts for the specified number of steps."""
+        """
+        Generate forecasts for the specified number of steps.
+
+        After fitting the model, this generates forecasts for the logit-transformed
+        rates and initializes the simulation engine for downstream simulations.
+
+        Args:
+            steps: Number of forecast steps (days). If None, uses previously set value.
+
+        Examples:
+            >>> model.create_model()
+            >>> model.fit_model()
+            >>> model.forecast(steps=30)
+        """
         self.var_forecasting.forecast_logit_ratios(steps, **kwargs)
         self.forecasting_box = self.var_forecasting.forecasting_box
         self.forecasting_interval = self.var_forecasting.forecasting_interval
@@ -173,13 +218,141 @@ class Model(BaseModel, SIRDModelMixin):
         self.results = self.simulation_engine.results
 
     def generate_result(self) -> None:
-        """Generate results for all compartments."""
-        if self.simulation_engine is None:
-            raise RuntimeError(
-                "Forecast and simulation must be generated before generating results."
+        """
+        Generate results for all compartments.
+
+        Aggregates simulation outputs into the final `results` structure
+        (S, I, R, D, A, C) across confidence levels.
+
+        Raises:
+            RuntimeError: If simulation has not been executed yet
+
+        Examples:
+            >>> model.run_simulations()
+            >>> model.generate_result()
+            >>> assert model.results is not None
+        """
+        settings = get_settings()
+
+        # Helper: compute a deterministic cache key from forecast + last history state
+        def _hash_series_values(s: pd.Series) -> str:
+            # Use raw bytes for stability
+            h = hashlib.sha256()
+            h.update(s.to_numpy().tobytes())
+            h.update(str(s.dtype).encode("utf-8"))
+            return h.hexdigest()
+
+        def _compute_cache_key() -> str:
+            last_hist = self.data.iloc[-1]
+
+            payload: Dict[str, Any] = {
+                "pkg_version": _get_pkg_version(),
+                "start": self.start,
+                "stop": self.stop,
+                "window": self.window,
+                "days_to_forecast": self.days_to_forecast,
+                "interval": [d.strftime("%Y-%m-%d") for d in self.forecasting_interval],
+                "initial_state": {
+                    k: float(last_hist[k])
+                    for k in ["A", "C", "S", "I", "R", "D", "alpha", "beta", "gamma"]
+                },
+                "rates_hash": {
+                    ratio: {
+                        level: _hash_series_values(
+                            self.forecasting_box[ratio][level].loc[
+                                self.forecasting_interval
+                            ]
+                        )
+                        for level in FORECASTING_LEVELS
+                    }
+                    for ratio in ["alpha", "beta", "gamma"]
+                },
+            }
+            blob = json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
+            return hashlib.sha256(blob).hexdigest()
+
+        def _cache_dir_for_key(key: str) -> Path:
+            base = Path(settings.CACHE_DIR)
+            return base / key
+
+        def _load_from_cache(dir_path: Path) -> Optional[Box]:
+            meta_path = dir_path / "meta.json"
+            if not meta_path.exists():
+                return None
+            try:
+                meta = json.loads(meta_path.read_text(encoding="utf-8"))
+            except Exception:
+                return None
+            if (
+                settings.CACHE_STRICT_VERSION
+                and meta.get("pkg_version") != _get_pkg_version()
+            ):
+                return None
+
+            box = Box()
+            try:
+                for comp in COMPARTMENTS:
+                    fp = dir_path / f"{comp}.csv"
+                    if not fp.exists():
+                        return None
+                    df = pd.read_csv(fp, index_col=0, parse_dates=True)
+                    # Ensure index aligns to forecasting interval
+                    df = df.loc[self.forecasting_interval]
+                    box[comp] = df
+                return box
+            except Exception:
+                return None
+
+        def _save_to_cache(dir_path: Path, results_box: Box) -> None:
+            dir_path.mkdir(parents=True, exist_ok=True)
+            meta = {
+                "pkg_version": _get_pkg_version(),
+                "start": str(self.start) if self.start else None,
+                "stop": str(self.stop) if self.stop else None,
+                "window": int(self.window) if self.window is not None else None,
+                "days_to_forecast": int(self.days_to_forecast)
+                if self.days_to_forecast is not None
+                else None,
+            }
+            (dir_path / "meta.json").write_text(
+                json.dumps(meta, indent=2, sort_keys=True), encoding="utf-8"
             )
-        self.simulation_engine.generate_result()
-        self.results = self.simulation_engine.results
+            for comp in COMPARTMENTS:
+                results_box[comp].to_csv(dir_path / f"{comp}.csv")
+
+        # Attempt cache if enabled
+        cache_used = False
+        if settings.RESULT_CACHING_ENABLED:
+            try:
+                key = _compute_cache_key()
+                cdir = _cache_dir_for_key(key)
+                cached = _load_from_cache(cdir)
+                if cached is not None:
+                    logging.info("Loaded results from cache: %s", cdir)
+                    self.results = cached
+                    cache_used = True
+                else:
+                    logging.debug("No cache hit for key: %s", key)
+            except Exception as e:
+                logging.debug("Result cache check failed: %s", e)
+
+        if not cache_used:
+            if self.simulation_engine is None:
+                raise RuntimeError(
+                    "Forecast and simulation must be generated before generating results."
+                )
+            self.simulation_engine.generate_result()
+            self.results = self.simulation_engine.results
+
+            # Save to cache if enabled
+            if settings.RESULT_CACHING_ENABLED:
+                try:
+                    key = _compute_cache_key()
+                    cdir = _cache_dir_for_key(key)
+                    _save_to_cache(cdir, self.results)
+                    logging.info("Saved results to cache: %s", cdir)
+                except Exception as e:
+                    logging.error("Result cache save failed: %s", e, exc_info=True)
 
     def calculate_R0(self) -> pd.Series:
         """Calculate basic reproduction number R₀(t) = α(t) / (β(t) + γ(t)).
@@ -304,6 +477,10 @@ class Model(BaseModel, SIRDModelMixin):
             compartment_code: Compartment to visualize (A, C, S, I, R, D)
             testing_data: Optional test data for comparison
             log_response: Whether to use logarithmic scale
+
+        Examples:
+            >>> # Visualize confirmed cases with test split overlay
+            >>> model.visualize_results("C", testing_data=testing_data, log_response=True)
         """
         _visualize_results(
             results=self.results if self.results else self.simulation_engine.results,
@@ -330,6 +507,12 @@ class Model(BaseModel, SIRDModelMixin):
 
         Returns:
             Dictionary with evaluation metrics for each compartment and method
+
+        Examples:
+            >>> testing = container.data.loc[model.forecasting_interval]
+            >>> eval_dict = model.evaluate_forecast(testing)
+            >>> # Save results to JSON
+            >>> model.evaluate_forecast(testing, save_evaluation=True, filename="evaluation_output")
         """
         return _evaluate_forecast(
             results=self.results if self.results else self.simulation_engine.results,
