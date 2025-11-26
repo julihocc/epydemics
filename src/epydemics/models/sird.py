@@ -8,7 +8,7 @@ from box import Box
 
 from ..analysis.evaluation import evaluate_forecast as _evaluate_forecast
 from ..analysis.visualization import visualize_results as _visualize_results
-from ..core.constants import COMPARTMENTS, LOGIT_RATIOS
+from ..core.constants import COMPARTMENTS, FORECASTING_LEVELS, LOGIT_RATIOS
 from ..data.preprocessing import reindex_data
 from .base import BaseModel, SIRDModelMixin
 from .var_forecasting import VARForecasting
@@ -115,6 +115,115 @@ class Model(BaseModel, SIRDModelMixin):
             raise RuntimeError("Forecast and simulation must be generated before generating results.")
         self.simulation_engine.generate_result()
         self.results = self.simulation_engine.results
+
+    def calculate_R0(self) -> pd.Series:
+        """Calculate basic reproduction number R₀(t) = α(t) / (β(t) + γ(t)).
+
+        The basic reproduction number R₀ represents the average number of secondary
+        infections caused by a single infected individual in a completely susceptible
+        population. It is a critical epidemiological metric for understanding epidemic
+        dynamics:
+        - R₀ > 1: Epidemic grows (each infected person infects more than one other)
+        - R₀ = 1: Critical threshold (epidemic remains stable)
+        - R₀ < 1: Epidemic declines (insufficient transmission to sustain spread)
+
+        Returns:
+            pd.Series: Time series of R₀ values indexed by date
+
+        Raises:
+            ValueError: If required rate columns are not present in data
+
+        Examples:
+            >>> model = Model(container, start="2020-03-01", stop="2020-12-31")
+            >>> R0 = model.calculate_R0()
+            >>> print(f"Mean R₀: {R0.mean():.2f}")
+            Mean R₀: 1.85
+            >>> print(f"R₀ > 1 for {(R0 > 1).sum()} days")
+            R₀ > 1 for 245 days
+
+        Notes:
+            - Calculated from historical data rates (alpha, beta, gamma)
+            - Use forecast_R0() for forecasted reproduction numbers
+            - High variability in R₀ reflects changing interventions and behavior
+        """
+        required_cols = ["alpha", "beta", "gamma"]
+        missing_cols = [col for col in required_cols if col not in self.data.columns]
+        if missing_cols:
+            raise ValueError(
+                f"Missing required columns for R₀ calculation: {missing_cols}"
+            )
+
+        alpha = self.data["alpha"]
+        beta = self.data["beta"]
+        gamma = self.data["gamma"]
+
+        R0 = alpha / (beta + gamma)
+        R0.name = "R0"
+
+        return R0
+
+    def forecast_R0(self) -> pd.DataFrame:
+        """Calculate R₀(t) for forecasted parameters across all scenarios.
+
+        Generates basic reproduction number forecasts by combining forecasted
+        infection rates (α) with recovery (β) and mortality (γ) rates across
+        all 27 scenario combinations (3 confidence levels × 3 rates).
+
+        Returns:
+            pd.DataFrame: R₀ values for each scenario combination.
+                Columns are named as "alpha_level|beta_level|gamma_level"
+                (e.g., "lower|point|upper"). Index is the forecasting interval.
+
+        Raises:
+            ValueError: If forecast has not been generated yet
+
+        Examples:
+            >>> model = Model(container, start="2020-03-01", stop="2020-12-31")
+            >>> model.create_logit_ratios_model()
+            >>> model.fit_logit_ratios_model()
+            >>> model.forecast_logit_ratios(steps=30)
+            >>> R0_forecast = model.forecast_R0()
+            >>> print(R0_forecast.shape)
+            (30, 27)
+            >>> # Get mean R₀ across all scenarios
+            >>> mean_R0 = R0_forecast.mean(axis=1)
+            >>> print(f"Average forecasted R₀: {mean_R0.mean():.2f}")
+            Average forecasted R₀: 1.15
+
+        Notes:
+            - Requires forecast_logit_ratios() to be called first
+            - Each column represents a different scenario combination
+            - Use mean(axis=1) to get average R₀ across scenarios
+            - Uncertainty in R₀ reflects uncertainty in underlying rates
+        """
+        if not hasattr(self, "forecasting_box") or self.forecasting_box is None:
+            raise ValueError(
+                "Forecast must be generated before calculating R₀. "
+                "Call forecast_logit_ratios() first."
+            )
+
+        R0_forecasts = {}
+
+        for alpha_level in FORECASTING_LEVELS:
+            for beta_level in FORECASTING_LEVELS:
+                for gamma_level in FORECASTING_LEVELS:
+                    alpha = self.forecasting_box["alpha"][alpha_level]
+                    beta = self.forecasting_box["beta"][beta_level]
+                    gamma = self.forecasting_box["gamma"][gamma_level]
+
+                    scenario = f"{alpha_level}|{beta_level}|{gamma_level}"
+                    R0_forecasts[scenario] = alpha / (beta + gamma)
+
+        result = pd.DataFrame(R0_forecasts, index=self.forecasting_interval)
+
+        # Add summary statistics columns
+        result["mean"] = result.mean(axis=1)
+        result["median"] = result.median(axis=1)
+        result["std"] = result.std(axis=1)
+        result["min"] = result.min(axis=1)
+        result["max"] = result.max(axis=1)
+
+        return result
 
     def visualize_results(
         self,

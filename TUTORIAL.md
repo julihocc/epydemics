@@ -163,18 +163,18 @@ global_model = Model(
 
 ```
 
-In the following, we apply these methods to create and to a time series model for the logit of the rates $\alpha$, $\beta$ and $\gamma$. This is the core of the model. Please refer to the documentation for more information.
+In the following, we apply these methods to create and fit a time series model for the logit of the rates $\alpha$, $\beta$ and $\gamma$. This is the core of the model. Please refer to the documentation for more information.
 
 ```python
-global_model.create_logit_ratios_model()
-global_model.fit_logit_ratios_model()
+global_model.create_model()
+global_model.fit_model()
 ```
 
-Now that we have a model these rate, we can adjust the numbers of days (`steps`) to forecast. The `forecast_logit_ratios` method returns a Pandas DataFrame object containing the forecasted logit ratios. The `forecasting_interval` attribute contains the forecasting interval.
+Now that we have a model for these rates, we can adjust the numbers of days (`steps`) to forecast. The `forecast` method generates forecasts for the logit ratios and transforms them back to rates. The `forecasting_interval` attribute contains the forecasting interval.
 
 ```python
 
-global_model.forecast_logit_ratios(steps=30)
+global_model.forecast(steps=30)
 global_model.forecasting_interval
 ```
 

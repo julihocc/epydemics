@@ -158,6 +158,15 @@ cython_debug/
 # AI Context
 CLAUDE.md
 GEMINI.md
+.github/copilot-instructions.md
 .claude/
-.github/copilot-instructions
 .github/prompts/
+
+# Local directories not to be tracked
+epydemics-tutorial/
+epydemics_global_model/
+
+# Large data files handled by Git LFS (see .gitattributes)
+# Download via scripts: python examples/download_data.py
+
+.vscode/

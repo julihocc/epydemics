@@ -424,3 +424,239 @@ class TestModelIntegration:
         model.fit_model()
         assert model.logit_ratios_model is not None
         assert model.logit_ratios_model_fitted is not None
+
+
+class TestModelR0Calculations:
+    """Test R₀ (basic reproduction number) calculation functionality."""
+
+    @pytest.fixture
+    def sample_data_container(self):
+        """Create sample DataContainer for testing."""
+        dates = pd.date_range("2020-01-01", periods=50, freq="D")
+        sample_data = pd.DataFrame(
+            {
+                "C": np.cumsum(np.random.poisson(10, 50)) + 100,
+                "D": np.cumsum(np.random.poisson(1, 50)) + 1,
+                "N": [1000000] * 50,
+            },
+            index=dates,
+        )
+        return DataContainer(sample_data, window=7)
+
+    @pytest.fixture
+    def fitted_model_with_forecast(self, sample_data_container):
+        """Create a model with fitted VAR and forecast."""
+        model = Model(sample_data_container)
+        model.create_model()
+        model.fit_model()
+        model.forecast(steps=10)
+        return model
+
+    def test_calculate_R0_returns_series(self, sample_data_container):
+        """Test that calculate_R0 returns a pandas Series."""
+        # Arrange
+        model = Model(sample_data_container)
+
+        # Act
+        R0 = model.calculate_R0()
+
+        # Assert
+        assert isinstance(R0, pd.Series)
+        assert R0.name == "R0"
+
+    def test_calculate_R0_correct_length(self, sample_data_container):
+        """Test that R₀ series has same length as model data."""
+        # Arrange
+        model = Model(sample_data_container)
+
+        # Act
+        R0 = model.calculate_R0()
+
+        # Assert
+        assert len(R0) == len(model.data)
+
+    def test_calculate_R0_non_negative(self, sample_data_container):
+        """Test that R₀ values are non-negative."""
+        # Arrange
+        model = Model(sample_data_container)
+
+        # Act
+        R0 = model.calculate_R0()
+
+        # Assert
+        assert all(R0 >= 0), "R₀ values must be non-negative"
+
+    def test_calculate_R0_correct_formula(self, sample_data_container):
+        """Test that R₀ calculation uses correct formula: α / (β + γ)."""
+        # Arrange
+        model = Model(sample_data_container)
+
+        # Act
+        R0 = model.calculate_R0()
+
+        # Calculate expected values manually
+        alpha = model.data["alpha"]
+        beta = model.data["beta"]
+        gamma = model.data["gamma"]
+        expected_R0 = alpha / (beta + gamma)
+
+        # Assert
+        pd.testing.assert_series_equal(R0, expected_R0, check_names=False)
+
+    def test_calculate_R0_missing_columns_raises_error(self):
+        """Test that calculate_R0 raises error when required columns missing."""
+        # Arrange - Create data without required rate columns
+        dates = pd.date_range("2020-01-01", periods=20, freq="D")
+        incomplete_data = pd.DataFrame(
+            {
+                "C": np.cumsum(np.random.poisson(10, 20)) + 100,
+                "D": np.cumsum(np.random.poisson(1, 20)) + 1,
+                "N": [1000000] * 20,
+            },
+            index=dates,
+        )
+        # Create container but manually modify data to remove rate columns
+        container = DataContainer(incomplete_data, window=7)
+        model = Model(container)
+
+        # Remove rate columns to simulate missing data
+        model.data = model.data.drop(columns=["alpha", "beta", "gamma"])
+
+        # Act & Assert
+        with pytest.raises(ValueError, match="Missing required columns"):
+            model.calculate_R0()
+
+    def test_forecast_R0_returns_dataframe(self, fitted_model_with_forecast):
+        """Test that forecast_R0 returns a pandas DataFrame."""
+        # Act
+        R0_forecast = fitted_model_with_forecast.forecast_R0()
+
+        # Assert
+        assert isinstance(R0_forecast, pd.DataFrame)
+
+    def test_forecast_R0_correct_shape(self, fitted_model_with_forecast):
+        """Test that forecast_R0 has correct shape (steps × scenarios)."""
+        # Act
+        R0_forecast = fitted_model_with_forecast.forecast_R0()
+
+        # Assert
+        # Should have 10 rows (steps) and 27 scenario columns + 5 summary columns
+        assert R0_forecast.shape[0] == 10
+        assert R0_forecast.shape[1] == 27 + 5  # 27 scenarios + mean, median, std, min, max
+
+    def test_forecast_R0_has_summary_statistics(self, fitted_model_with_forecast):
+        """Test that forecast_R0 includes summary statistic columns."""
+        # Act
+        R0_forecast = fitted_model_with_forecast.forecast_R0()
+
+        # Assert
+        summary_cols = ["mean", "median", "std", "min", "max"]
+        for col in summary_cols:
+            assert col in R0_forecast.columns, f"Missing summary column: {col}"
+
+    def test_forecast_R0_correct_index(self, fitted_model_with_forecast):
+        """Test that forecast_R0 has correct forecasting interval index."""
+        # Act
+        R0_forecast = fitted_model_with_forecast.forecast_R0()
+
+        # Assert
+        pd.testing.assert_index_equal(
+            R0_forecast.index,
+            fitted_model_with_forecast.forecasting_interval
+        )
+
+    def test_forecast_R0_non_negative(self, fitted_model_with_forecast):
+        """Test that all forecasted R₀ values are non-negative."""
+        # Act
+        R0_forecast = fitted_model_with_forecast.forecast_R0()
+
+        # Assert
+        assert (R0_forecast >= 0).all().all(), "All R₀ forecasts must be non-negative"
+
+    def test_forecast_R0_without_forecast_raises_error(self, sample_data_container):
+        """Test that forecast_R0 raises error if forecast not generated."""
+        # Arrange
+        model = Model(sample_data_container)
+        model.create_model()
+        model.fit_model()
+        # Don't call forecast()
+
+        # Act & Assert
+        with pytest.raises(ValueError, match="Forecast must be generated"):
+            model.forecast_R0()
+
+    def test_forecast_R0_scenario_naming(self, fitted_model_with_forecast):
+        """Test that forecast_R0 scenarios are named correctly."""
+        # Act
+        R0_forecast = fitted_model_with_forecast.forecast_R0()
+
+        # Assert
+        # Check that scenario columns follow pattern: level|level|level
+        scenario_cols = [col for col in R0_forecast.columns
+                        if col not in ["mean", "median", "std", "min", "max"]]
+
+        assert len(scenario_cols) == 27, "Should have 27 scenario combinations"
+
+        # Check format of scenario names
+        for col in scenario_cols:
+            parts = col.split("|")
+            assert len(parts) == 3, f"Scenario name {col} should have 3 parts"
+            assert all(part in ["lower", "point", "upper"] for part in parts), \
+                f"Invalid scenario level in {col}"
+
+    def test_R0_interpretation_threshold(self, sample_data_container):
+        """Test R₀ interpretation around critical threshold of 1."""
+        # Arrange
+        model = Model(sample_data_container)
+        R0 = model.calculate_R0()
+
+        # Act - Count days above/below threshold
+        growing_days = (R0 > 1).sum()
+        declining_days = (R0 < 1).sum()
+        stable_days = (R0 == 1).sum()
+
+        # Assert
+        total_days = growing_days + declining_days + stable_days
+        assert total_days == len(R0), "All days should be classified"
+        assert growing_days + declining_days + stable_days == len(R0)
+
+    def test_forecast_R0_summary_statistics_correct(self, fitted_model_with_forecast):
+        """Test that summary statistics are calculated correctly."""
+        # Act
+        R0_forecast = fitted_model_with_forecast.forecast_R0()
+
+        # Get scenario columns only
+        scenario_cols = [col for col in R0_forecast.columns
+                        if col not in ["mean", "median", "std", "min", "max"]]
+
+        # Calculate expected statistics manually
+        scenario_data = R0_forecast[scenario_cols]
+
+        # Assert
+        np.testing.assert_array_almost_equal(
+            R0_forecast["mean"].values,
+            scenario_data.mean(axis=1).values,
+            decimal=10,
+            err_msg="Mean calculation incorrect"
+        )
+
+        np.testing.assert_array_almost_equal(
+            R0_forecast["median"].values,
+            scenario_data.median(axis=1).values,
+            decimal=10,
+            err_msg="Median calculation incorrect"
+        )
+
+        np.testing.assert_array_almost_equal(
+            R0_forecast["min"].values,
+            scenario_data.min(axis=1).values,
+            decimal=10,
+            err_msg="Min calculation incorrect"
+        )
+
+        np.testing.assert_array_almost_equal(
+            R0_forecast["max"].values,
+            scenario_data.max(axis=1).values,
+            decimal=10,
+            err_msg="Max calculation incorrect"
+        )
