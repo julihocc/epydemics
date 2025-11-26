@@ -289,13 +289,31 @@ model.run_simulations(n_jobs=1)
 - Limited memory
 - Single-core systems
 
-**Typical speedup:**
-- 4 cores: ~2.5-3.0x speedup
-- 8 cores: ~4.0-5.0x speedup
-- Overhead from process creation reduces ideal linear speedup
+**Overhead vs Benefit:**
+- **Process spawning overhead**: ~2-3 seconds (Windows)
+- **Benefits when simulation time >> overhead** (production-scale data)
+- **Not beneficial for quick simulations** (<1 second per run)
 
-**Benchmark results:**
-Run `python benchmarks/parallel_simulation_benchmark.py` to benchmark on your system.
+**Benchmark results (Windows, 16 cores, small test data):**
+```
+Sequential (n_jobs=1):  0.020s (baseline)
+Parallel (n_jobs=2):    2.418s (120x SLOWER due to overhead)
+Parallel (n_jobs=4):    2.751s (138x SLOWER)
+Parallel (n_jobs=16):   7.196s (360x SLOWER)
+```
+
+**Key finding**: For small/quick simulations, sequential is faster. Parallel execution is beneficial when:
+- Simulations take >5 seconds individually
+- Working with large datasets (>1000 data points)
+- Running production forecasts with many scenarios
+- Simulation complexity justifies overhead
+
+**Run your own benchmark:**
+```bash
+python benchmarks/parallel_simulation_benchmark.py
+```
+
+Results saved to `benchmarks/parallel_benchmark_report.md`
 
 ### Working with Constants
 Always import and use predefined constants from `epydemics.core.constants`:
