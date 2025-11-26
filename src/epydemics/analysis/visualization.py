@@ -16,6 +16,7 @@ from ..core.constants import (
     METHOD_COLORS,
     METHOD_NAMES,
 )
+from .formatting import format_time_axis
 
 
 def visualize_results(
@@ -24,6 +25,7 @@ def visualize_results(
     testing_data: Optional[pd.DataFrame] = None,
     log_response: bool = False,
     alpha: float = 0.3,
+    format_axis: bool = True,
 ) -> None:
     """
     Visualize forecast results for a specific compartment.
@@ -34,9 +36,20 @@ def visualize_results(
         testing_data: Optional DataFrame with actual values for comparison
         log_response: Whether to use logarithmic scale for y-axis
         alpha: Transparency for simulation paths
+        format_axis: Apply professional time axis formatting (default: True)
 
     Raises:
         KeyError: If compartment_code is not found in results
+
+    Examples:
+        >>> results = model.results
+        >>> visualize_results(
+        ...     results,
+        ...     "C",
+        ...     testing_data=test_df,
+        ...     log_response=True,
+        ...     format_axis=True
+        ... )
     """
     if compartment_code not in results:
         raise KeyError(f"Compartment '{compartment_code}' not found in results")
@@ -84,6 +97,11 @@ def visualize_results(
 
     if log_response:
         plt.yscale("log")
+
+    # Apply professional time axis formatting if requested
+    if format_axis:
+        ax = plt.gca()
+        format_time_axis(ax, compartment.index, time_range="auto")
 
     plt.tight_layout()
     plt.show()
