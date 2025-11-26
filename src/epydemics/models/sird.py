@@ -1,6 +1,7 @@
 """SIRD epidemiological model with VAR time series forecasting."""
 
 import logging
+import warnings
 from typing import Any, Dict, Optional, Tuple
 
 import pandas as pd
@@ -16,6 +17,7 @@ from .simulation import EpidemicSimulation
 
 
 from epydemics.core.config import get_settings
+
 
 class Model(BaseModel, SIRDModelMixin):
     """
@@ -61,7 +63,7 @@ class Model(BaseModel, SIRDModelMixin):
         )
         if self.days_to_forecast:
             self.var_forecasting.days_to_forecast = self.days_to_forecast
-        
+
         # Results and simulation attributes (set during model execution)
         self.results: Optional[Box] = None
         self.simulation_engine: Optional[EpidemicSimulation] = None
@@ -80,6 +82,20 @@ class Model(BaseModel, SIRDModelMixin):
         """Create the VAR model for logit-transformed rates."""
         self.var_forecasting.create_logit_ratios_model()
 
+    def create_logit_ratios_model(self, *args, **kwargs) -> None:
+        """DEPRECATED: Use create_model() instead.
+
+        This method is deprecated and will be removed in v0.8.0.
+        Use create_model() for the same functionality.
+        """
+        warnings.warn(
+            "create_logit_ratios_model() is deprecated and will be removed in v0.8.0. "
+            "Use create_model() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.create_model(*args, **kwargs)
+
     def fit_model(self, *args, **kwargs) -> None:
         """Fit the VAR model to the data."""
         settings = get_settings()
@@ -87,6 +103,20 @@ class Model(BaseModel, SIRDModelMixin):
         kwargs.setdefault("ic", settings.VAR_CRITERION)
         self.var_forecasting.fit_logit_ratios_model(*args, **kwargs)
         self.days_to_forecast = self.var_forecasting.days_to_forecast
+
+    def fit_logit_ratios_model(self, *args, **kwargs) -> None:
+        """DEPRECATED: Use fit_model() instead.
+
+        This method is deprecated and will be removed in v0.8.0.
+        Use fit_model() for the same functionality.
+        """
+        warnings.warn(
+            "fit_logit_ratios_model() is deprecated and will be removed in v0.8.0. "
+            "Use fit_model() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.fit_model(*args, **kwargs)
 
     def forecast(self, steps: Optional[int] = None, **kwargs) -> None:
         """Generate forecasts for the specified number of steps."""
@@ -100,6 +130,20 @@ class Model(BaseModel, SIRDModelMixin):
         self.simulation_engine = EpidemicSimulation(
             self.data, self.forecasting_box, self.forecasting_interval
         )
+
+    def forecast_logit_ratios(self, steps: Optional[int] = None, **kwargs) -> None:
+        """DEPRECATED: Use forecast() instead.
+
+        This method is deprecated and will be removed in v0.8.0.
+        Use forecast() for the same functionality.
+        """
+        warnings.warn(
+            "forecast_logit_ratios() is deprecated and will be removed in v0.8.0. "
+            "Use forecast() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.forecast(steps, **kwargs)
 
     def run_simulations(self, n_jobs: Optional[int] = None) -> None:
         """
@@ -131,7 +175,9 @@ class Model(BaseModel, SIRDModelMixin):
     def generate_result(self) -> None:
         """Generate results for all compartments."""
         if self.simulation_engine is None:
-            raise RuntimeError("Forecast and simulation must be generated before generating results.")
+            raise RuntimeError(
+                "Forecast and simulation must be generated before generating results."
+            )
         self.simulation_engine.generate_result()
         self.results = self.simulation_engine.results
 
@@ -235,12 +281,13 @@ class Model(BaseModel, SIRDModelMixin):
 
         result = pd.DataFrame(R0_forecasts, index=self.forecasting_interval)
 
-        # Add summary statistics columns
-        result["mean"] = result.mean(axis=1)
-        result["median"] = result.median(axis=1)
-        result["std"] = result.std(axis=1)
-        result["min"] = result.min(axis=1)
-        result["max"] = result.max(axis=1)
+        # Calculate summary statistics from scenario columns only
+        scenario_data = result.copy()  # Preserve original scenario-only data
+        result["mean"] = scenario_data.mean(axis=1)
+        result["median"] = scenario_data.median(axis=1)
+        result["std"] = scenario_data.std(axis=1)
+        result["min"] = scenario_data.min(axis=1)
+        result["max"] = scenario_data.max(axis=1)
 
         return result
 
@@ -291,8 +338,3 @@ class Model(BaseModel, SIRDModelMixin):
             save_evaluation=save_evaluation,
             filename=filename,
         )
-
-
-
-
-

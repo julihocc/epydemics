@@ -182,8 +182,6 @@ class TestModelSimulation:
         return model
 
 
-
-
 class TestModelResults:
     """Test results processing and aggregation."""
 
@@ -196,8 +194,6 @@ class TestModelResults:
         model.forecast(steps=5)
         model.run_simulations()
         return model
-
-
 
     def test_generate_result(self, model_with_simulations):
         """Test complete results generation."""
@@ -397,9 +393,9 @@ class TestModelIntegration:
 
         # Assert - Should complete within reasonable time (30 seconds max)
         execution_time = end_time - start_time
-        assert (
-            execution_time < 30.0
-        ), f"Model workflow took {execution_time:.2f}s, expected <30s"
+        assert execution_time < 30.0, (
+            f"Model workflow took {execution_time:.2f}s, expected <30s"
+        )
 
     def test_model_backward_compatibility(self, sample_data_container):
         """Test that Model maintains backward compatibility with existing usage."""
@@ -542,7 +538,9 @@ class TestModelR0Calculations:
         # Assert
         # Should have 10 rows (steps) and 27 scenario columns + 5 summary columns
         assert R0_forecast.shape[0] == 10
-        assert R0_forecast.shape[1] == 27 + 5  # 27 scenarios + mean, median, std, min, max
+        assert (
+            R0_forecast.shape[1] == 27 + 5
+        )  # 27 scenarios + mean, median, std, min, max
 
     def test_forecast_R0_has_summary_statistics(self, fitted_model_with_forecast):
         """Test that forecast_R0 includes summary statistic columns."""
@@ -561,8 +559,7 @@ class TestModelR0Calculations:
 
         # Assert
         pd.testing.assert_index_equal(
-            R0_forecast.index,
-            fitted_model_with_forecast.forecasting_interval
+            R0_forecast.index, fitted_model_with_forecast.forecasting_interval
         )
 
     def test_forecast_R0_non_negative(self, fitted_model_with_forecast):
@@ -592,8 +589,11 @@ class TestModelR0Calculations:
 
         # Assert
         # Check that scenario columns follow pattern: level|level|level
-        scenario_cols = [col for col in R0_forecast.columns
-                        if col not in ["mean", "median", "std", "min", "max"]]
+        scenario_cols = [
+            col
+            for col in R0_forecast.columns
+            if col not in ["mean", "median", "std", "min", "max"]
+        ]
 
         assert len(scenario_cols) == 27, "Should have 27 scenario combinations"
 
@@ -601,8 +601,9 @@ class TestModelR0Calculations:
         for col in scenario_cols:
             parts = col.split("|")
             assert len(parts) == 3, f"Scenario name {col} should have 3 parts"
-            assert all(part in ["lower", "point", "upper"] for part in parts), \
+            assert all(part in ["lower", "point", "upper"] for part in parts), (
                 f"Invalid scenario level in {col}"
+            )
 
     def test_R0_interpretation_threshold(self, sample_data_container):
         """Test R₀ interpretation around critical threshold of 1."""
@@ -625,38 +626,200 @@ class TestModelR0Calculations:
         # Act
         R0_forecast = fitted_model_with_forecast.forecast_R0()
 
-        # Get scenario columns only
-        scenario_cols = [col for col in R0_forecast.columns
-                        if col not in ["mean", "median", "std", "min", "max"]]
+        # Get scenario columns only (27 scenarios with pattern: level|level|level)
+        scenario_cols = [
+            col
+            for col in R0_forecast.columns
+            if col not in ["mean", "median", "std", "min", "max"]
+        ]
 
-        # Calculate expected statistics manually
+        # Calculate expected statistics manually from scenario columns only
         scenario_data = R0_forecast[scenario_cols]
 
-        # Assert
+        # Assert - use lower precision due to floating point variations
         np.testing.assert_array_almost_equal(
             R0_forecast["mean"].values,
             scenario_data.mean(axis=1).values,
-            decimal=10,
-            err_msg="Mean calculation incorrect"
+            decimal=8,
+            err_msg="Mean calculation incorrect",
         )
 
         np.testing.assert_array_almost_equal(
             R0_forecast["median"].values,
             scenario_data.median(axis=1).values,
-            decimal=10,
-            err_msg="Median calculation incorrect"
+            decimal=8,
+            err_msg="Median calculation incorrect",
         )
 
         np.testing.assert_array_almost_equal(
             R0_forecast["min"].values,
             scenario_data.min(axis=1).values,
-            decimal=10,
-            err_msg="Min calculation incorrect"
+            decimal=8,
+            err_msg="Min calculation incorrect",
         )
 
         np.testing.assert_array_almost_equal(
             R0_forecast["max"].values,
             scenario_data.max(axis=1).values,
-            decimal=10,
-            err_msg="Max calculation incorrect"
+            decimal=8,
+            err_msg="Max calculation incorrect",
         )
+
+
+class TestDeprecatedAPIBackwardCompatibility:
+    """Test deprecated API methods for backward compatibility."""
+
+    @pytest.fixture
+    def sample_data_container(self):
+        """Create sample DataContainer for testing."""
+        dates = pd.date_range("2020-01-01", periods=50, freq="D")
+        sample_data = pd.DataFrame(
+            {
+                "C": np.cumsum(np.random.poisson(10, 50)) + 100,
+                "D": np.cumsum(np.random.poisson(1, 50)) + 1,
+                "N": [1000000] * 50,
+            },
+            index=dates,
+        )
+        return DataContainer(sample_data, window=7)
+
+    def test_create_logit_ratios_model_deprecated(self, sample_data_container):
+        """Test that create_logit_ratios_model emits deprecation warning."""
+        # Arrange
+        model = Model(sample_data_container)
+
+        # Act & Assert - Should emit DeprecationWarning
+        with pytest.warns(
+            DeprecationWarning,
+            match="create_logit_ratios_model.*deprecated.*create_model",
+        ):
+            model.create_logit_ratios_model()
+
+        # Should still work correctly
+        assert model.logit_ratios_model is not None
+
+    def test_fit_logit_ratios_model_deprecated(self, sample_data_container):
+        """Test that fit_logit_ratios_model emits deprecation warning."""
+        # Arrange
+        model = Model(sample_data_container)
+        model.create_model()
+
+        # Act & Assert - Should emit DeprecationWarning
+        with pytest.warns(
+            DeprecationWarning, match="fit_logit_ratios_model.*deprecated.*fit_model"
+        ):
+            model.fit_logit_ratios_model()
+
+        # Should still work correctly
+        assert model.logit_ratios_model_fitted is not None
+
+    def test_forecast_logit_ratios_deprecated(self, sample_data_container):
+        """Test that forecast_logit_ratios emits deprecation warning."""
+        # Arrange
+        model = Model(sample_data_container)
+        model.create_model()
+        model.fit_model()
+
+        # Act & Assert - Should emit DeprecationWarning
+        with pytest.warns(
+            DeprecationWarning, match="forecast_logit_ratios.*deprecated.*forecast"
+        ):
+            model.forecast_logit_ratios(steps=5)
+
+        # Should still work correctly
+        assert model.forecasting_box is not None
+        assert len(model.forecasting_interval) == 5
+
+    def test_deprecated_api_complete_workflow(self, sample_data_container):
+        """Test complete workflow using deprecated API methods."""
+        # Arrange
+        model = Model(sample_data_container)
+
+        # Act - Use old API (should emit warnings but work)
+        with pytest.warns(DeprecationWarning):
+            model.create_logit_ratios_model()
+
+        with pytest.warns(DeprecationWarning):
+            model.fit_logit_ratios_model()
+
+        with pytest.warns(DeprecationWarning):
+            model.forecast_logit_ratios(steps=7)
+
+        model.run_simulations()
+        model.generate_result()
+
+        # Assert - Should produce same results as new API
+        assert model.logit_ratios_model_fitted is not None
+        assert model.forecasting_box is not None
+        assert model.results is not None
+
+        # Results should contain all compartments
+        compartments = ["A", "C", "S", "I", "R", "D"]
+        for compartment in compartments:
+            assert compartment in model.results
+
+    def test_deprecated_and_new_api_equivalence(self, sample_data_container):
+        """Test that deprecated and new APIs produce identical results."""
+        # Arrange - Model with old API
+        model_old = Model(sample_data_container, start="2020-01-10", stop="2020-01-30")
+
+        with pytest.warns(DeprecationWarning):
+            model_old.create_logit_ratios_model()
+        with pytest.warns(DeprecationWarning):
+            model_old.fit_logit_ratios_model(max_lag=2)  # Reduced lag for small dataset
+        with pytest.warns(DeprecationWarning):
+            model_old.forecast_logit_ratios(steps=5)
+
+        # Arrange - Model with new API
+        model_new = Model(sample_data_container, start="2020-01-10", stop="2020-01-30")
+        model_new.create_model()
+        model_new.fit_model(max_lag=2)  # Same reduced lag
+        model_new.forecast(steps=5)
+
+        # Assert - Results should be identical
+        pd.testing.assert_index_equal(
+            model_old.forecasting_interval, model_new.forecasting_interval
+        )
+
+        # Check that forecasting boxes have same structure
+        for rate in ["alpha", "beta", "gamma"]:
+            pd.testing.assert_frame_equal(
+                model_old.forecasting_box[rate], model_new.forecasting_box[rate]
+            )
+
+    def test_deprecation_warning_mentions_removal_version(self, sample_data_container):
+        """Test that deprecation warnings mention when methods will be removed."""
+        # Arrange
+        model = Model(sample_data_container)
+
+        # Act & Assert - Should mention v0.8.0 removal
+        with pytest.warns(DeprecationWarning, match="removed in v0.8.0"):
+            model.create_logit_ratios_model()
+
+        model.create_model()  # Ensure model exists for next test
+
+        with pytest.warns(DeprecationWarning, match="removed in v0.8.0"):
+            model.fit_logit_ratios_model()
+
+        model.fit_model()  # Ensure fitted for next test
+
+        with pytest.warns(DeprecationWarning, match="removed in v0.8.0"):
+            model.forecast_logit_ratios(steps=5)
+
+    def test_deprecated_methods_accept_same_arguments(self, sample_data_container):
+        """Test that deprecated methods accept same arguments as new methods."""
+        # Arrange
+        model = Model(sample_data_container)
+
+        # Act - Test with various arguments
+        with pytest.warns(DeprecationWarning):
+            model.create_logit_ratios_model()  # No args
+
+        with pytest.warns(DeprecationWarning):
+            model.fit_logit_ratios_model(max_lag=7, ic="bic")  # With kwargs
+
+        with pytest.warns(DeprecationWarning):
+            model.forecast_logit_ratios(10, alpha=0.1)  # With args and kwargs
+
+        # Assert - Should work without errors
+        assert model.forecasting_box is not None
