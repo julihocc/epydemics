@@ -1,7 +1,9 @@
 # Refactoring Priorities and Next Steps
 
 **Last Updated:** November 26, 2025
-**Current Branch:** fixing-data-problem
+**Current Branch:** fixing-data-problem  
+**Project Board:** https://github.com/users/julihocc/projects/3  
+**Milestone:** https://github.com/julihocc/epydemics/milestone/2
 **Phase:** Post Phase 3 - Maintenance and Improvements
 
 ---
