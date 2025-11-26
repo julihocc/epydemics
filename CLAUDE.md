@@ -231,6 +231,72 @@ model.visualize_results("C", testing_data, log_response=True)
 evaluation = model.evaluate_forecast(testing_data)
 ```
 
+### Parallel Simulations (Performance)
+
+The library supports parallel execution of epidemic simulations for improved performance on multi-core systems.
+
+#### Configuration
+
+**Environment Variables / .env file:**
+```bash
+# Enable parallel execution (default: True)
+PARALLEL_SIMULATIONS=True
+
+# Number of parallel jobs (default: None = auto-detect CPU count)
+N_SIMULATION_JOBS=4  # or None for auto-detection
+```
+
+**Python code:**
+```python
+from epydemics.core.config import get_settings
+
+settings = get_settings()
+print(f"Parallel simulations: {settings.PARALLEL_SIMULATIONS}")
+print(f"Number of jobs: {settings.N_SIMULATION_JOBS}")
+```
+
+#### Usage Examples
+
+**Auto-detect CPUs (default):**
+```python
+# Uses config default (parallel if PARALLEL_SIMULATIONS=True)
+model.run_simulations()  # Auto-detects CPU count
+
+# Explicitly use auto-detection
+model.run_simulations(n_jobs=None)
+```
+
+**Specify number of workers:**
+```python
+# Use specific number of parallel workers
+model.run_simulations(n_jobs=4)  # 4 parallel workers
+
+# Force sequential execution (debugging or resource constraints)
+model.run_simulations(n_jobs=1)
+```
+
+#### Performance Considerations
+
+**When to use parallel:**
+- Multiple CPU cores available
+- Running single large analysis
+- Forecast periods with many scenarios (27 scenarios = 3³ combinations)
+- Production forecasting
+
+**When to use sequential:**
+- Debugging (easier to trace)
+- Running many models simultaneously (avoid oversubscription)
+- Limited memory
+- Single-core systems
+
+**Typical speedup:**
+- 4 cores: ~2.5-3.0x speedup
+- 8 cores: ~4.0-5.0x speedup
+- Overhead from process creation reduces ideal linear speedup
+
+**Benchmark results:**
+Run `python benchmarks/parallel_simulation_benchmark.py` to benchmark on your system.
+
 ### Working with Constants
 Always import and use predefined constants from `epydemics.core.constants`:
 ```python
