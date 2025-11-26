@@ -7,6 +7,8 @@ to define expected behavior and ensure correct extraction.
 
 import itertools
 import json
+import tempfile
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 import numpy as np
@@ -330,15 +332,20 @@ class TestModelEvaluation:
         for compartment in custom_compartments:
             assert compartment in evaluation
 
-    @patch("builtins.open", create=True)
-    @patch("json.dump")
     def test_evaluate_forecast_save_results(
-        self, mock_json_dump, mock_open, model_with_results, sample_data_container
+        self, model_with_results, sample_data_container, tmp_path
     ):
-        """Test saving evaluation results to JSON."""
+        """
+        Test saving evaluation results to JSON.
+
+        Uses real temporary file to avoid pytest-cov stalling issues
+        that occurred with mocked builtins.open.
+        """
         # Arrange
         testing_data = sample_data_container.data.tail(5)
-        filename = "test_evaluation"
+        # Create filename in temporary directory without extension
+        test_file = tmp_path / "test_evaluation"
+        filename = str(test_file)
 
         # Act
         evaluation = model_with_results.evaluate_forecast(
@@ -346,10 +353,31 @@ class TestModelEvaluation:
         )
 
         # Assert
-        assert mock_open.called
-        assert mock_json_dump.called
-        # Should open file with correct name
-        mock_open.assert_called_with(f"{filename}.json", "w")
+        # Check that JSON file was created
+        json_file = Path(f"{filename}.json")
+        assert json_file.exists(), "JSON file should be created"
+
+        # Verify file contains valid JSON with expected structure
+        with open(json_file, "r") as f:
+            saved_data = json.load(f)
+
+        # Check that saved data matches evaluation results
+        assert isinstance(saved_data, dict)
+
+        # Default compartments to evaluate
+        default_compartments = ["C", "D", "I"]
+        for compartment in default_compartments:
+            assert compartment in saved_data
+
+        # Verify structure matches evaluation dict
+        central_methods = ["mean", "median", "gmean", "hmean"]
+        expected_metrics = ["mae", "mse", "rmse", "mape", "smape"]
+
+        for compartment in default_compartments:
+            for method in central_methods:
+                assert method in saved_data[compartment]
+                for metric in expected_metrics:
+                    assert metric in saved_data[compartment][method]
 
 
 class TestModelIntegration:

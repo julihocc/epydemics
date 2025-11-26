@@ -8,6 +8,27 @@ Epydemics is a Python library for epidemiological modeling and forecasting that 
 
 **Key Innovation**: Rates (α, β, γ) are logit-transformed before VAR modeling to ensure they stay within (0,1) bounds, then inverse-transformed back for epidemic simulations.
 
+## Development Workflow
+
+### Git Worktree Setup
+This project uses git worktrees for parallel development. The current worktree structure allows working on multiple branches simultaneously without switching:
+```bash
+# List all worktrees
+git worktree list
+
+# Create new worktree for a branch
+git worktree add ../epydemics.worktrees/feature-name feature-branch-name
+
+# Remove worktree when done
+git worktree remove ../epydemics.worktrees/feature-name
+```
+
+### Version Management
+- Current version: 0.6.1-dev (defined in `pyproject.toml`)
+- Version also appears in `src/epydemics/__init__.py` as `__version__`
+- Main branch: `main`
+- When bumping versions, update both `pyproject.toml` and `src/epydemics/__init__.py`
+
 ## Development Commands
 
 ### Environment Setup
@@ -63,6 +84,17 @@ pre-commit run --all-files
 pre-commit install
 ```
 
+**Pre-commit Hooks**: This project uses extensive pre-commit hooks (configured in `.pre-commit-config.yaml`):
+- Code formatting: `black` (line length 88)
+- Import sorting: `isort` (black profile)
+- Linting: `flake8`, `pylint`
+- Type checking: `mypy`
+- Security: `bandit`
+- Documentation: `pydocstyle` (Google convention)
+- Standard checks: trailing whitespace, EOF fixer, YAML/TOML/JSON validation, merge conflicts
+
+**Important**: Pre-commit hooks will run automatically before each commit. If hooks fail, the commit will be rejected. Fix issues and retry.
+
 ### Documentation
 ```bash
 # Build documentation (if docs directory exists)
@@ -99,10 +131,17 @@ Raw OWID Data → DataContainer → Feature Engineering → Model → Forecast �
 - `simulation.py`: EpidemicSimulation - Monte Carlo epidemic simulations
 - `forecasting/var.py`: Additional VAR utilities
 
-**`src/epydemics/analysis/`** - Post-processing and visualization
+**`src/epydemics/analysis/`** - Post-processing and visualization (extracted in v0.6.0)
 - `evaluation.py`: Model evaluation metrics (MAE, MSE, RMSE, MAPE, SMAPE)
+  - `evaluate_forecast()`: Evaluate forecasts against actual data
+  - `evaluate_model()`: Comprehensive model evaluation
 - `visualization.py`: Plotting functions for results
-- `formatting.py`: Professional plot formatting utilities (format_time_axis, add_forecast_highlight, set_professional_style)
+  - `visualize_results()`: Main visualization function for compartments and rates
+- `formatting.py`: Professional plot formatting utilities
+  - `format_time_axis()`: Format datetime axes with appropriate intervals
+  - `add_forecast_highlight()`: Add shaded regions for forecast periods
+  - `set_professional_style()`: Apply consistent styling across plots
+  - `format_subplot_grid()`: Configure subplot layouts
 
 **`src/epydemics/utils/`** - Utilities
 - `transformations.py`: Logit/inverse logit transforms, rate bound handling
@@ -192,15 +231,102 @@ model.visualize_results("C", testing_data, log_response=True)
 evaluation = model.evaluate_forecast(testing_data)
 ```
 
+### Parallel Simulations (Performance)
+
+The library supports parallel execution of epidemic simulations for improved performance on multi-core systems.
+
+#### Configuration
+
+**Environment Variables / .env file:**
+```bash
+# Enable parallel execution (default: True)
+PARALLEL_SIMULATIONS=True
+
+# Number of parallel jobs (default: None = auto-detect CPU count)
+N_SIMULATION_JOBS=4  # or None for auto-detection
+```
+
+**Python code:**
+```python
+from epydemics.core.config import get_settings
+
+settings = get_settings()
+print(f"Parallel simulations: {settings.PARALLEL_SIMULATIONS}")
+print(f"Number of jobs: {settings.N_SIMULATION_JOBS}")
+```
+
+#### Usage Examples
+
+**Auto-detect CPUs (default):**
+```python
+# Uses config default (parallel if PARALLEL_SIMULATIONS=True)
+model.run_simulations()  # Auto-detects CPU count
+
+# Explicitly use auto-detection
+model.run_simulations(n_jobs=None)
+```
+
+**Specify number of workers:**
+```python
+# Use specific number of parallel workers
+model.run_simulations(n_jobs=4)  # 4 parallel workers
+
+# Force sequential execution (debugging or resource constraints)
+model.run_simulations(n_jobs=1)
+```
+
+#### Performance Considerations
+
+**When to use parallel:**
+- Multiple CPU cores available
+- Running single large analysis
+- Forecast periods with many scenarios (27 scenarios = 3³ combinations)
+- Production forecasting
+
+**When to use sequential:**
+- Debugging (easier to trace)
+- Running many models simultaneously (avoid oversubscription)
+- Limited memory
+- Single-core systems
+
+**Overhead vs Benefit:**
+- **Process spawning overhead**: ~2-3 seconds (Windows)
+- **Benefits when simulation time >> overhead** (production-scale data)
+- **Not beneficial for quick simulations** (<1 second per run)
+
+**Benchmark results (Windows, 16 cores, small test data):**
+```
+Sequential (n_jobs=1):  0.020s (baseline)
+Parallel (n_jobs=2):    2.418s (120x SLOWER due to overhead)
+Parallel (n_jobs=4):    2.751s (138x SLOWER)
+Parallel (n_jobs=16):   7.196s (360x SLOWER)
+```
+
+**Key finding**: For small/quick simulations, sequential is faster. Parallel execution is beneficial when:
+- Simulations take >5 seconds individually
+- Working with large datasets (>1000 data points)
+- Running production forecasts with many scenarios
+- Simulation complexity justifies overhead
+
+**Run your own benchmark:**
+```bash
+python benchmarks/parallel_simulation_benchmark.py
+```
+
+Results saved to `benchmarks/parallel_benchmark_report.md`
+
 ### Working with Constants
 Always import and use predefined constants from `epydemics.core.constants`:
 ```python
 from epydemics.core.constants import (
-    RATIOS,              # ["alpha", "beta", "gamma"]
-    LOGIT_RATIOS,        # ["logit_alpha", "logit_beta", "logit_gamma"]
-    COMPARTMENTS,        # ["A", "C", "S", "I", "R", "D"]
-    FORECASTING_LEVELS,  # ["lower", "point", "upper"]
-    CENTRAL_TENDENCY_METHODS  # ["mean", "median", "gmean", "hmean"]
+    RATIOS,                      # ["alpha", "beta", "gamma"]
+    LOGIT_RATIOS,                # ["logit_alpha", "logit_beta", "logit_gamma"]
+    COMPARTMENTS,                # ["A", "C", "S", "I", "R", "D"]
+    COMPARTMENT_LABELS,          # {"A": "Active", "C": "Confirmed", ...}
+    FORECASTING_LEVELS,          # ["lower", "point", "upper"]
+    CENTRAL_TENDENCY_METHODS,    # ["mean", "median", "gmean", "hmean"]
+    METHOD_NAMES,                # {"mean": "Mean", "median": "Median", ...}
+    METHOD_COLORS,               # {"mean": "blue", "median": "orange", ...}
 )
 ```
 
@@ -226,8 +352,13 @@ model.results.simulation[alpha_level][beta_level][gamma_level].C  # Cases
 
 ### Test Organization
 - `tests/unit/` - Unit tests for individual components
+  - `tests/unit/analysis/` - Analysis module tests
+  - `tests/unit/core/` - Core functionality tests
+  - `tests/unit/models/` - Model-specific unit tests
 - `tests/integration/` - Integration tests for full workflows
+  - `test_backward_compatibility.py` - Ensures API stability
 - `tests/conftest.py` - Shared fixtures
+- Top-level test files: `test_data_container.py`, `test_model.py`, `test_parallel_simulations.py`
 
 ### Test Markers
 Use pytest markers to categorize tests:
@@ -238,10 +369,32 @@ Use pytest markers to categorize tests:
 @pytest.mark.network  # Requires network access
 ```
 
+### Running Specific Tests
+```bash
+# Run a specific test file
+pytest tests/test_model.py
+
+# Run a specific test function
+pytest tests/test_model.py::test_function_name
+
+# Run a specific test class
+pytest tests/test_model.py::TestClassName
+
+# Run a specific test method in a class
+pytest tests/test_model.py::TestClassName::test_method_name
+
+# Run with verbose output and show print statements
+pytest tests/test_model.py -v -s
+
+# Run with debugging on first failure
+pytest tests/test_model.py -x --pdb
+```
+
 ### Common Fixtures (in conftest.py)
-- `sample_data`: Basic synthetic DataFrame
-- `sample_container`: Pre-initialized DataContainer
-- Check `tests/conftest.py` for all available fixtures
+- `sample_owid_data`: OWID-format epidemiological data (31 days, 2020-03-01 to 2020-03-31)
+- `sample_processed_data`: Processed data with C, D, N columns and DatetimeIndex
+- `sample_data_container`: Pre-initialized DataContainer with processed sample data
+- All fixtures use `np.random.seed(42)` for reproducibility
 
 ## Code Style Requirements
 
@@ -305,4 +458,8 @@ When making changes to specific functionality, review these key files:
 
 **Examples**:
 - `examples/global_forecasting.ipynb` - Complete COVID-19 analysis example
+- `examples/parallel_simulation_demo.ipynb` - Parallel simulation demonstrations
 - `examples/README.md` - Guide to example notebooks
+- `examples/download_data.py` - Script to download OWID data
+- `examples/DATA_SOURCES.md` - Information about data sources
+- `examples/NETWORK_ISSUES.md` - Troubleshooting network/data download issues
