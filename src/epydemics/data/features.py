@@ -100,17 +100,17 @@ def add_logit_ratios(data: pd.DataFrame) -> pd.DataFrame:
 
 def feature_engineering(data: pd.DataFrame) -> pd.DataFrame:
     """
-    Perform feature engineering to create SIRD compartments and rate calculations.
+    Perform feature engineering to create SIRD/SIRDV compartments and rate calculations.
 
     This function calculates:
-    - SIRD compartments (S, I, R, D)
-    - Difference values (dC, dI, dR, dD, etc.)
-    - Epidemiological rates (alpha, beta, gamma)
+    - SIRD compartments (S, I, R, D) or SIRDV compartments (S, I, R, D, V)
+    - Difference values (dC, dI, dR, dD, dV, etc.)
+    - Epidemiological rates (alpha, beta, gamma, delta)
     - R0 calculation
     - Logit transformations of rates
 
     Args:
-        data: Preprocessed DataFrame with basic columns C, D, N
+        data: Preprocessed DataFrame with basic columns C, D, N (and optionally V)
 
     Returns:
         DataFrame with full feature set for epidemiological modeling
@@ -119,6 +119,16 @@ def feature_engineering(data: pd.DataFrame) -> pd.DataFrame:
 
     # Create a copy to avoid modifying original
     engineered_data = data.copy()
+
+    # Detect vaccination presence
+    has_vaccination = "V" in engineered_data.columns
+
+    # Fill missing vaccination data with zeros if present
+    if has_vaccination:
+        engineered_data["V"] = engineered_data["V"].fillna(0)
+        logging.info("Detected vaccination data (V column). Using SIRDV model.")
+    else:
+        logging.info("No vaccination data detected. Using SIRD model.")
 
     # Calculate SIRD compartments
     # R: Recovered (using recovery_lag from settings)
@@ -135,10 +145,17 @@ def feature_engineering(data: pd.DataFrame) -> pd.DataFrame:
         I=engineered_data["C"] - engineered_data["R"] - engineered_data["D"]
     )
 
-    # S: Susceptible population
-    engineered_data = engineered_data.assign(
-        S=engineered_data["N"] - engineered_data["C"]
-    )
+    # S: Susceptible population (MODIFIED for SIRDV)
+    if has_vaccination:
+        # SIRDV: S = N - C - V (vaccinated are removed from susceptible pool)
+        engineered_data = engineered_data.assign(
+            S=engineered_data["N"] - engineered_data["C"] - engineered_data["V"]
+        )
+    else:
+        # SIRD: S = N - C
+        engineered_data = engineered_data.assign(
+            S=engineered_data["N"] - engineered_data["C"]
+        )
 
     # A: At-risk population (S + I)
     engineered_data = engineered_data.assign(
@@ -152,6 +169,14 @@ def feature_engineering(data: pd.DataFrame) -> pd.DataFrame:
     engineered_data = engineered_data.assign(dI=-engineered_data["I"].diff(periods=-1))
     engineered_data = engineered_data.assign(dR=-engineered_data["R"].diff(periods=-1))
     engineered_data = engineered_data.assign(dD=-engineered_data["D"].diff(periods=-1))
+
+    # Calculate vaccination difference if SIRDV
+    if has_vaccination:
+        engineered_data = engineered_data.assign(
+            dV=-engineered_data["V"].diff(periods=-1)
+        )
+        # Clip negative dV to 0 (handle data corrections/revisions)
+        engineered_data["dV"] = engineered_data["dV"].clip(lower=0)
 
     # Calculate epidemiological rates
     # Alpha: infection rate
@@ -169,6 +194,13 @@ def feature_engineering(data: pd.DataFrame) -> pd.DataFrame:
     engineered_data = engineered_data.assign(
         gamma=engineered_data.dD / engineered_data.I
     )
+
+    # Delta: vaccination rate (SIRDV only)
+    if has_vaccination:
+        # delta = dV / S (fraction of susceptible vaccinated per day)
+        engineered_data = engineered_data.assign(
+            delta=engineered_data.dV / engineered_data.S
+        )
 
     # R0: Basic reproduction number
     engineered_data = engineered_data.assign(

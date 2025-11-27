@@ -28,33 +28,42 @@ def test_ratios_constants():
     """Test RATIOS constant has correct values and type."""
     from epydemics.core.constants import RATIOS
 
-    expected = ["alpha", "beta", "gamma"]
+    expected = ["alpha", "beta", "gamma", "delta"]
     assert isinstance(RATIOS, list)
     assert RATIOS == expected
-    assert len(RATIOS) == 3
+    assert len(RATIOS) == 4
     assert all(isinstance(item, str) for item in RATIOS)
+
+    # Test backward compatibility - first 3 rates are unchanged
+    assert RATIOS[:3] == ["alpha", "beta", "gamma"]
 
 
 def test_logit_ratios_constants():
     """Test LOGIT_RATIOS constant has correct values and type."""
     from epydemics.core.constants import LOGIT_RATIOS
 
-    expected = ["logit_alpha", "logit_beta", "logit_gamma"]
+    expected = ["logit_alpha", "logit_beta", "logit_gamma", "logit_delta"]
     assert isinstance(LOGIT_RATIOS, list)
     assert LOGIT_RATIOS == expected
-    assert len(LOGIT_RATIOS) == 3
+    assert len(LOGIT_RATIOS) == 4
     assert all(isinstance(item, str) for item in LOGIT_RATIOS)
+
+    # Test backward compatibility - first 3 logit ratios are unchanged
+    assert LOGIT_RATIOS[:3] == ["logit_alpha", "logit_beta", "logit_gamma"]
 
 
 def test_compartments_constants():
     """Test COMPARTMENTS constant has correct values and type."""
     from epydemics.core.constants import COMPARTMENTS
 
-    expected = ["A", "C", "S", "I", "R", "D"]
+    expected = ["A", "C", "S", "I", "R", "D", "V"]
     assert isinstance(COMPARTMENTS, list)
     assert COMPARTMENTS == expected
-    assert len(COMPARTMENTS) == 6
+    assert len(COMPARTMENTS) == 7
     assert all(isinstance(item, str) for item in COMPARTMENTS)
+
+    # Test backward compatibility - first 6 compartments are unchanged
+    assert COMPARTMENTS[:6] == ["A", "C", "S", "I", "R", "D"]
 
 
 def test_forecasting_levels_constants():
@@ -110,6 +119,24 @@ def test_ratios_correspondence():
     for i, ratio in enumerate(RATIOS):
         expected_logit = f"logit_{ratio}"
         assert LOGIT_RATIOS[i] == expected_logit
+
+
+def test_compartment_labels():
+    """Test that COMPARTMENT_LABELS has all compartments including V."""
+    from epydemics.core.constants import COMPARTMENT_LABELS, COMPARTMENTS
+
+    # All compartments should have labels
+    for compartment in COMPARTMENTS:
+        assert compartment in COMPARTMENT_LABELS
+
+    # Test specific labels
+    assert COMPARTMENT_LABELS["V"] == "Vaccinated"
+    assert COMPARTMENT_LABELS["S"] == "Susceptible"
+    assert COMPARTMENT_LABELS["I"] == "Infected"
+    assert COMPARTMENT_LABELS["R"] == "Recovered"
+    assert COMPARTMENT_LABELS["D"] == "Deaths"
+    assert COMPARTMENT_LABELS["C"] == "Confirmed"
+    assert COMPARTMENT_LABELS["A"] == "Active"
 
 
 def test_backward_compatibility():

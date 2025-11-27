@@ -20,7 +20,12 @@
       "Bash(Format-Table)",
       "Bash(gh project field-list:*)",
       "Bash(cat:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh project:*)",
+      "Bash(gh issue create:*)",
+      "Bash(gh label:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": [],
     "ask": []

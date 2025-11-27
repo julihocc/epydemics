@@ -1118,7 +1118,7 @@ wheels = [
 
 [[package]]
 name = "epydemics"
-version = "0.6.0.dev0"
+version = "0.6.1.dev0"
 source = { editable = "." }
 dependencies = [
     { name = "factor-analyzer" },
