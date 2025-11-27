@@ -1,11 +1,15 @@
 # GitHub Copilot Instructions for Epydemics
 
-**Version 0.6.0** - AI-Enhanced with Parallel Simulation Support
+**Version 0.6.1-dev** - Result Caching & Vaccination Support
 
 ## Project Overview
 Epydemics implements epidemiological forecasting by combining discrete SIRD (Susceptible-Infected-Recovered-Deaths) models with VAR (Vector Autoregression) time series on **logit-transformed rates**. Unlike classical models with constant parameters, this models time-varying infection (α), recovery (β), and mortality (γ) rates.
 
 **Key Innovation**: Rates are logit-transformed before VAR modeling to ensure (0,1) bounds, then inverse-transformed for Monte Carlo epidemic simulations across 27 scenarios (3³ confidence levels).
+
+**Current Development**: Git worktree `sirdv-model-implementation` branch - working on SIRDV (vaccination) model extension and result caching features.
+
+**Important**: Version mismatch exists - `pyproject.toml` declares `0.6.1-dev` but `src/epydemics/__init__.py` still has `0.6.0-dev`. Update both when releasing.
 
 ## Architecture at a Glance
 
@@ -91,6 +95,15 @@ settings = get_settings()  # Cached singleton
 # Configure via environment variables or .env:
 # WINDOW_SIZE=7, RECOVERY_LAG=14, PARALLEL_SIMULATIONS=True
 # N_SIMULATION_JOBS=4 (or None for CPU auto-detect)
+
+# Result caching (v0.6.1+):
+# RESULT_CACHING_ENABLED=True
+# CACHE_DIR=.epydemics_cache
+# CACHE_STRICT_VERSION=False  # True invalidates cache on version change
+
+# Vaccination support (v0.6.1+):
+# ENABLE_VACCINATION=True
+# VACCINATION_COLUMN=people_vaccinated
 ```
 
 ## Critical Development Workflows
@@ -239,13 +252,21 @@ def forecast(self, steps: int) -> None:
 - **Parallel Processing**: `concurrent.futures.ProcessPoolExecutor` (Python stdlib)
 - **Config Management**: Environment variables via pydantic-settings (`.env` file support)
 
-## Recent Major Changes (v0.6.0)
+## Recent Major Changes (v0.6.1-dev)
 
-1. **Parallel Simulations**: Added `n_jobs` parameter to `run_simulations()` with auto-CPU detection
-2. **VAR API Fix**: Corrected `select_order()` usage (no `ic` parameter - use attribute access)
-3. **Modular Architecture**: Extracted analysis functions to `epydemics/analysis/` module
-4. **Modern Pandas**: Replaced deprecated `fillna(method="ffill")` with `.ffill()`
-5. **Enhanced Config**: Added `PARALLEL_SIMULATIONS` and `N_SIMULATION_JOBS` settings
+1. **Result Caching (v0.6.1)**: File-based caching of `generate_result()` output to avoid recomputation
+   - Configure via `.env`: `RESULT_CACHING_ENABLED=True`, `CACHE_DIR=.epydemics_cache`, `CACHE_STRICT_VERSION=False`
+   - Cache key based on: model params, data state (SHA-256), forecast values, optionally package version
+   - See `src/epydemics/models/sird.py` (lines 237-350) for implementation
+2. **Vaccination Support (v0.6.1)**: Optional SIRDV model with vaccination compartment (V)
+   - Enable via: `ENABLE_VACCINATION=True`, `VACCINATION_COLUMN=people_vaccinated` in config
+   - Falls back to SIRD if data unavailable - see `src/epydemics/epydemics.py` `process_data_from_owid()`
+3. **Parallel Simulations (v0.6.0)**: Added `n_jobs` parameter to `run_simulations()` with auto-CPU detection
+4. **VAR API Fix (v0.6.0)**: Corrected `select_order()` usage (no `ic` parameter - use attribute access)
+5. **Modular Architecture (v0.6.0)**: Extracted analysis functions to `epydemics/analysis/` module
+6. **Modern Pandas (v0.6.0)**: Replaced deprecated `fillna(method="ffill")` with `.ffill()`
 
 ## Testing New Features
-See `tests/test_parallel_simulations.py` for comprehensive parallel simulation test patterns (sequential vs parallel equivalence, n_jobs validation, backward compatibility).
+- **Result Caching**: `tests/models/test_result_caching.py` - cache hit/miss, invalidation, version handling
+- **Parallel Simulations**: `tests/test_parallel_simulations.py` - sequential vs parallel equivalence, n_jobs validation
+- **Vaccination**: `tests/unit/data/test_features_vaccination.py` - SIRDV feature engineering patterns
