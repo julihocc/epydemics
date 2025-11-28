@@ -75,6 +75,16 @@ class Settings(BaseSettings):
         description="If true, invalidate cache when package version changes.",
     )
 
+    # --- Vaccination Settings ---
+    ENABLE_VACCINATION: bool = Field(
+        False,
+        description="Enable vaccination compartment (V) in SIRDV model.",
+    )
+    VACCINATION_COLUMN: str = Field(
+        "people_vaccinated",
+        description="Column name for vaccination data in OWID dataset.",
+    )
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -1,16 +1,42 @@
 # Epydemics: Forecasting COVID-19 using time series and machine learning
 
-**Version 0.6.0** - AI-Enhanced Documentation Release
+**Version 0.7.0** - SIRDV Vaccination Model Release
 
-`epydemics` is a Python library for epidemiological modeling and forecasting. It provides tools for creating, fitting, and evaluating discrete SIRD models with time-dependent parameters. The library is designed to be flexible and extensible, allowing users to easily incorporate their own data and models.
+`epydemics` is a Python library for epidemiological modeling and forecasting. It provides tools for creating, fitting, and evaluating discrete SIRD/SIRDV models with time-dependent parameters. The library is designed to be flexible and extensible, allowing users to easily incorporate their own data and models.
 
 ## Features
 
 -   **Discrete SIRD Model**: A discrete Susceptible-Infected-Recovered-Deceased (SIRD) model with time-dependent parameters.
--   **Time Series Forecasting**: Use of time series models to forecast the evolution of the pandemic.
+-   **SIRDV Vaccination Model** (v0.7.0): Extended model including Vaccinated compartment (V) and vaccination rate (δ).
+-   **Time Series Forecasting**: Use of VAR (Vector Autoregression) models to forecast epidemic rates with logit transformation.
 -   **Data Container**: A convenient class for loading, preprocessing, and storing epidemiological data.
--   **Model Evaluation**: Tools for evaluating the performance of the models.
--   **Visualization**: Functions for visualizing the results of the models.
+-   **Parallel Simulations**: Multi-core support for faster Monte Carlo simulations (27 scenarios for SIRD, 81 for SIRDV).
+-   **Result Caching**: File-based caching to avoid recomputing identical analyses.
+-   **Model Evaluation**: Tools for evaluating model performance with MAE, MSE, RMSE, MAPE, SMAPE metrics.
+-   **Visualization**: Professional plotting functions for results and forecasts.
+
+## SIRDV Model (New in v0.7.0)
+
+The SIRDV model extends the classical SIRD model by incorporating vaccination:
+
+**Compartments:**
+- S: Susceptible
+- I: Infected (active cases)
+- R: Recovered
+- D: Deaths
+- V: Vaccinated (new)
+
+**Rates:**
+- α: Infection rate
+- β: Recovery rate
+- γ: Mortality rate
+- δ: Vaccination rate (new)
+
+**Key Features:**
+- Automatic detection from vaccination data
+- 81 simulation scenarios (3⁴ confidence levels)
+- Conservation law: N = S + I + R + D + V
+- Parallel execution recommended for performance
 
 ## Getting Started
 

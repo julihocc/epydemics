@@ -2,10 +2,10 @@
 Core constants for the epydemics library.
 """
 
-RATIOS = ["alpha", "beta", "gamma"]
-LOGIT_RATIOS = ["logit_alpha", "logit_beta", "logit_gamma"]
+RATIOS = ["alpha", "beta", "gamma", "delta"]
+LOGIT_RATIOS = ["logit_alpha", "logit_beta", "logit_gamma", "logit_delta"]
 FORECASTING_LEVELS = ["lower", "point", "upper"]
-COMPARTMENTS = ["A", "C", "S", "I", "R", "D"]
+COMPARTMENTS = ["A", "C", "S", "I", "R", "D", "V"]
 COMPARTMENT_LABELS = {
     "A": "Active",
     "C": "Confirmed",
@@ -13,6 +13,7 @@ COMPARTMENT_LABELS = {
     "I": "Infected",
     "R": "Recovered",
     "D": "Deaths",
+    "V": "Vaccinated",
 }
 CENTRAL_TENDENCY_METHODS = ["mean", "median", "gmean", "hmean"]
 METHOD_NAMES = {

@@ -291,3 +291,138 @@ def test_backward_compatibility_imports():
 
     assert callable(evaluate_forecast)
     assert callable(evaluate_model)
+
+
+# SIRDV-specific tests
+@pytest.fixture
+def sample_sirdv_results():
+    """Sample SIRDV forecast results including V compartment."""
+    dates = pd.date_range("2020-01-01", periods=10, freq="D")
+
+    # Create sample forecast data
+    forecast_data = pd.DataFrame(
+        {
+            "mean": np.random.rand(10) * 100,
+            "median": np.random.rand(10) * 100,
+            "gmean": np.random.rand(10) * 100,
+            "hmean": np.random.rand(10) * 100,
+        },
+        index=dates,
+    )
+
+    results = {
+        "C": forecast_data,
+        "D": forecast_data.copy() * 0.1,
+        "I": forecast_data.copy() * 0.5,
+        "R": forecast_data.copy() * 0.8,
+        "S": forecast_data.copy() * 5.0,
+        "V": forecast_data.copy() * 2.0,  # Vaccination compartment
+        "A": forecast_data.copy() * 5.5,
+    }
+
+    return results
+
+
+@pytest.fixture
+def sample_sirdv_testing_data():
+    """Sample SIRDV testing data including V compartment."""
+    dates = pd.date_range("2020-01-01", periods=10, freq="D")
+
+    return pd.DataFrame(
+        {
+            "C": np.random.rand(10) * 100,
+            "D": np.random.rand(10) * 10,
+            "I": np.random.rand(10) * 50,
+            "R": np.random.rand(10) * 80,
+            "S": np.random.rand(10) * 500,
+            "V": np.random.rand(10) * 200,  # Vaccination data
+            "A": np.random.rand(10) * 550,
+        },
+        index=dates,
+    )
+
+
+def test_evaluate_forecast_v_compartment(
+    sample_sirdv_results, sample_sirdv_testing_data
+):
+    """Test evaluation includes V (Vaccinated) compartment."""
+    evaluation = evaluate_forecast(
+        sample_sirdv_results,
+        sample_sirdv_testing_data,
+        compartment_codes=("C", "D", "I", "V"),
+    )
+
+    assert "V" in evaluation
+    assert "mean" in evaluation["V"]
+    assert "mae" in evaluation["V"]["mean"]
+
+
+def test_evaluate_forecast_all_sirdv_compartments(
+    sample_sirdv_results, sample_sirdv_testing_data
+):
+    """Test evaluation works for all SIRDV compartments."""
+    compartments = ("S", "I", "R", "D", "V", "C", "A")
+
+    evaluation = evaluate_forecast(
+        sample_sirdv_results, sample_sirdv_testing_data, compartment_codes=compartments
+    )
+
+    # Should evaluate all requested compartments
+    for compartment in compartments:
+        assert compartment in evaluation
+        assert "mean" in evaluation[compartment]
+
+
+def test_evaluate_forecast_v_compartment_metrics(
+    sample_sirdv_results, sample_sirdv_testing_data
+):
+    """Test that V compartment evaluation includes all metrics."""
+    evaluation = evaluate_forecast(
+        sample_sirdv_results,
+        sample_sirdv_testing_data,
+        compartment_codes=("V",),
+    )
+
+    v_metrics = evaluation["V"]["mean"]
+    assert "mae" in v_metrics
+    assert "mse" in v_metrics
+    assert "rmse" in v_metrics
+    assert "mape" in v_metrics
+    assert "smape" in v_metrics
+
+
+def test_evaluate_forecast_sirdv_backward_compatibility(
+    sample_results, sample_testing_data, sample_sirdv_results, sample_sirdv_testing_data
+):
+    """Test that SIRDV evaluation doesn't break SIRD functionality."""
+    # SIRD evaluation should still work
+    sird_eval = evaluate_forecast(
+        sample_results, sample_testing_data, compartment_codes=("C", "D", "I")
+    )
+    assert "C" in sird_eval
+    assert "D" in sird_eval
+    assert "I" in sird_eval
+    assert "V" not in sird_eval
+
+    # SIRDV evaluation should work
+    sirdv_eval = evaluate_forecast(
+        sample_sirdv_results,
+        sample_sirdv_testing_data,
+        compartment_codes=("C", "D", "I", "V"),
+    )
+    assert "C" in sirdv_eval
+    assert "D" in sirdv_eval
+    assert "I" in sirdv_eval
+    assert "V" in sirdv_eval
+
+
+def test_evaluate_model_v_compartment(sample_sirdv_results, sample_sirdv_testing_data):
+    """Test evaluate_model works with V compartment."""
+    evaluation = evaluate_model(
+        sample_sirdv_results,
+        sample_sirdv_testing_data,
+        compartment_codes=("C", "V"),
+    )
+
+    assert "V" in evaluation
+    assert "C" in evaluation

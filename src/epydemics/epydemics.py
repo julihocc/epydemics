@@ -62,7 +62,8 @@ def validate_data(training_data):
 def process_data_from_owid(
     url="https://catalog.ourworldindata.org/garden/covid/latest/compact/compact.csv",
     iso_code="OWID_WRL",
-    country=None
+    country=None,
+    include_vaccination=None
 ):
     """
     Load and process COVID-19 data from Our World in Data.
@@ -78,11 +79,16 @@ def process_data_from_owid(
     country : str, optional
         Country name for filtering data (e.g., 'World', 'United States', 'Mexico').
         If specified, takes precedence over iso_code parameter.
+    include_vaccination : bool, optional
+        Whether to include vaccination data (people_vaccinated column).
+        If None, reads from ENABLE_VACCINATION config setting.
+        Falls back to SIRD if vaccination data is not available.
 
     Returns
     -------
     pd.DataFrame
-        Processed dataframe with date index and columns C, D, N.
+        Processed dataframe with date index and columns C, D, N (SIRD)
+        or C, D, N, V (SIRDV if include_vaccination=True and data available).
     """
     try:
         data = pd.read_csv(url)
@@ -144,10 +150,36 @@ def process_data_from_owid(
     except Exception as e:
         raise Exception(f"Could not filter data for {country or iso_code}: {e}")
 
-    try:
-        data = data[["date", "total_cases", "total_deaths", "population"]]
-    except ValueError:
-        raise ValueError("Dataframe has not the required columns")
+    # Determine vaccination column name from config
+    from epydemics.core.config import get_settings
+    settings = get_settings()
+
+    # Use config setting if include_vaccination not explicitly provided
+    if include_vaccination is None:
+        include_vaccination = settings.ENABLE_VACCINATION
+
+    vaccination_column = settings.VACCINATION_COLUMN
+
+    # Attempt to include vaccination data if requested
+    has_vaccination = False
+    if include_vaccination:
+        if vaccination_column in data.columns:
+            try:
+                data = data[["date", "total_cases", "total_deaths", "population", vaccination_column]]
+                has_vaccination = True
+                logging.info(f"Including vaccination data from column '{vaccination_column}'")
+            except KeyError:
+                logging.warning(f"Vaccination column '{vaccination_column}' not found. Falling back to SIRD model.")
+                data = data[["date", "total_cases", "total_deaths", "population"]]
+        else:
+            logging.warning(f"Vaccination column '{vaccination_column}' not available in dataset. Falling back to SIRD model.")
+            data = data[["date", "total_cases", "total_deaths", "population"]]
+    else:
+        # SIRD model (no vaccination)
+        try:
+            data = data[["date", "total_cases", "total_deaths", "population"]]
+        except ValueError:
+            raise ValueError("Dataframe does not have the required columns")
 
     try:
         data.set_index("date", inplace=True)
@@ -159,12 +191,12 @@ def process_data_from_owid(
     except Exception:
         raise Exception("Date could not be set as DatetimeIndex")
 
+    # Rename columns based on whether vaccination is included
     try:
-        data.columns = [
-            "C",
-            "D",
-            "N",
-        ]
+        if has_vaccination:
+            data.columns = ["C", "D", "N", "V"]
+        else:
+            data.columns = ["C", "D", "N"]
     except ValueError:
         raise ValueError("Columns on reduced dataframe could not be renamed")
 

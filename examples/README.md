@@ -1,31 +1,101 @@
 # Epydemics Examples
 
-This directory contains example notebooks demonstrating the capabilities of the epydemics library for epidemiological modeling and forecasting.
+This directory contains example notebooks and scripts demonstrating the capabilities of the epydemics library for epidemiological modeling and forecasting.
 
-## Available Examples
+**Version**: 0.7.0 (includes SIRDV vaccination model)
 
-### 1. Global COVID-19 Forecasting
-**File:** `global_forecasting.ipynb`
+## Directory Structure
 
-The main research notebook demonstrating the adaptive forecasting methodology using time-varying SIRD model parameters. This notebook reproduces the results from "Adaptive Epidemic Forecasting Using Time Series Analysis and Machine Learning" (Castillo Colmenares, 2024).
+```
+examples/
+├── notebooks/          # Jupyter notebooks with complete workflows
+├── data/              # Data storage (OWID COVID-19 datasets)
+├── download_data.py   # Data download utility
+└── README.md          # This file
+```
 
-**Features demonstrated:**
-- Loading and preprocessing OWID global COVID-19 data
-- Creating DataContainer with feature engineering
-- Fitting VAR models to logit-transformed rates
-- 30-day forecasting with uncertainty quantification
+## Available Notebooks
+
+### 1. SIRD Basic Workflow
+**File:** `notebooks/01_sird_basic_workflow.ipynb`
+
+Introduction to the SIRD (Susceptible-Infected-Recovered-Deaths) model.
+
+**Topics:**
+- Loading COVID-19 data from OWID
+- Creating a DataContainer with preprocessing
+- Fitting VAR models to time-varying rates
+- 30-day forecasting with uncertainty
 - 27-scenario Monte Carlo simulation
-- Model evaluation with multiple metrics (MAE, MSE, RMSE, MAPE, SMAPE)
-- Advanced visualization techniques
-- R₀(t) calculation and interpretation
+- Visualization and evaluation
+- Performance metrics (MAE, RMSE, MAPE, SMAPE)
 
-**Expected runtime:** 5-10 minutes
-**Dataset:** Global COVID-19 data from Our World in Data
+**Expected runtime:** 3-5 minutes  
+**Model type:** SIRD (3 rates: α, β, γ)  
+**Scenarios:** 27 (3³)
+
+---
+
+### 2. SIRDV Vaccination Analysis ⭐ NEW in v0.7.0
+**File:** `notebooks/02_sirdv_vaccination_analysis.ipynb`
+
+Complete guide to the SIRDV model with vaccination support.
+
+**Topics:**
+- Loading data with vaccination information
+- Automatic SIRDV detection
+- 4-rate VAR forecasting (α, β, γ, δ)
+- 81-scenario Monte Carlo simulation
+- V (Vaccinated) compartment visualization
+- SIRDV vs SIRD comparison
+- Vaccination impact analysis
+- Performance optimization tips
+
+**Expected runtime:** 5-8 minutes  
+**Model type:** SIRDV (4 rates: α, β, γ, δ)  
+**Scenarios:** 81 (3⁴)  
+**Data requirements:** Requires `people_vaccinated` column
+
+---
+
+### 3. Global COVID-19 Forecasting
+**File:** `notebooks/03_global_covid19_forecasting.ipynb`
+
+Advanced research notebook demonstrating adaptive forecasting methodology using time-varying SIRD model parameters. Reproduces results from "Adaptive Epidemic Forecasting Using Time Series Analysis and Machine Learning" (Castillo Colmenares, 2024).
+
+**Features:**
+- Global COVID-19 data analysis
+- Advanced VAR model selection (AIC criterion)
+- Multi-wave pandemic capture
+- R₀(t) calculation and interpretation
+- Professional visualization techniques
+- Comprehensive model evaluation
+
+**Expected runtime:** 8-12 minutes  
+**Dataset:** Global COVID-19 data (OWID_WRL)
 
 **Key results:**
 - Confirmed cases forecast: MAPE = 4.27%
 - Infected population forecast: MAPE = 25.98%
 - Successfully captures multiple pandemic waves
+
+---
+
+### 4. Parallel Simulations Demo
+**File:** `notebooks/04_parallel_simulations.ipynb`
+
+Performance optimization using parallel execution.
+
+**Topics:**
+- Sequential vs parallel simulation comparison
+- Multi-core execution with `n_jobs` parameter
+- Performance benchmarking
+- Speedup analysis (4-7x improvement)
+- Memory usage considerations
+- Best practices for large-scale simulations
+
+**Expected runtime:** 5-10 minutes  
+**Recommendation:** Use for SIRDV models (81 scenarios)
 
 ## Running the Examples
 

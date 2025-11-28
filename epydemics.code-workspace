@@ -7,5 +7,6 @@
 	"settings": {
 		"editor.defaultFormatter": "charliermarsh.ruff",
 		"notebook.defaultFormatter": "charliermarsh.ruff"
+		,"github.copilot.chat.workspaceInstructions": ".github/copilot-instructions.md"
 	}
 }

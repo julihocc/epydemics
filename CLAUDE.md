@@ -29,6 +29,42 @@ git worktree remove ../epydemics.worktrees/feature-name
 - Main branch: `main`
 - When bumping versions, update both `pyproject.toml` and `src/epydemics/__init__.py`
 
+### Result Caching (v0.6.1+)
+The library supports file-based caching of generated results to avoid recomputation when running the same analysis multiple times.
+
+**Configuration via .env file:**
+```bash
+# Enable result caching (default: False)
+RESULT_CACHING_ENABLED=True
+
+# Cache directory (default: .epydemics_cache)
+CACHE_DIR=.epydemics_cache
+
+# Invalidate cache on version changes (default: False)
+CACHE_STRICT_VERSION=False
+```
+
+**Cache Key Components:**
+- Package version (if CACHE_STRICT_VERSION=True)
+- Model parameters: start/stop dates, forecast steps
+- Last historical data state (SHA-256 hash)
+- Forecast values (SHA-256 hash)
+
+**Usage:**
+```python
+# First run: computes and caches results
+model.generate_result()  # Cache miss - full computation
+
+# Subsequent runs with same configuration: loads from cache
+model.generate_result()  # Cache hit - instant load
+```
+
+**Important:**
+- Cache files are stored in `.epydemics_cache/` by default
+- Add cache directory to `.gitignore` to avoid committing cache artifacts
+- Cache invalidates automatically when data or model parameters change
+- Set `CACHE_STRICT_VERSION=True` in production to invalidate cache on version changes
+
 ## Development Commands
 
 ### Environment Setup
@@ -146,6 +182,23 @@ Raw OWID Data → DataContainer → Feature Engineering → Model → Forecast �
 **`src/epydemics/utils/`** - Utilities
 - `transformations.py`: Logit/inverse logit transforms, rate bound handling
 
+### Caching Mechanism (v0.6.1+)
+
+**Result Caching Flow**:
+```
+generate_result() → check cache → cache hit? → load from disk
+                         ↓ (miss)
+                    compute results → save to cache → return
+```
+
+The caching system in `Model.generate_result()` creates deterministic cache keys using:
+- Model configuration (start, stop, forecast steps)
+- Last historical data state (SHA-256 hash of values)
+- Forecast values (SHA-256 hash)
+- Package version (optional, if `CACHE_STRICT_VERSION=True`)
+
+Cache files are stored as JSON in `CACHE_DIR` (default: `.epydemics_cache/`) with filenames based on the SHA-256 hash of the cache key.
+
 ### Key Classes and Their Roles
 
 **DataContainer**: Entry point for all data processing
@@ -205,6 +258,64 @@ Must follow this exact sequence (implemented in `features.py`):
 5. Apply `prepare_for_logit_function()` to bound rates
 6. Apply logit transform
 
+### SIRDV Model Extension (v0.7.0+)
+The SIRDV model extends SIRD by adding a Vaccinated compartment (V) and vaccination rate (δ).
+
+**SIRDV Compartments:**
+```python
+V = Vaccinated = cumulative vaccinations  # Vaccinated population
+S = Susceptible = N - I - R - D - V       # Updated to exclude V
+I = Infected = C - R - D                  # Unchanged
+R = Recovered = C.shift(14) - D           # Unchanged
+D = Deaths = cumulative deaths            # Unchanged
+C = Cases = cumulative cases              # Unchanged
+A = S + I                                 # Active population
+```
+
+**SIRDV Rates:**
+```python
+δ(t) = vaccination rate = dV / S  # New vaccination rate
+α(t) = infection rate = (A * dC) / (I * S)
+β(t) = recovery rate = dR / I
+γ(t) = mortality rate = dD / I
+```
+
+**Conservation Law:**
+```python
+# SIRD: N = S + I + R + D
+# SIRDV: N = S + I + R + D + V
+```
+
+**Key Differences:**
+- **4 rates instead of 3**: VAR model forecasts (logit_alpha, logit_beta, logit_gamma, logit_delta)
+- **81 scenarios instead of 27**: Simulations run 3⁴ = 81 combinations (lower/point/upper for each rate)
+- **4D Box structure**: `simulation[α][β][γ][δ]` for scenario storage
+- **Vaccination flow**: `vaccination = δ * S` removes susceptible individuals to V compartment
+
+**Configuration:**
+```bash
+# Enable SIRDV mode (requires vaccination column in data)
+ENABLE_VACCINATION=True
+VACCINATION_COLUMN=people_vaccinated  # Column name in OWID data
+```
+
+**Detection:**
+```python
+# Model automatically detects vaccination support
+model = Model(container, start="2020-03-01", stop="2021-12-31")
+print(model.has_vaccination)  # True if logit_delta present
+
+# Results include V compartment when vaccination detected
+model.generate_result()
+print(model.results.V)  # Vaccination forecasts
+```
+
+**Performance Notes:**
+- SIRDV requires more observations for VAR estimation (4 equations vs 3)
+- Use longer training periods or smaller max_lag for SIRDV
+- Simulation time ~3x longer due to 81 scenarios vs 27
+- Parallel execution (`n_jobs=None`) recommended for SIRDV
+
 ## Common Development Patterns
 
 ### Typical Analysis Workflow
@@ -229,6 +340,42 @@ model.generate_result()
 testing_data = container.data.loc[model.forecasting_interval]
 model.visualize_results("C", testing_data, log_response=True)
 evaluation = model.evaluate_forecast(testing_data)
+```
+
+### Result Caching (v0.6.1+)
+
+Enable caching to avoid recomputing results for the same model configuration:
+
+```python
+from epydemics.core.config import get_settings
+import os
+
+# Enable caching via environment variable
+os.environ["RESULT_CACHING_ENABLED"] = "True"
+
+# Or configure via .env file:
+# RESULT_CACHING_ENABLED=True
+# CACHE_DIR=.epydemics_cache
+# CACHE_STRICT_VERSION=False
+
+model.generate_result()  # First run: computes and caches
+model.generate_result()  # Subsequent runs: loads from cache
+```
+
+**Performance Benefits:**
+- Instant result loading for repeated analyses
+- Useful for iterative development and testing
+- Cache automatically invalidates when data or parameters change
+
+**Cache Management:**
+```python
+from pathlib import Path
+
+# Clear cache manually if needed
+cache_dir = Path(get_settings().CACHE_DIR)
+if cache_dir.exists():
+    import shutil
+    shutil.rmtree(cache_dir)
 ```
 
 ### Parallel Simulations (Performance)
@@ -454,7 +601,8 @@ When making changes to specific functionality, review these key files:
 
 **Configuration**:
 - `pyproject.toml` - Project metadata, dependencies, tool configs
-- `src/epydemics/core/config.py` - Runtime settings
+- `src/epydemics/core/config.py` - Runtime settings (caching, parallel simulations)
+- `.env` - Environment configuration for caching and parallel execution (optional)
 
 **Examples**:
 - `examples/global_forecasting.ipynb` - Complete COVID-19 analysis example
@@ -463,3 +611,7 @@ When making changes to specific functionality, review these key files:
 - `examples/download_data.py` - Script to download OWID data
 - `examples/DATA_SOURCES.md` - Information about data sources
 - `examples/NETWORK_ISSUES.md` - Troubleshooting network/data download issues
+
+**Testing**:
+- `tests/models/test_result_caching.py` - Result caching tests
+- `tests/test_parallel_simulations.py` - Parallel simulation tests

@@ -65,11 +65,26 @@ class Model(BaseModel, SIRDModelMixin):
         self.days_to_forecast = days_to_forecast
 
         self.data = reindex_data(data_container.data, start, stop)
-        self.logit_ratios_values = self.data[LOGIT_RATIOS].values
+
+        # Select only logit ratios that exist in the data (SIRD vs SIRDV)
+        available_logit_ratios = [r for r in LOGIT_RATIOS if r in self.data.columns]
+        self.logit_ratios_values = self.data[available_logit_ratios].values
+        self.active_logit_ratios = available_logit_ratios  # Store for later use
+
+        # Detect vaccination presence
+        self.has_vaccination = "logit_delta" in available_logit_ratios
+
+        # Log model type detection
+        n_rates = len(available_logit_ratios)
+        model_type = "SIRDV" if n_rates == 4 else "SIRD"
+        logging.info(f"Model initialized with {n_rates} rates ({model_type} mode)")
 
         # Forecasting component
         self.var_forecasting = VARForecasting(
-            self.data, self.logit_ratios_values, self.window
+            self.data,
+            self.logit_ratios_values,
+            self.window,
+            active_logit_ratios=available_logit_ratios,
         )
         if self.days_to_forecast:
             self.var_forecasting.days_to_forecast = self.days_to_forecast
@@ -245,28 +260,55 @@ class Model(BaseModel, SIRDModelMixin):
         def _compute_cache_key() -> str:
             last_hist = self.data.iloc[-1]
 
+            # Build initial state with required compartments
+            initial_state_keys = [
+                "A",
+                "C",
+                "S",
+                "I",
+                "R",
+                "D",
+                "alpha",
+                "beta",
+                "gamma",
+            ]
+            if self.has_vaccination:
+                initial_state_keys.extend(["V", "delta"])
+
+            initial_state = {
+                k: float(last_hist[k])
+                for k in initial_state_keys
+                if k in last_hist.index
+            }
+
+            # Build rates hash with required rates
+            rates_to_hash = ["alpha", "beta", "gamma"]
+            if self.has_vaccination:
+                rates_to_hash.append("delta")
+
+            rates_hash = {
+                ratio: {
+                    level: _hash_series_values(
+                        self.forecasting_box[ratio][level].loc[
+                            self.forecasting_interval
+                        ]
+                    )
+                    for level in FORECASTING_LEVELS
+                }
+                for ratio in rates_to_hash
+                if ratio in self.forecasting_box
+            }
+
             payload: Dict[str, Any] = {
                 "pkg_version": _get_pkg_version(),
                 "start": self.start,
                 "stop": self.stop,
                 "window": self.window,
                 "days_to_forecast": self.days_to_forecast,
+                "has_vaccination": self.has_vaccination,
                 "interval": [d.strftime("%Y-%m-%d") for d in self.forecasting_interval],
-                "initial_state": {
-                    k: float(last_hist[k])
-                    for k in ["A", "C", "S", "I", "R", "D", "alpha", "beta", "gamma"]
-                },
-                "rates_hash": {
-                    ratio: {
-                        level: _hash_series_values(
-                            self.forecasting_box[ratio][level].loc[
-                                self.forecasting_interval
-                            ]
-                        )
-                        for level in FORECASTING_LEVELS
-                    }
-                    for ratio in ["alpha", "beta", "gamma"]
-                },
+                "initial_state": initial_state,
+                "rates_hash": rates_hash,
             }
             blob = json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
             return hashlib.sha256(blob).hexdigest()
@@ -291,14 +333,17 @@ class Model(BaseModel, SIRDModelMixin):
 
             box = Box()
             try:
-                for comp in COMPARTMENTS:
-                    fp = dir_path / f"{comp}.csv"
-                    if not fp.exists():
-                        return None
-                    df = pd.read_csv(fp, index_col=0, parse_dates=True)
+                # Load all CSV files in the cache directory (dynamic compartments)
+                for comp_file in dir_path.glob("*.csv"):
+                    comp = comp_file.stem  # Get compartment name from filename
+                    df = pd.read_csv(comp_file, index_col=0, parse_dates=True)
                     # Ensure index aligns to forecasting interval
                     df = df.loc[self.forecasting_interval]
                     box[comp] = df
+                # Ensure we have at least the core SIRD compartments
+                required_comps = ["C", "I", "R", "D"]
+                if not all(comp in box for comp in required_comps):
+                    return None
                 return box
             except Exception:
                 return None
@@ -317,7 +362,8 @@ class Model(BaseModel, SIRDModelMixin):
             (dir_path / "meta.json").write_text(
                 json.dumps(meta, indent=2, sort_keys=True), encoding="utf-8"
             )
-            for comp in COMPARTMENTS:
+            # Only save compartments that exist in results
+            for comp in results_box.keys():
                 results_box[comp].to_csv(dir_path / f"{comp}.csv")
 
         # Attempt cache if enabled

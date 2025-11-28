@@ -19,6 +19,7 @@ from epydemics.models.simulation import EpidemicSimulation
 class TestParallelSimulations:
     """Test suite for parallel simulation execution."""
 
+    @pytest.mark.slow
     def test_sequential_vs_parallel_identical_results(self, sample_data_container):
         """Test that sequential and parallel execution produce identical results."""
         # Create and fit model
@@ -55,6 +56,7 @@ class TestParallelSimulations:
                         atol=1e-10,
                     )
 
+    @pytest.mark.slow
     def test_n_jobs_parameter_types(self, sample_data_container):
         """Test different n_jobs parameter values."""
         model = Model(sample_data_container, start="2020-03-10", stop="2020-03-25")
@@ -80,6 +82,7 @@ class TestParallelSimulations:
         model.simulation_engine.run_simulations(n_jobs=None)
         assert model.simulation_engine.simulation is not None
 
+    @pytest.mark.slow
     def test_n_jobs_auto_detection(self, sample_data_container):
         """Test that n_jobs=None correctly auto-detects CPU count."""
         model = Model(sample_data_container, start="2020-03-10", stop="2020-03-25")
@@ -94,6 +97,7 @@ class TestParallelSimulations:
             model.simulation_engine.run_simulations(n_jobs=None)
             assert model.simulation_engine.simulation is not None
 
+    @pytest.mark.slow
     def test_model_run_simulations_accepts_n_jobs(self, sample_data_container):
         """Test that Model.run_simulations() accepts and passes n_jobs parameter."""
         model = Model(sample_data_container, start="2020-03-10", stop="2020-03-25")
@@ -113,6 +117,7 @@ class TestParallelSimulations:
         model.run_simulations(n_jobs=2)
         assert model.simulation is not None
 
+    @pytest.mark.slow
     def test_parallel_simulation_all_scenarios_present(self, sample_data_container):
         """Test that parallel execution generates all 27 scenarios."""
         model = Model(sample_data_container, start="2020-03-10", stop="2020-03-25")
@@ -135,6 +140,7 @@ class TestParallelSimulations:
 
         assert count == 27
 
+    @pytest.mark.slow
     def test_parallel_execution_with_generate_result(self, sample_data_container):
         """Test that parallel simulations work with generate_result()."""
         model = Model(sample_data_container, start="2020-03-10", stop="2020-03-25")
@@ -174,6 +180,7 @@ class TestParallelSimulations:
         with pytest.raises(ValueError, match="n_jobs must be None or >= 1"):
             model.simulation_engine.run_simulations(n_jobs=-1)
 
+    @pytest.mark.slow
     def test_backward_compatibility_no_n_jobs(self, sample_data_container):
         """Test that run_simulations() works without n_jobs parameter (backward compatibility)."""
         model = Model(sample_data_container, start="2020-03-10", stop="2020-03-25")

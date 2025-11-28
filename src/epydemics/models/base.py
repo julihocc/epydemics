@@ -102,17 +102,50 @@ class SIRDModelMixin:
     (Susceptible-Infected-Recovered-Deaths) epidemiological models.
     """
 
-    def get_sird_compartments(self) -> list[str]:
-        """Get the list of SIRD compartment names."""
-        return ["S", "I", "R", "D", "C", "A"]
+    def get_sird_compartments(self, has_vaccination: bool = False) -> list[str]:
+        """
+        Get the list of SIRD/SIRDV compartment names.
 
-    def get_sird_rates(self) -> list[str]:
-        """Get the list of SIRD rate names."""
-        return ["alpha", "beta", "gamma"]
+        Args:
+            has_vaccination: If True, include V compartment for SIRDV
 
-    def get_logit_rates(self) -> list[str]:
-        """Get the list of logit-transformed rate names."""
-        return ["logit_alpha", "logit_beta", "logit_gamma"]
+        Returns:
+            List of compartment names (6 for SIRD, 7 for SIRDV)
+        """
+        compartments = ["S", "I", "R", "D", "C", "A"]
+        if has_vaccination:
+            compartments.append("V")
+        return compartments
+
+    def get_sird_rates(self, has_vaccination: bool = False) -> list[str]:
+        """
+        Get the list of SIRD/SIRDV rate names.
+
+        Args:
+            has_vaccination: If True, include delta rate for SIRDV
+
+        Returns:
+            List of rate names (3 for SIRD, 4 for SIRDV)
+        """
+        rates = ["alpha", "beta", "gamma"]
+        if has_vaccination:
+            rates.append("delta")
+        return rates
+
+    def get_logit_rates(self, has_vaccination: bool = False) -> list[str]:
+        """
+        Get the list of logit-transformed rate names.
+
+        Args:
+            has_vaccination: If True, include logit_delta for SIRDV
+
+        Returns:
+            List of logit rate names (3 for SIRD, 4 for SIRDV)
+        """
+        logit_rates = ["logit_alpha", "logit_beta", "logit_gamma"]
+        if has_vaccination:
+            logit_rates.append("logit_delta")
+        return logit_rates
 
     def validate_sird_data(self, data: pd.DataFrame) -> bool:
         """

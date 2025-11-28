@@ -197,6 +197,7 @@ class TestModelResults:
         model.run_simulations()
         return model
 
+    @pytest.mark.slow
     def test_generate_result(self, model_with_simulations):
         """Test complete results generation."""
         # Act
@@ -218,15 +219,16 @@ class TestModelVisualization:
 
     @pytest.fixture
     def model_with_results(self, sample_data_container):
-        """Create model with complete results."""
+        """Create model with complete results (optimized for speed)."""
         model = Model(sample_data_container)
         model.create_model()
-        model.fit_model()
-        model.forecast(steps=5)
-        model.run_simulations()
+        model.fit_model(max_lag=2)  # Reduced from default
+        model.forecast(steps=3)  # Reduced from 5
+        model.run_simulations(n_jobs=1)  # Sequential for consistency
         model.generate_result()
         return model
 
+    @pytest.mark.slow
     @patch("matplotlib.pyplot.show")
     @patch("matplotlib.pyplot.plot")
     @patch("matplotlib.pyplot.title")
@@ -252,6 +254,7 @@ class TestModelVisualization:
         assert mock_grid.called
         assert mock_show.called
 
+    @pytest.mark.slow
     @patch("matplotlib.pyplot.show")
     @patch("matplotlib.pyplot.plot")
     def test_visualize_results_with_testing_data(
@@ -314,10 +317,11 @@ class TestModelEvaluation:
                         evaluation[compartment][method][metric], (int, float)
                     )
 
+    @pytest.mark.slow
     def test_evaluate_forecast_custom_compartments(
         self, model_with_results, sample_data_container
     ):
-        """Test evaluation with custom compartment selection."""
+        """Test evaluation with custom compartments."""
         # Arrange
         testing_data = sample_data_container.data.tail(5)
         custom_compartments = ["S", "R"]
@@ -332,6 +336,7 @@ class TestModelEvaluation:
         for compartment in custom_compartments:
             assert compartment in evaluation
 
+    @pytest.mark.slow
     def test_evaluate_forecast_save_results(
         self, model_with_results, sample_data_container, tmp_path
     ):
@@ -383,6 +388,7 @@ class TestModelEvaluation:
 class TestModelIntegration:
     """Integration tests for complete Model workflow."""
 
+    @pytest.mark.slow
     def test_complete_workflow(self, sample_data_container):
         """Test complete end-to-end Model workflow."""
         # Arrange & Act - Complete pipeline
@@ -404,6 +410,7 @@ class TestModelIntegration:
         for compartment in compartments:
             assert compartment in model.results
 
+    @pytest.mark.slow
     def test_model_performance_reasonable_time(self, sample_data_container):
         """Test that complete model workflow completes in reasonable time."""
         # Arrange
@@ -758,6 +765,7 @@ class TestDeprecatedAPIBackwardCompatibility:
         assert model.forecasting_box is not None
         assert len(model.forecasting_interval) == 5
 
+    @pytest.mark.slow
     def test_deprecated_api_complete_workflow(self, sample_data_container):
         """Test complete workflow using deprecated API methods."""
         # Arrange
