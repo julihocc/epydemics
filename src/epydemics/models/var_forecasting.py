@@ -1,6 +1,7 @@
 """
 Vector Autoregression (VAR) forecasting implementation.
 """
+
 import pandas as pd
 import numpy as np
 from typing import Any, Dict, Optional, Tuple
@@ -15,10 +16,22 @@ class VARForecasting:
     Encapsulates the VAR forecasting logic extracted from the Model class.
     """
 
-    def __init__(self, data: pd.DataFrame, logit_ratios_values: np.ndarray, window: int):
+    def __init__(
+        self,
+        data: pd.DataFrame,
+        logit_ratios_values: np.ndarray,
+        window: int,
+        active_logit_ratios: Optional[list] = None,
+    ):
         self.data = data
         self.logit_ratios_values = logit_ratios_values
         self.window = window
+        # Use provided active ratios or default to all LOGIT_RATIOS
+        self.active_logit_ratios = (
+            active_logit_ratios
+            if active_logit_ratios is not None
+            else list(LOGIT_RATIOS)
+        )
 
         self.forecaster: Optional[VARForecaster] = None
         self.forecasted_logit_ratios: Optional[pd.DataFrame] = None
@@ -60,9 +73,9 @@ class VARForecasting:
         """
         if self.forecaster is None:
             self.create_logit_ratios_model()
-            
+
         self.forecaster.fit(*args, **kwargs)
-        
+
         if self.days_to_forecast is None:
             self.days_to_forecast = self.forecaster.k_ar + self.window
 
@@ -86,37 +99,24 @@ class VARForecasting:
         )
         try:
             self.forecasted_logit_ratios_tuple_arrays = (
-                self.forecaster.forecast_interval(
-                    self.days_to_forecast, **kwargs
-                )
+                self.forecaster.forecast_interval(self.days_to_forecast, **kwargs)
             )
         except Exception as e:
             raise Exception(e)
 
-        self.forecasting_box = {
-            LOGIT_RATIOS[0]: pd.DataFrame(
-                self.forecasted_logit_ratios_tuple_arrays[0],
+        # Dynamically create forecasting_box based on active logit ratios
+        self.forecasting_box = {}
+        for i, logit_ratio_name in enumerate(self.active_logit_ratios):
+            self.forecasting_box[logit_ratio_name] = pd.DataFrame(
+                self.forecasted_logit_ratios_tuple_arrays[i],
                 index=self.forecasting_interval,
                 columns=FORECASTING_LEVELS,
-            ),
-            LOGIT_RATIOS[1]: pd.DataFrame(
-                self.forecasted_logit_ratios_tuple_arrays[1],
-                index=self.forecasting_interval,
-                columns=FORECASTING_LEVELS,
-            ),
-            LOGIT_RATIOS[2]: pd.DataFrame(
-                self.forecasted_logit_ratios_tuple_arrays[2],
-                index=self.forecasting_interval,
-                columns=FORECASTING_LEVELS,
-            ),
-        }
+            )
 
-        self.forecasting_box["alpha"] = self.forecasting_box["logit_alpha"].apply(
-            logistic_function
-        )
-        self.forecasting_box["beta"] = self.forecasting_box["logit_beta"].apply(
-            logistic_function
-        )
-        self.forecasting_box["gamma"] = self.forecasting_box["logit_gamma"].apply(
-            logistic_function
-        )
+        # Apply inverse logit (logistic function) to get original rates
+        for logit_ratio in self.active_logit_ratios:
+            # Remove "logit_" prefix to get original rate name
+            rate_name = logit_ratio.replace("logit_", "")
+            self.forecasting_box[rate_name] = self.forecasting_box[logit_ratio].apply(
+                logistic_function
+            )

@@ -49,7 +49,8 @@ def test_generate_result_uses_cache_roundtrip(
     model1.fit_model(max_lag=2)
     model1.forecast(steps=5)
     model1.run_simulations(n_jobs=1)
-    model1.generate_result()    assert model1.results is not None
+    model1.generate_result()
+    assert model1.results is not None
     assert cache_dir.exists()
     # Ensure compartment files exist in exactly one subdir
     subdirs = [p for p in cache_dir.glob("*/") if (p / "C.csv").exists()]

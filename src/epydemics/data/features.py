@@ -122,6 +122,9 @@ def feature_engineering(data: pd.DataFrame) -> pd.DataFrame:
 
     # Detect vaccination presence
     has_vaccination = "V" in engineered_data.columns
+    logging.debug(
+        f"Vaccination detection: has_vaccination={has_vaccination}, columns={engineered_data.columns.tolist()}"
+    )
 
     # Fill missing vaccination data with zeros if present
     if has_vaccination:
@@ -134,9 +137,7 @@ def feature_engineering(data: pd.DataFrame) -> pd.DataFrame:
     # R: Recovered (using recovery_lag from settings)
     settings = get_settings()
     engineered_data = engineered_data.assign(
-        R=engineered_data["C"]
-        .shift(settings.RECOVERY_LAG)
-        .fillna(0)
+        R=engineered_data["C"].shift(settings.RECOVERY_LAG).fillna(0)
         - engineered_data["D"]
     )
 

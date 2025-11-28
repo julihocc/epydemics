@@ -1,6 +1,7 @@
 """
 Epidemic simulation engine.
 """
+
 import itertools
 import logging
 import multiprocessing as mp
@@ -239,10 +240,13 @@ class EpidemicSimulation:
                 # Collect results as they complete
                 for future in as_completed(future_to_scenario):
                     (
-                        logit_alpha_level,
-                        logit_beta_level,
-                        logit_gamma_level,
-                    ), simulation_result = future.result()
+                        (
+                            logit_alpha_level,
+                            logit_beta_level,
+                            logit_gamma_level,
+                        ),
+                        simulation_result,
+                    ) = future.result()
                     self.simulation[logit_alpha_level][logit_beta_level][
                         logit_gamma_level
                     ] = simulation_result
@@ -288,5 +292,13 @@ class EpidemicSimulation:
         """Generate results for all compartments."""
         self.results = Box()
 
-        for compartment in COMPARTMENTS:
+        # Get available compartments from a sample simulation (they're all the same)
+        sample_simulation = self.simulation[FORECASTING_LEVELS[0]][
+            FORECASTING_LEVELS[0]
+        ][FORECASTING_LEVELS[0]]
+        available_compartments = [
+            c for c in COMPARTMENTS if c in sample_simulation.columns
+        ]
+
+        for compartment in available_compartments:
             self.results[compartment] = self.create_results_dataframe(compartment)

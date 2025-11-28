@@ -65,11 +65,18 @@ class Model(BaseModel, SIRDModelMixin):
         self.days_to_forecast = days_to_forecast
 
         self.data = reindex_data(data_container.data, start, stop)
-        self.logit_ratios_values = self.data[LOGIT_RATIOS].values
+
+        # Select only logit ratios that exist in the data (SIRD vs SIRDV)
+        available_logit_ratios = [r for r in LOGIT_RATIOS if r in self.data.columns]
+        self.logit_ratios_values = self.data[available_logit_ratios].values
+        self.active_logit_ratios = available_logit_ratios  # Store for later use
 
         # Forecasting component
         self.var_forecasting = VARForecasting(
-            self.data, self.logit_ratios_values, self.window
+            self.data,
+            self.logit_ratios_values,
+            self.window,
+            active_logit_ratios=available_logit_ratios,
         )
         if self.days_to_forecast:
             self.var_forecasting.days_to_forecast = self.days_to_forecast
@@ -291,14 +298,17 @@ class Model(BaseModel, SIRDModelMixin):
 
             box = Box()
             try:
-                for comp in COMPARTMENTS:
-                    fp = dir_path / f"{comp}.csv"
-                    if not fp.exists():
-                        return None
-                    df = pd.read_csv(fp, index_col=0, parse_dates=True)
+                # Load all CSV files in the cache directory (dynamic compartments)
+                for comp_file in dir_path.glob("*.csv"):
+                    comp = comp_file.stem  # Get compartment name from filename
+                    df = pd.read_csv(comp_file, index_col=0, parse_dates=True)
                     # Ensure index aligns to forecasting interval
                     df = df.loc[self.forecasting_interval]
                     box[comp] = df
+                # Ensure we have at least the core SIRD compartments
+                required_comps = ["C", "I", "R", "D"]
+                if not all(comp in box for comp in required_comps):
+                    return None
                 return box
             except Exception:
                 return None
@@ -317,7 +327,8 @@ class Model(BaseModel, SIRDModelMixin):
             (dir_path / "meta.json").write_text(
                 json.dumps(meta, indent=2, sort_keys=True), encoding="utf-8"
             )
-            for comp in COMPARTMENTS:
+            # Only save compartments that exist in results
+            for comp in results_box.keys():
                 results_box[comp].to_csv(dir_path / f"{comp}.csv")
 
         # Attempt cache if enabled

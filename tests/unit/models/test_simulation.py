@@ -33,10 +33,13 @@ class TestEpidemicSimulation:
     def setup_simulation_data(self, sample_data_container):
         """Set up data required for EpidemicSimulation."""
         data = sample_data_container.data
-        logit_ratios_values = data[["logit_alpha", "logit_beta", "logit_gamma"]].values
+        active_logit_ratios = ["logit_alpha", "logit_beta", "logit_gamma"]
+        logit_ratios_values = data[active_logit_ratios].values
         window = sample_data_container.window
 
-        var_forecasting = VARForecasting(data, logit_ratios_values, window)
+        var_forecasting = VARForecasting(
+            data, logit_ratios_values, window, active_logit_ratios
+        )
         var_forecasting.create_logit_ratios_model()
         var_forecasting.fit_logit_ratios_model()
         var_forecasting.forecast_logit_ratios(steps=5)
@@ -77,7 +80,9 @@ class TestEpidemicSimulation:
     def test_simulate_for_given_levels(self, epidemic_simulation_instance):
         """Test individual simulation scenario."""
         simulation_levels = ["point", "point", "point"]
-        result = epidemic_simulation_instance.simulate_for_given_levels(simulation_levels)
+        result = epidemic_simulation_instance.simulate_for_given_levels(
+            simulation_levels
+        )
 
         assert isinstance(result, pd.DataFrame)
         assert len(result) == len(epidemic_simulation_instance.forecasting_interval)
@@ -92,13 +97,16 @@ class TestEpidemicSimulation:
     def test_simulation_conservation_laws(self, epidemic_simulation_instance):
         """Test that SIRD simulation respects conservation laws."""
         simulation_levels = ["point", "point", "point"]
-        result = epidemic_simulation_instance.simulate_for_given_levels(simulation_levels)
+        result = epidemic_simulation_instance.simulate_for_given_levels(
+            simulation_levels
+        )
 
         for idx in result.index:
             row = result.loc[idx]
             assert np.isclose(row["S"] + row["I"], row["A"])
             assert np.isclose(row["C"], row["I"] + row["R"] + row["D"])
 
+    @pytest.mark.slow
     def test_run_simulations(self, epidemic_simulation_instance):
         """Test running all 27 simulation scenarios."""
         epidemic_simulation_instance.run_simulations()
@@ -115,6 +123,7 @@ class TestEpidemicSimulation:
                     count += 1
         assert count == 27
 
+    @pytest.mark.slow
     def test_create_results_dataframe(self, epidemic_simulation_instance):
         """Test results dataframe creation for specific compartment."""
         epidemic_simulation_instance.run_simulations()
@@ -130,6 +139,7 @@ class TestEpidemicSimulation:
         for method in central_methods:
             assert method in results_df.columns
 
+    @pytest.mark.slow
     def test_generate_result(self, epidemic_simulation_instance):
         """Test complete results generation."""
         epidemic_simulation_instance.run_simulations()

@@ -31,9 +31,10 @@ class TestVARForecasting:
     def var_forecasting_instance(self, sample_data_container):
         """Create a VARForecasting instance for testing."""
         data = sample_data_container.data
-        logit_ratios_values = data[["logit_alpha", "logit_beta", "logit_gamma"]].values
+        active_logit_ratios = ["logit_alpha", "logit_beta", "logit_gamma"]
+        logit_ratios_values = data[active_logit_ratios].values
         window = sample_data_container.window
-        return VARForecasting(data, logit_ratios_values, window)
+        return VARForecasting(data, logit_ratios_values, window, active_logit_ratios)
 
     def test_var_forecasting_init(self, var_forecasting_instance):
         """Test VARForecasting initialization."""
@@ -67,5 +68,12 @@ class TestVARForecasting:
         assert var_forecasting_instance.forecasting_interval is not None
         assert len(var_forecasting_instance.forecasting_interval) == 5
 
-        for rate in ["alpha", "beta", "gamma", "logit_alpha", "logit_beta", "logit_gamma"]:
+        for rate in [
+            "alpha",
+            "beta",
+            "gamma",
+            "logit_alpha",
+            "logit_beta",
+            "logit_gamma",
+        ]:
             assert rate in var_forecasting_instance.forecasting_box
