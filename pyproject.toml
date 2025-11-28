@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "epydemics"
-version = "0.6.1-dev"
-description = "Advanced epidemiological modeling and forecasting using discrete SIRD models with time series analysis"
+version = "0.7.0"
+description = "Advanced epidemiological modeling and forecasting using discrete SIRD/SIRDV models with time series analysis"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [

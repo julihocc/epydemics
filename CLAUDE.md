@@ -258,6 +258,64 @@ Must follow this exact sequence (implemented in `features.py`):
 5. Apply `prepare_for_logit_function()` to bound rates
 6. Apply logit transform
 
+### SIRDV Model Extension (v0.7.0+)
+The SIRDV model extends SIRD by adding a Vaccinated compartment (V) and vaccination rate (δ).
+
+**SIRDV Compartments:**
+```python
+V = Vaccinated = cumulative vaccinations  # Vaccinated population
+S = Susceptible = N - I - R - D - V       # Updated to exclude V
+I = Infected = C - R - D                  # Unchanged
+R = Recovered = C.shift(14) - D           # Unchanged
+D = Deaths = cumulative deaths            # Unchanged
+C = Cases = cumulative cases              # Unchanged
+A = S + I                                 # Active population
+```
+
+**SIRDV Rates:**
+```python
+δ(t) = vaccination rate = dV / S  # New vaccination rate
+α(t) = infection rate = (A * dC) / (I * S)
+β(t) = recovery rate = dR / I
+γ(t) = mortality rate = dD / I
+```
+
+**Conservation Law:**
+```python
+# SIRD: N = S + I + R + D
+# SIRDV: N = S + I + R + D + V
+```
+
+**Key Differences:**
+- **4 rates instead of 3**: VAR model forecasts (logit_alpha, logit_beta, logit_gamma, logit_delta)
+- **81 scenarios instead of 27**: Simulations run 3⁴ = 81 combinations (lower/point/upper for each rate)
+- **4D Box structure**: `simulation[α][β][γ][δ]` for scenario storage
+- **Vaccination flow**: `vaccination = δ * S` removes susceptible individuals to V compartment
+
+**Configuration:**
+```bash
+# Enable SIRDV mode (requires vaccination column in data)
+ENABLE_VACCINATION=True
+VACCINATION_COLUMN=people_vaccinated  # Column name in OWID data
+```
+
+**Detection:**
+```python
+# Model automatically detects vaccination support
+model = Model(container, start="2020-03-01", stop="2021-12-31")
+print(model.has_vaccination)  # True if logit_delta present
+
+# Results include V compartment when vaccination detected
+model.generate_result()
+print(model.results.V)  # Vaccination forecasts
+```
+
+**Performance Notes:**
+- SIRDV requires more observations for VAR estimation (4 equations vs 3)
+- Use longer training periods or smaller max_lag for SIRDV
+- Simulation time ~3x longer due to 81 scenarios vs 27
+- Parallel execution (`n_jobs=None`) recommended for SIRDV
+
 ## Common Development Patterns
 
 ### Typical Analysis Workflow
