@@ -55,6 +55,7 @@ dependencies = [
     "notebook>=7.5.0",
     "seaborn>=0.13.2",
     "factor-analyzer>=0.5.1",
+    "pytest-cov>=7.0.0",
 ]
 
 [project.optional-dependencies]
