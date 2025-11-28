@@ -71,6 +71,11 @@ class Model(BaseModel, SIRDModelMixin):
         self.logit_ratios_values = self.data[available_logit_ratios].values
         self.active_logit_ratios = available_logit_ratios  # Store for later use
 
+        # Log model type detection
+        n_rates = len(available_logit_ratios)
+        model_type = "SIRDV" if n_rates == 4 else "SIRD"
+        logging.info(f"Model initialized with {n_rates} rates ({model_type} mode)")
+
         # Forecasting component
         self.var_forecasting = VARForecasting(
             self.data,
