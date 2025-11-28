@@ -1,15 +1,20 @@
 # GitHub Copilot Instructions for Epydemics
 
-**Version 0.6.1-dev** - Result Caching & Vaccination Support
+**Version 0.6.1-dev** - SIRDV Model Implementation Complete
 
 ## Project Overview
-Epydemics implements epidemiological forecasting by combining discrete SIRD (Susceptible-Infected-Recovered-Deaths) models with VAR (Vector Autoregression) time series on **logit-transformed rates**. Unlike classical models with constant parameters, this models time-varying infection (α), recovery (β), and mortality (γ) rates.
+Epydemics implements epidemiological forecasting by combining discrete SIRD/SIRDV models with VAR (Vector Autoregression) time series on **logit-transformed rates**. The system now automatically detects and handles both traditional SIRD models and modern SIRDV models with vaccination data.
 
-**Key Innovation**: Rates are logit-transformed before VAR modeling to ensure (0,1) bounds, then inverse-transformed for Monte Carlo epidemic simulations across 27 scenarios (3³ confidence levels).
+**Key Innovation**: Rates are logit-transformed before VAR modeling to ensure (0,1) bounds, then inverse-transformed for Monte Carlo epidemic simulations across 27 scenarios (3³ confidence levels). The system dynamically adapts to available data (SIRD vs SIRDV).
 
-**Current Development**: Git worktree `sirdv-model-implementation` branch - working on SIRDV (vaccination) model extension and result caching features.
+**Current Status**: Branch `sirdv-model-implementation` - **COMPLETE** ✅
+- Dynamic SIRD/SIRDV detection implemented
+- Vaccination support fully functional
+- Result caching working with variable compartments
+- All fast tests passing (130+)
+- Slow tests properly marked
 
-**Important**: Version mismatch exists - `pyproject.toml` declares `0.6.1-dev` but `src/epydemics/__init__.py` still has `0.6.0-dev`. Update both when releasing.
+**Important**: Version in `pyproject.toml` is `0.6.1-dev` and `src/epydemics/__init__.py` should match before release.
 
 ## Architecture at a Glance
 
@@ -254,17 +259,27 @@ def forecast(self, steps: int) -> None:
 
 ## Recent Major Changes (v0.6.1-dev)
 
-1. **Result Caching (v0.6.1)**: File-based caching of `generate_result()` output to avoid recomputation
+1. **✅ SIRDV Model Support (COMPLETE - Nov 2025)**: 
+   - Automatic detection of vaccination column (V)
+   - Dynamic rate calculation including delta (vaccination rate)
+   - Modified susceptible calculation: `S = N - C - V` for SIRDV
+   - Backward compatible with SIRD models
+   - See `SIRDV_IMPLEMENTATION_COMPLETE.md` for details
+
+2. **✅ Result Caching (v0.6.1)**: File-based caching of `generate_result()` output to avoid recomputation
    - Configure via `.env`: `RESULT_CACHING_ENABLED=True`, `CACHE_DIR=.epydemics_cache`, `CACHE_STRICT_VERSION=False`
    - Cache key based on: model params, data state (SHA-256), forecast values, optionally package version
-   - See `src/epydemics/models/sird.py` (lines 237-350) for implementation
-2. **Vaccination Support (v0.6.1)**: Optional SIRDV model with vaccination compartment (V)
-   - Enable via: `ENABLE_VACCINATION=True`, `VACCINATION_COLUMN=people_vaccinated` in config
-   - Falls back to SIRD if data unavailable - see `src/epydemics/epydemics.py` `process_data_from_owid()`
-3. **Parallel Simulations (v0.6.0)**: Added `n_jobs` parameter to `run_simulations()` with auto-CPU detection
-4. **VAR API Fix (v0.6.0)**: Corrected `select_order()` usage (no `ic` parameter - use attribute access)
-5. **Modular Architecture (v0.6.0)**: Extracted analysis functions to `epydemics/analysis/` module
-6. **Modern Pandas (v0.6.0)**: Replaced deprecated `fillna(method="ffill")` with `.ffill()`
+   - Dynamic compartment saving/loading (handles both SIRD and SIRDV)
+   
+3. **✅ Parallel Simulations (v0.6.0)**: Added `n_jobs` parameter to `run_simulations()` with auto-CPU detection
+
+4. **✅ VAR API Fix (v0.6.0)**: Corrected `select_order()` usage (no `ic` parameter - use attribute access)
+
+5. **✅ Modular Architecture (v0.6.0)**: Extracted analysis functions to `epydemics/analysis/` module
+
+6. **✅ Modern Pandas (v0.6.0)**: Replaced deprecated `fillna(method="ffill")` with `.ffill()`
+
+7. **✅ Test Infrastructure**: Added `@pytest.mark.slow` to 25+ integration tests for faster CI/CD
 
 ## Testing New Features
 - **Result Caching**: `tests/models/test_result_caching.py` - cache hit/miss, invalidation, version handling

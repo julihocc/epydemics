@@ -1,16 +1,20 @@
 # Epydemics: Forecasting COVID-19 using time series and machine learning
 
-**Version 0.6.0** - AI-Enhanced Documentation Release
+**Version 0.6.1-dev** - SIRDV Vaccination Support
 
-`epydemics` is a Python library for epidemiological modeling and forecasting. It provides tools for creating, fitting, and evaluating discrete SIRD models with time-dependent parameters. The library is designed to be flexible and extensible, allowing users to easily incorporate their own data and models.
+`epydemics` is a Python library for epidemiological modeling and forecasting. It provides tools for creating, fitting, and evaluating discrete SIRD/SIRDV models with time-dependent parameters. The library is designed to be flexible and extensible, allowing users to easily incorporate their own data and models.
 
 ## Features
 
--   **Discrete SIRD Model**: A discrete Susceptible-Infected-Recovered-Deceased (SIRD) model with time-dependent parameters.
--   **Time Series Forecasting**: Use of time series models to forecast the evolution of the pandemic.
--   **Data Container**: A convenient class for loading, preprocessing, and storing epidemiological data.
--   **Model Evaluation**: Tools for evaluating the performance of the models.
--   **Visualization**: Functions for visualizing the results of the models.
+-   **Discrete SIRD/SIRDV Models**: Automatic detection and support for both:
+    -   **SIRD**: Susceptible-Infected-Recovered-Deceased model
+    -   **SIRDV**: SIRD with Vaccination compartment (automatically detected)
+-   **Time Series Forecasting**: VAR (Vector Autoregression) models on logit-transformed rates with confidence intervals
+-   **Parallel Simulation**: Multi-core support for faster Monte Carlo simulations (27 scenarios)
+-   **Data Container**: A convenient class for loading, preprocessing, and storing epidemiological data from OWID
+-   **Model Evaluation**: Comprehensive metrics (MAE, MSE, RMSE, MAPE, SMAPE) across multiple central tendencies
+-   **Visualization**: Professional plotting functions with confidence bands and testing data overlay
+-   **Result Caching**: Optional file-based caching to avoid recomputation
 
 ## Getting Started
 
@@ -40,12 +44,18 @@ pip install -e .
 
 ## Further work
 
-There are many ways to extend and improve `epydemics`. Some possible directions for future work include:
+Recent additions in v0.6.1-dev:
+-   ✅ **SIRDV Model Support**: Automatic detection and modeling of vaccination data
+-   ✅ **Parallel Simulations**: Multi-core execution for improved performance
+-   ✅ **Result Caching**: Optional caching to avoid recomputation
+-   ✅ **Enhanced Testing**: Comprehensive test coverage with slow test markers
 
--   **More advanced time series models**: The current version of `epydemics` uses a simple time series model for forecasting the SIRD parameters. More advanced models, such as SARIMAX or Prophet, could be used to improve the accuracy of the forecasts.
--   **Support for other epidemiological models**: `epydemics` could be extended to support other epidemiological models, such as the SEIR model.
--   **Improved visualization**: The visualization tools in `epydemics` could be improved to provide more insights into the dynamics of the pandemic.
--   **More comprehensive documentation**: The documentation for `epydemics` could be improved to provide more detailed explanations of the models and the code.
+Future directions:
+
+-   **More advanced time series models**: The current version uses VAR models. More advanced approaches like SARIMAX, Prophet, or deep learning could improve accuracy.
+-   **Support for other epidemiological models**: Extend to SEIR, SEIRD, or metapopulation models.
+-   **Improved visualization**: Interactive dashboards and real-time updating plots.
+-   **More comprehensive documentation**: Detailed SIRDV examples and case studies with real vaccination data.
 
 ## References
 
