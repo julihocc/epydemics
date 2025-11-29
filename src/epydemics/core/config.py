@@ -45,6 +45,44 @@ class Settings(BaseSettings):
         "aic", description="Criterion for VAR lag order selection (e.g., 'aic', 'bic')."
     )
 
+    # --- Forecasting Backend Settings ---
+    DEFAULT_FORECASTER: str = Field(
+        "var",
+        description="Default forecasting backend ('var', 'prophet', 'arima', 'lstm').",
+    )
+    FORECASTER_ALPHA: float = Field(
+        0.05,
+        description="Significance level for confidence intervals (alpha = 0.05 for 95% CI).",
+    )
+
+    # --- Prophet Backend Settings ---
+    PROPHET_YEARLY_SEASONALITY: bool = Field(
+        False,
+        description="Enable yearly seasonality in Prophet models.",
+    )
+    PROPHET_WEEKLY_SEASONALITY: bool = Field(
+        False,
+        description="Enable weekly seasonality in Prophet models.",
+    )
+    PROPHET_CHANGEPOINT_PRIOR_SCALE: float = Field(
+        0.05,
+        description="Flexibility of trend changes in Prophet (higher = more flexible).",
+    )
+
+    # --- ARIMA Backend Settings ---
+    ARIMA_MAX_P: int = Field(
+        5,
+        description="Maximum AR order for Auto-ARIMA model selection.",
+    )
+    ARIMA_MAX_Q: int = Field(
+        5,
+        description="Maximum MA order for Auto-ARIMA model selection.",
+    )
+    ARIMA_SEASONAL: bool = Field(
+        False,
+        description="Enable seasonal ARIMA (SARIMA) models.",
+    )
+
     # --- Logging Settings ---
     LOG_LEVEL: str = Field("INFO", description="Default logging level.")
     LOG_FORMAT: str = Field(

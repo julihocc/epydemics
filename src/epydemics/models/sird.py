@@ -15,7 +15,8 @@ from ..analysis.visualization import visualize_results as _visualize_results
 from ..core.constants import COMPARTMENTS, FORECASTING_LEVELS, LOGIT_RATIOS
 from ..data.preprocessing import reindex_data
 from .base import BaseModel, SIRDModelMixin
-from .var_forecasting import VARForecasting
+from .var_forecasting import VARForecasting  # Keep for backward compat
+from .forecasting.orchestrator import ForecastingOrchestrator
 from .simulation import EpidemicSimulation
 
 
@@ -31,11 +32,41 @@ def _get_pkg_version() -> str:
 
 class Model(BaseModel, SIRDModelMixin):
     """
-    SIRD epidemiological model with VAR time series forecasting.
+    SIRD epidemiological model with multi-backend time series forecasting.
 
     This model implements the SIRD (Susceptible-Infected-Recovered-Deaths)
-    compartmental model with time-varying rates modeled using Vector Autoregression
-    on logit-transformed infection, recovery, and mortality rates.
+    compartmental model with time-varying rates. Supports multiple forecasting
+    backends: VAR (default), Prophet, ARIMA, and LSTM (stub).
+
+    The forecasting backend is selected via the `forecaster` parameter, with
+    backend-specific configuration passed through `forecaster_kwargs`.
+
+    Examples:
+        Default VAR backend (v0.7.0 behavior):
+
+        >>> model = Model(container, start="2020-03-01", stop="2020-12-31")
+        >>> model.create_model()
+        >>> model.fit_model(max_lag=10)
+
+        Prophet with seasonality:
+
+        >>> model = Model(
+        ...     container,
+        ...     forecaster="prophet",
+        ...     yearly_seasonality=True,
+        ...     changepoint_prior_scale=0.1
+        ... )
+        >>> model.create_model()
+        >>> model.fit_model()
+
+        Auto-ARIMA:
+
+        >>> model = Model(
+        ...     container,
+        ...     forecaster="arima",
+        ...     max_p=5,
+        ...     seasonal=False
+        ... )
     """
 
     def __init__(
@@ -44,6 +75,8 @@ class Model(BaseModel, SIRDModelMixin):
         start: Optional[str] = None,
         stop: Optional[str] = None,
         days_to_forecast: Optional[int] = None,
+        forecaster: str = "var",
+        **forecaster_kwargs,
     ):
         """
         Initialize the SIRD Model.
@@ -53,6 +86,36 @@ class Model(BaseModel, SIRDModelMixin):
             start: Start date for model training (YYYY-MM-DD format)
             stop: Stop date for model training (YYYY-MM-DD format)
             days_to_forecast: Number of days to forecast ahead
+            forecaster: Forecasting backend to use. Options:
+                - 'var' (default): Vector Autoregression (statsmodels)
+                - 'prophet': Facebook Prophet
+                - 'arima': Auto-ARIMA (pmdarima)
+                - 'lstm': LSTM neural network (stub - not yet implemented)
+            **forecaster_kwargs: Backend-specific configuration parameters.
+                For VAR: max_lag, ic (information criterion)
+                For Prophet: yearly_seasonality, weekly_seasonality, changepoint_prior_scale
+                For ARIMA: max_p, max_q, seasonal
+
+        Examples:
+            >>> # Default VAR backend (100% backward compatible)
+            >>> model = Model(container, start="2020-03-01", stop="2020-12-31")
+            >>>
+            >>> # Prophet with custom seasonality
+            >>> model = Model(
+            ...     container,
+            ...     forecaster="prophet",
+            ...     yearly_seasonality=True,
+            ...     changepoint_prior_scale=0.05
+            ... )
+            >>>
+            >>> # ARIMA with custom parameters
+            >>> model = Model(
+            ...     container,
+            ...     forecaster="arima",
+            ...     max_p=3,
+            ...     max_q=3,
+            ...     seasonal=False
+            ... )
         """
         # Data and model attributes
         self.data: Optional[pd.DataFrame] = None
@@ -63,6 +126,10 @@ class Model(BaseModel, SIRDModelMixin):
 
         # Model parameters
         self.days_to_forecast = days_to_forecast
+
+        # Forecasting configuration
+        self.forecaster_name = forecaster
+        self.forecaster_kwargs = forecaster_kwargs
 
         self.data = reindex_data(data_container.data, start, stop)
 
@@ -77,14 +144,18 @@ class Model(BaseModel, SIRDModelMixin):
         # Log model type detection
         n_rates = len(available_logit_ratios)
         model_type = "SIRDV" if n_rates == 4 else "SIRD"
-        logging.info(f"Model initialized with {n_rates} rates ({model_type} mode)")
+        logging.info(
+            f"Model initialized with {n_rates} rates ({model_type} mode), "
+            f"forecaster='{forecaster}'"
+        )
 
-        # Forecasting component
-        self.var_forecasting = VARForecasting(
+        # Forecasting component - use orchestrator for multi-backend support
+        self.var_forecasting = ForecastingOrchestrator(
             self.data,
             self.logit_ratios_values,
             self.window,
             active_logit_ratios=available_logit_ratios,
+            backend=forecaster,
         )
         if self.days_to_forecast:
             self.var_forecasting.days_to_forecast = self.days_to_forecast
@@ -105,19 +176,29 @@ class Model(BaseModel, SIRDModelMixin):
 
     def create_model(self, *args, **kwargs) -> None:
         """
-        Create the VAR model for logit-transformed rates.
+        Create the forecasting model for logit-transformed rates.
 
-        This prepares the internal VAR forecaster on the logit-transformed
-        α, β, γ rates using the configured smoothing window.
+        This prepares the internal forecaster (VAR, Prophet, ARIMA, etc.) on the
+        logit-transformed α, β, γ (and optionally δ for SIRDV) rates using the
+        configured smoothing window.
+
+        Args:
+            **kwargs: Backend-specific creation parameters (forwarded to backend)
 
         Examples:
             >>> from epydemics import Model, process_data_from_owid
             >>> raw = process_data_from_owid("OWID_WRL")
             >>> container = DataContainer(raw, window=7)
+            >>>
+            >>> # Default VAR backend
             >>> model = Model(container, start="2020-03-01", stop="2020-12-31")
             >>> model.create_model()
+            >>>
+            >>> # Prophet backend
+            >>> model = Model(container, forecaster="prophet")
+            >>> model.create_model()
         """
-        self.var_forecasting.create_logit_ratios_model()
+        self.var_forecasting.create_logit_ratios_model(*args, **kwargs)
 
     def create_logit_ratios_model(self, *args, **kwargs) -> None:
         """DEPRECATED: Use create_model() instead.
@@ -135,20 +216,53 @@ class Model(BaseModel, SIRDModelMixin):
 
     def fit_model(self, *args, **kwargs) -> None:
         """
-        Fit the VAR model to the data.
+        Fit the forecasting model to the data.
+
+        Merges initialization-time kwargs (from __init__) with call-time kwargs,
+        with call-time kwargs taking precedence. This allows flexible configuration:
+
+        - Set defaults at initialization: Model(..., max_lag=10)
+        - Override at fit time: model.fit_model(max_lag=15)
 
         Args:
-            max_lag: Optional maximum lag order for VAR selection (default from settings)
-            ic: Information criterion for lag selection (e.g., "aic", from settings)
+            **kwargs: Backend-specific parameters. Common options:
+                For VAR:
+                    max_lag: Maximum lag order for selection (default from settings)
+                    ic: Information criterion ('aic', 'bic', etc.)
+                For Prophet:
+                    yearly_seasonality: Enable yearly patterns
+                    weekly_seasonality: Enable weekly patterns
+                    changepoint_prior_scale: Trend flexibility
+                For ARIMA:
+                    max_p: Maximum AR order
+                    max_q: Maximum MA order
+                    seasonal: Enable seasonal ARIMA
 
         Examples:
+            >>> # VAR with defaults
+            >>> model = Model(container)
             >>> model.create_model()
             >>> model.fit_model(max_lag=10)
+            >>>
+            >>> # VAR with init-time and fit-time config
+            >>> model = Model(container, max_lag=5)
+            >>> model.fit_model(ic="bic")  # Uses max_lag=5, ic="bic"
+            >>>
+            >>> # Prophet with seasonality
+            >>> model = Model(container, forecaster="prophet")
+            >>> model.fit_model(yearly_seasonality=True)
         """
         settings = get_settings()
-        kwargs.setdefault("max_lag", settings.VAR_MAX_LAG)
-        kwargs.setdefault("ic", settings.VAR_CRITERION)
-        self.var_forecasting.fit_logit_ratios_model(*args, **kwargs)
+
+        # Merge init-time kwargs with call-time kwargs (call-time takes precedence)
+        merged_kwargs = {**self.forecaster_kwargs, **kwargs}
+
+        # Apply backend-specific defaults from settings
+        if self.forecaster_name == "var":
+            merged_kwargs.setdefault("max_lag", settings.VAR_MAX_LAG)
+            merged_kwargs.setdefault("ic", settings.VAR_CRITERION)
+
+        self.var_forecasting.fit_logit_ratios_model(*args, **merged_kwargs)
         self.days_to_forecast = self.var_forecasting.days_to_forecast
 
     def fit_logit_ratios_model(self, *args, **kwargs) -> None:
@@ -306,6 +420,8 @@ class Model(BaseModel, SIRDModelMixin):
                 "window": self.window,
                 "days_to_forecast": self.days_to_forecast,
                 "has_vaccination": self.has_vaccination,
+                "forecaster": self.forecaster_name,  # Include backend in cache key
+                "forecaster_kwargs": self.forecaster_kwargs,  # Include config in cache key
                 "interval": [d.strftime("%Y-%m-%d") for d in self.forecasting_interval],
                 "initial_state": initial_state,
                 "rates_hash": rates_hash,
