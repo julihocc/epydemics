@@ -8,8 +8,12 @@ import numpy as np
 import pandas as pd
 from statsmodels.tsa.api import VAR
 
+from .base import BaseForecaster
+from .registry import register_forecaster
 
-class VARForecaster:
+
+@register_forecaster("var", aliases=["vector_ar", "vector_autoregression"])
+class VARForecaster(BaseForecaster):
     """
     Wrapper around statsmodels VAR for epidemiological rate forecasting.
 
@@ -26,9 +30,7 @@ class VARForecaster:
             data: DataFrame or numpy array containing the multivariate time series to model.
                   Rows are time steps, columns are variables.
         """
-        self.data = data
-        self.model: Optional[VAR] = None
-        self.fitted_model: Optional[Any] = None
+        super().__init__(data)
         self.k_ar: int = 0
 
     def create_model(self) -> None:
@@ -90,3 +92,8 @@ class VARForecaster:
             self.data.values if isinstance(self.data, pd.DataFrame) else self.data
         )
         return self.fitted_model.forecast_interval(data_values, steps, **kwargs)
+
+    @property
+    def backend_name(self) -> str:
+        """Return the backend identifier."""
+        return "var"

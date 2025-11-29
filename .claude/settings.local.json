@@ -25,7 +25,16 @@
       "Bash(gh project:*)",
       "Bash(gh issue create:*)",
       "Bash(gh label:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(gh repo view:*)",
+      "Bash(gh milestone create:*)",
+      "Bash(gh api:*)",
+      "Bash(for i in {82..97})",
+      "Bash(do)",
+      "Bash(gh issue edit:*)",
+      "Bash(echo:*)",
+      "Bash(done)",
+      "Bash(python3:*)"
     ],
     "deny": [],
     "ask": []
