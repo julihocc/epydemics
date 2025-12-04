@@ -274,3 +274,109 @@ def test_backward_compatibility_imports():
     from epydemics.analysis import visualize_results
 
     assert callable(visualize_results)
+
+
+# SIRDV-specific tests
+@pytest.fixture
+def sample_sirdv_results():
+    """Sample SIRDV forecast results including V compartment."""
+    dates = pd.date_range("2020-01-01", periods=10, freq="D")
+
+    # Central tendency data
+    central_tendency_data = pd.DataFrame(
+        {
+            "mean": np.linspace(100, 200, 10),
+            "median": np.linspace(95, 195, 10),
+            "gmean": np.linspace(98, 198, 10),
+            "hmean": np.linspace(92, 192, 10),
+        },
+        index=dates,
+    )
+
+    # Add simulation paths
+    simulation_data = central_tendency_data.copy()
+    simulation_data["lower|lower|lower|lower"] = simulation_data["mean"] * 0.8
+    simulation_data["upper|upper|upper|upper"] = simulation_data["mean"] * 1.2
+    simulation_data["point|lower|point|upper"] = simulation_data["mean"] * 0.9
+
+    # SIRDV results include V compartment
+    results = {
+        "C": simulation_data,
+        "D": simulation_data.copy() * 0.1,
+        "I": simulation_data.copy() * 0.5,
+        "R": simulation_data.copy() * 0.8,
+        "S": simulation_data.copy() * 5.0,
+        "V": simulation_data.copy() * 2.0,  # Vaccination compartment
+        "A": simulation_data.copy() * 5.5,
+    }
+
+    return results
+
+
+@patch("matplotlib.pyplot.show")
+@patch("matplotlib.pyplot.plot")
+def test_visualize_results_v_compartment(mock_plot, mock_show, sample_sirdv_results):
+    """Test visualization of V (Vaccinated) compartment."""
+    visualize_results(sample_sirdv_results, "V")
+
+    # Should make plot calls for simulation paths + central tendencies
+    assert mock_plot.call_count >= 4
+
+
+@patch("matplotlib.pyplot.show")
+@patch("matplotlib.pyplot.ylabel")
+def test_visualize_results_v_compartment_label(
+    mock_ylabel, mock_show, sample_sirdv_results
+):
+    """Test that V compartment uses correct label from constants."""
+    visualize_results(sample_sirdv_results, "V")
+
+    # Should use "Vaccinated" label from COMPARTMENT_LABELS
+    mock_ylabel.assert_called_once()
+    ylabel_arg = mock_ylabel.call_args[0][0]
+    assert "Vaccinated" in ylabel_arg
+
+
+@patch("matplotlib.pyplot.show")
+@patch("matplotlib.pyplot.plot")
+def test_visualize_results_all_sirdv_compartments(
+    mock_plot, mock_show, sample_sirdv_results
+):
+    """Test visualization works for all SIRDV compartments."""
+    compartments = ["S", "I", "R", "D", "V", "C", "A"]
+
+    for compartment in compartments:
+        mock_plot.reset_mock()
+        visualize_results(sample_sirdv_results, compartment)
+
+        # Each compartment should be visualizable
+        assert mock_plot.call_count >= 4
+
+
+@patch("matplotlib.pyplot.show")
+@patch("matplotlib.pyplot.plot")
+def test_visualize_results_v_with_testing_data(
+    mock_plot, mock_show, sample_sirdv_results
+):
+    """Test V compartment visualization with testing data overlay."""
+    testing_data = pd.DataFrame(
+        {"V": [150, 160, 170]}, index=pd.date_range("2020-01-01", periods=3)
+    )
+
+    visualize_results(sample_sirdv_results, "V", testing_data=testing_data)
+
+    # Should include testing data plot (red line)
+    assert mock_plot.call_count >= 5
+
+
+def test_sirdv_backward_compatibility_with_sird(sample_results, sample_sirdv_results):
+    """Test that SIRDV visualization doesn't break SIRD functionality."""
+    # SIRD results should still work
+    with patch("matplotlib.pyplot.show"), patch("matplotlib.pyplot.plot") as mock_plot:
+        visualize_results(sample_results, "C")
+        assert mock_plot.call_count >= 4
+
+    # SIRDV results should also work
+    with patch("matplotlib.pyplot.show"), patch("matplotlib.pyplot.plot") as mock_plot:
+        visualize_results(sample_sirdv_results, "C")
+        assert mock_plot.call_count >= 4

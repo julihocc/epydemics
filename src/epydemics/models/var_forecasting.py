@@ -2,6 +2,7 @@
 Vector Autoregression (VAR) forecasting implementation.
 """
 
+import logging
 import pandas as pd
 import numpy as np
 from typing import Any, Dict, Optional, Tuple
@@ -32,6 +33,11 @@ class VARForecasting:
             if active_logit_ratios is not None
             else list(LOGIT_RATIOS)
         )
+
+        # Log rate count detection
+        n_rates = len(self.active_logit_ratios)
+        model_type = "SIRDV (4-rate)" if n_rates == 4 else "SIRD (3-rate)"
+        logging.info(f"VAR forecasting initialized with {n_rates} rates: {model_type}")
 
         self.forecaster: Optional[VARForecaster] = None
         self.forecasted_logit_ratios: Optional[pd.DataFrame] = None
@@ -104,13 +110,23 @@ class VARForecasting:
         except Exception as e:
             raise Exception(e)
 
+        # Extract (lower, point, upper) arrays
+        # Each is shape (steps, n_variables)
+        lower_bounds, point_forecasts, upper_bounds = (
+            self.forecasted_logit_ratios_tuple_arrays
+        )
+
         # Dynamically create forecasting_box based on active logit ratios
         self.forecasting_box = {}
         for i, logit_ratio_name in enumerate(self.active_logit_ratios):
+            # Extract i-th variable from each forecast array
             self.forecasting_box[logit_ratio_name] = pd.DataFrame(
-                self.forecasted_logit_ratios_tuple_arrays[i],
+                {
+                    "lower": lower_bounds[:, i],
+                    "point": point_forecasts[:, i],
+                    "upper": upper_bounds[:, i],
+                },
                 index=self.forecasting_interval,
-                columns=FORECASTING_LEVELS,
             )
 
         # Apply inverse logit (logistic function) to get original rates

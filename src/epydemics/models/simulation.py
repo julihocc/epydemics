@@ -21,8 +21,8 @@ def _run_single_simulation(
     data: pd.DataFrame,
     forecasting_box: Dict[str, pd.DataFrame],
     forecasting_interval: pd.DatetimeIndex,
-    simulation_levels: Tuple[str, str, str],
-) -> Tuple[Tuple[str, str, str], pd.DataFrame]:
+    simulation_levels: Tuple[str, ...],
+) -> Tuple[Tuple[str, ...], pd.DataFrame]:
     """
     Helper function to run a single simulation scenario.
 
@@ -32,7 +32,9 @@ def _run_single_simulation(
         data: Historical epidemic data
         forecasting_box: Dictionary with forecasted rate values
         forecasting_interval: Time index for forecast period
-        simulation_levels: Tuple of (alpha_level, beta_level, gamma_level)
+        simulation_levels: Tuple of rate levels (3 for SIRD, 4 for SIRDV)
+            SIRD: (alpha_level, beta_level, gamma_level)
+            SIRDV: (alpha_level, beta_level, gamma_level, delta_level)
 
     Returns:
         Tuple of (simulation_levels, simulation_dataframe)
@@ -58,17 +60,26 @@ class EpidemicSimulation:
         self.forecasting_box = forecasting_box
         self.forecasting_interval = forecasting_interval
 
+        # Detect if we have vaccination (delta rate present)
+        self.has_vaccination = "delta" in forecasting_box
+        if self.has_vaccination:
+            logging.info("Simulation initialized with vaccination (SIRDV mode)")
+        else:
+            logging.info("Simulation initialized without vaccination (SIRD mode)")
+
         self.simulation: Optional[Box] = None
         self.results: Optional[Box] = None
 
     def simulate_for_given_levels(
-        self, simulation_levels: Tuple[str, str, str]
+        self, simulation_levels: Tuple[str, ...]
     ) -> pd.DataFrame:
         """
         Simulate epidemic dynamics for given rate confidence levels.
 
         Args:
-            simulation_levels: Tuple of (alpha_level, beta_level, gamma_level)
+            simulation_levels: Tuple of rate levels (3 for SIRD, 4 for SIRDV)
+                SIRD: (alpha_level, beta_level, gamma_level)
+                SIRDV: (alpha_level, beta_level, gamma_level, delta_level)
 
         Returns:
             DataFrame with simulated compartment values
@@ -85,10 +96,20 @@ class EpidemicSimulation:
         A = last_hist.A
         C = last_hist.C
 
+        # Initialize V if vaccination is present
+        if self.has_vaccination:
+            V = last_hist.V if "V" in last_hist.index else 0
+        else:
+            V = 0
+
         # Current rates (from history) used for the first step calculation
         alpha = last_hist.alpha
         beta = last_hist.beta
         gamma = last_hist.gamma
+        if self.has_vaccination:
+            delta = last_hist.delta if "delta" in last_hist.index else 0
+        else:
+            delta = 0
 
         # Get forecasted rates as numpy arrays for performance
         forecast_alphas = (
@@ -106,23 +127,42 @@ class EpidemicSimulation:
             .loc[self.forecasting_interval]
             .values
         )
+        if self.has_vaccination:
+            forecast_deltas = (
+                self.forecasting_box["delta"][simulation_levels[3]]
+                .loc[self.forecasting_interval]
+                .values
+            )
+        else:
+            forecast_deltas = None
 
         n_steps = len(self.forecasting_interval)
 
         # Pre-allocate result arrays
-        # Columns: A, C, S, I, R, D, alpha, beta, gamma
-        results = np.zeros((n_steps, 9))
+        # SIRD: A, C, S, I, R, D, alpha, beta, gamma (9 columns)
+        # SIRDV: A, C, S, I, R, D, V, alpha, beta, gamma, delta (11 columns)
+        n_cols = 11 if self.has_vaccination else 9
+        results = np.zeros((n_steps, n_cols))
 
         for i in range(n_steps):
             # Dynamics using CURRENT (previous step's) state and rates
-            # S(t) = S(t-1) - I(t-1)*alpha(t-1)*S(t-1)/A(t-1)
-            new_S = S - I * alpha * S / A
-
-            # I(t) = I(t-1) + infection - recovery - death
+            # Calculate flows
             infection = I * alpha * S / A
             recovery = beta * I
             death = gamma * I
 
+            if self.has_vaccination:
+                # Vaccination flow: delta * S
+                vaccination = delta * S
+                # Update S with both infection and vaccination
+                new_S = S - infection - vaccination
+                new_V = V + vaccination
+            else:
+                # SIRD: S only reduced by infection
+                new_S = S - infection
+                new_V = 0
+
+            # I(t) = I(t-1) + infection - recovery - death
             new_I = I + infection - recovery - death
             new_R = R + recovery
             new_D = D + death
@@ -134,6 +174,8 @@ class EpidemicSimulation:
             new_alpha = forecast_alphas[i]
             new_beta = forecast_betas[i]
             new_gamma = forecast_gammas[i]
+            if self.has_vaccination:
+                new_delta = forecast_deltas[i]
 
             # Store results
             results[i, 0] = new_A
@@ -142,16 +184,42 @@ class EpidemicSimulation:
             results[i, 3] = new_I
             results[i, 4] = new_R
             results[i, 5] = new_D
-            results[i, 6] = new_alpha
-            results[i, 7] = new_beta
-            results[i, 8] = new_gamma
+            if self.has_vaccination:
+                results[i, 6] = new_V
+                results[i, 7] = new_alpha
+                results[i, 8] = new_beta
+                results[i, 9] = new_gamma
+                results[i, 10] = new_delta
+            else:
+                results[i, 6] = new_alpha
+                results[i, 7] = new_beta
+                results[i, 8] = new_gamma
 
             # Update state for next iteration
             S, I, R, D, A, C = new_S, new_I, new_R, new_D, new_A, new_C
             alpha, beta, gamma = new_alpha, new_beta, new_gamma
+            if self.has_vaccination:
+                V = new_V
+                delta = new_delta
 
         # Create DataFrame from results
-        columns = ["A", "C", "S", "I", "R", "D", "alpha", "beta", "gamma"]
+        if self.has_vaccination:
+            columns = [
+                "A",
+                "C",
+                "S",
+                "I",
+                "R",
+                "D",
+                "V",
+                "alpha",
+                "beta",
+                "gamma",
+                "delta",
+            ]
+        else:
+            columns = ["A", "C", "S", "I", "R", "D", "alpha", "beta", "gamma"]
+
         simulation_df = pd.DataFrame(
             results, index=self.forecasting_interval, columns=columns
         )
@@ -159,16 +227,31 @@ class EpidemicSimulation:
         return simulation_df
 
     def create_simulation_box(self) -> None:
-        """Create nested Box structure for storing simulation results."""
+        """
+        Create nested Box structure for storing simulation results.
+
+        Creates 3D structure for SIRD (27 scenarios) or 4D for SIRDV (81 scenarios).
+        """
         self.simulation = Box()
         for logit_alpha_level in FORECASTING_LEVELS:
             self.simulation[logit_alpha_level] = Box()
             for logit_beta_level in FORECASTING_LEVELS:
                 self.simulation[logit_alpha_level][logit_beta_level] = Box()
                 for logit_gamma_level in FORECASTING_LEVELS:
-                    self.simulation[logit_alpha_level][logit_beta_level][
-                        logit_gamma_level
-                    ] = None
+                    if self.has_vaccination:
+                        # 4D structure for SIRDV
+                        self.simulation[logit_alpha_level][logit_beta_level][
+                            logit_gamma_level
+                        ] = Box()
+                        for logit_delta_level in FORECASTING_LEVELS:
+                            self.simulation[logit_alpha_level][logit_beta_level][
+                                logit_gamma_level
+                            ][logit_delta_level] = None
+                    else:
+                        # 3D structure for SIRD
+                        self.simulation[logit_alpha_level][logit_beta_level][
+                            logit_gamma_level
+                        ] = None
 
     def run_simulations(self, n_jobs: Optional[int] = None) -> None:
         """
@@ -208,20 +291,49 @@ class EpidemicSimulation:
         self.create_simulation_box()
 
         # Generate all scenario combinations
-        scenarios = list(
-            itertools.product(
-                FORECASTING_LEVELS, FORECASTING_LEVELS, FORECASTING_LEVELS
+        # SIRD: 27 scenarios (3^3), SIRDV: 81 scenarios (3^4)
+        if self.has_vaccination:
+            scenarios = list(
+                itertools.product(
+                    FORECASTING_LEVELS,
+                    FORECASTING_LEVELS,
+                    FORECASTING_LEVELS,
+                    FORECASTING_LEVELS,
+                )
             )
-        )
+            logging.info(f"Running {len(scenarios)} SIRDV scenarios (3^4)")
+        else:
+            scenarios = list(
+                itertools.product(
+                    FORECASTING_LEVELS, FORECASTING_LEVELS, FORECASTING_LEVELS
+                )
+            )
+            logging.info(f"Running {len(scenarios)} SIRD scenarios (3^3)")
 
         if n_jobs == 1:
             # Sequential execution (original behavior)
             for current_levels in scenarios:
-                logit_alpha_level, logit_beta_level, logit_gamma_level = current_levels
                 current_simulation = self.simulate_for_given_levels(current_levels)
-                self.simulation[logit_alpha_level][logit_beta_level][
-                    logit_gamma_level
-                ] = current_simulation
+
+                if self.has_vaccination:
+                    # Unpack 4 levels for SIRDV
+                    (
+                        logit_alpha_level,
+                        logit_beta_level,
+                        logit_gamma_level,
+                        logit_delta_level,
+                    ) = current_levels
+                    self.simulation[logit_alpha_level][logit_beta_level][
+                        logit_gamma_level
+                    ][logit_delta_level] = current_simulation
+                else:
+                    # Unpack 3 levels for SIRD
+                    logit_alpha_level, logit_beta_level, logit_gamma_level = (
+                        current_levels
+                    )
+                    self.simulation[logit_alpha_level][logit_beta_level][
+                        logit_gamma_level
+                    ] = current_simulation
         else:
             # Parallel execution
             with ProcessPoolExecutor(max_workers=n_jobs) as executor:
@@ -239,24 +351,32 @@ class EpidemicSimulation:
 
                 # Collect results as they complete
                 for future in as_completed(future_to_scenario):
-                    (
+                    levels, simulation_result = future.result()
+
+                    if self.has_vaccination:
+                        # Unpack 4 levels for SIRDV
                         (
                             logit_alpha_level,
                             logit_beta_level,
                             logit_gamma_level,
-                        ),
-                        simulation_result,
-                    ) = future.result()
-                    self.simulation[logit_alpha_level][logit_beta_level][
-                        logit_gamma_level
-                    ] = simulation_result
+                            logit_delta_level,
+                        ) = levels
+                        self.simulation[logit_alpha_level][logit_beta_level][
+                            logit_gamma_level
+                        ][logit_delta_level] = simulation_result
+                    else:
+                        # Unpack 3 levels for SIRD
+                        logit_alpha_level, logit_beta_level, logit_gamma_level = levels
+                        self.simulation[logit_alpha_level][logit_beta_level][
+                            logit_gamma_level
+                        ] = simulation_result
 
     def create_results_dataframe(self, compartment: str) -> pd.DataFrame:
         """
         Create results DataFrame for a specific compartment.
 
         Args:
-            compartment: Compartment code (A, C, S, I, R, D)
+            compartment: Compartment code (A, C, S, I, R, D, V)
 
         Returns:
             DataFrame with simulation results and central tendencies
@@ -264,20 +384,44 @@ class EpidemicSimulation:
         results_dataframe = pd.DataFrame()
         logging.debug(results_dataframe.head())
 
-        levels_interactions = itertools.product(
-            FORECASTING_LEVELS, FORECASTING_LEVELS, FORECASTING_LEVELS
-        )
+        if self.has_vaccination:
+            # 4D iteration for SIRDV
+            levels_interactions = itertools.product(
+                FORECASTING_LEVELS,
+                FORECASTING_LEVELS,
+                FORECASTING_LEVELS,
+                FORECASTING_LEVELS,
+            )
 
-        for (
-            logit_alpha_level,
-            logit_beta_level,
-            logit_gamma_level,
-        ) in levels_interactions:
-            column_name = f"{logit_alpha_level}|{logit_beta_level}|{logit_gamma_level}"
-            simulation = self.simulation[logit_alpha_level][logit_beta_level][
-                logit_gamma_level
-            ]
-            results_dataframe[column_name] = simulation[compartment].values
+            for (
+                logit_alpha_level,
+                logit_beta_level,
+                logit_gamma_level,
+                logit_delta_level,
+            ) in levels_interactions:
+                column_name = f"{logit_alpha_level}|{logit_beta_level}|{logit_gamma_level}|{logit_delta_level}"
+                simulation = self.simulation[logit_alpha_level][logit_beta_level][
+                    logit_gamma_level
+                ][logit_delta_level]
+                results_dataframe[column_name] = simulation[compartment].values
+        else:
+            # 3D iteration for SIRD
+            levels_interactions = itertools.product(
+                FORECASTING_LEVELS, FORECASTING_LEVELS, FORECASTING_LEVELS
+            )
+
+            for (
+                logit_alpha_level,
+                logit_beta_level,
+                logit_gamma_level,
+            ) in levels_interactions:
+                column_name = (
+                    f"{logit_alpha_level}|{logit_beta_level}|{logit_gamma_level}"
+                )
+                simulation = self.simulation[logit_alpha_level][logit_beta_level][
+                    logit_gamma_level
+                ]
+                results_dataframe[column_name] = simulation[compartment].values
 
         results_dataframe["mean"] = results_dataframe.mean(axis=1)
         results_dataframe["median"] = results_dataframe.median(axis=1)
@@ -293,9 +437,15 @@ class EpidemicSimulation:
         self.results = Box()
 
         # Get available compartments from a sample simulation (they're all the same)
-        sample_simulation = self.simulation[FORECASTING_LEVELS[0]][
-            FORECASTING_LEVELS[0]
-        ][FORECASTING_LEVELS[0]]
+        if self.has_vaccination:
+            sample_simulation = self.simulation[FORECASTING_LEVELS[0]][
+                FORECASTING_LEVELS[0]
+            ][FORECASTING_LEVELS[0]][FORECASTING_LEVELS[0]]
+        else:
+            sample_simulation = self.simulation[FORECASTING_LEVELS[0]][
+                FORECASTING_LEVELS[0]
+            ][FORECASTING_LEVELS[0]]
+
         available_compartments = [
             c for c in COMPARTMENTS if c in sample_simulation.columns
         ]

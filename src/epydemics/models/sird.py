@@ -71,6 +71,14 @@ class Model(BaseModel, SIRDModelMixin):
         self.logit_ratios_values = self.data[available_logit_ratios].values
         self.active_logit_ratios = available_logit_ratios  # Store for later use
 
+        # Detect vaccination presence
+        self.has_vaccination = "logit_delta" in available_logit_ratios
+
+        # Log model type detection
+        n_rates = len(available_logit_ratios)
+        model_type = "SIRDV" if n_rates == 4 else "SIRD"
+        logging.info(f"Model initialized with {n_rates} rates ({model_type} mode)")
+
         # Forecasting component
         self.var_forecasting = VARForecasting(
             self.data,
@@ -252,28 +260,55 @@ class Model(BaseModel, SIRDModelMixin):
         def _compute_cache_key() -> str:
             last_hist = self.data.iloc[-1]
 
+            # Build initial state with required compartments
+            initial_state_keys = [
+                "A",
+                "C",
+                "S",
+                "I",
+                "R",
+                "D",
+                "alpha",
+                "beta",
+                "gamma",
+            ]
+            if self.has_vaccination:
+                initial_state_keys.extend(["V", "delta"])
+
+            initial_state = {
+                k: float(last_hist[k])
+                for k in initial_state_keys
+                if k in last_hist.index
+            }
+
+            # Build rates hash with required rates
+            rates_to_hash = ["alpha", "beta", "gamma"]
+            if self.has_vaccination:
+                rates_to_hash.append("delta")
+
+            rates_hash = {
+                ratio: {
+                    level: _hash_series_values(
+                        self.forecasting_box[ratio][level].loc[
+                            self.forecasting_interval
+                        ]
+                    )
+                    for level in FORECASTING_LEVELS
+                }
+                for ratio in rates_to_hash
+                if ratio in self.forecasting_box
+            }
+
             payload: Dict[str, Any] = {
                 "pkg_version": _get_pkg_version(),
                 "start": self.start,
                 "stop": self.stop,
                 "window": self.window,
                 "days_to_forecast": self.days_to_forecast,
+                "has_vaccination": self.has_vaccination,
                 "interval": [d.strftime("%Y-%m-%d") for d in self.forecasting_interval],
-                "initial_state": {
-                    k: float(last_hist[k])
-                    for k in ["A", "C", "S", "I", "R", "D", "alpha", "beta", "gamma"]
-                },
-                "rates_hash": {
-                    ratio: {
-                        level: _hash_series_values(
-                            self.forecasting_box[ratio][level].loc[
-                                self.forecasting_interval
-                            ]
-                        )
-                        for level in FORECASTING_LEVELS
-                    }
-                    for ratio in ["alpha", "beta", "gamma"]
-                },
+                "initial_state": initial_state,
+                "rates_hash": rates_hash,
             }
             blob = json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
             return hashlib.sha256(blob).hexdigest()

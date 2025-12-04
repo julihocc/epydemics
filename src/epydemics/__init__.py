@@ -1,16 +1,18 @@
 """Epydemics: Advanced epidemiological modeling and forecasting.
 
 This package provides tools for modeling and analyzing epidemic data using
-discrete SIRD models combined with time series analysis.
+discrete SIRD/SIRDV models combined with time series analysis.
 
-Phase 3 Features:
-- Extracted analysis module with visualization and evaluation functions
-- Modern pandas syntax (deprecated methods replaced)
-- Enhanced type safety and improved interfaces
-- Comprehensive test coverage for analysis functionality
+v0.7.0 Features:
+- SIRDV vaccination model with V compartment and delta rate
+- Automatic vaccination detection from data
+- 81 simulation scenarios for SIRDV (3⁴ confidence levels)
+- Full backward compatibility with SIRD models
+- Enhanced analysis module with SIRDV visualization and evaluation
 
-Version: 0.6.0-dev (Phase 3 Advanced Features & Analysis Module)
+Version: 0.7.0
 """
+
 import logging
 
 # Import main functionality from modular structure
