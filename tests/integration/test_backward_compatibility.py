@@ -30,7 +30,7 @@ def test_package_version():
     import epydemics
 
     assert hasattr(epydemics, "__version__")
-    assert epydemics.__version__ == "0.6.0-dev"
+    assert epydemics.__version__ == "0.7.0"
 
 
 def test_package_metadata():

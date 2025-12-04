@@ -48,7 +48,7 @@ from .models.sird import Model
 from .utils.transformations import prepare_for_logit_function
 from .core.config import get_settings
 
-__version__ = "0.6.0-dev"
+__version__ = "0.7.0"
 __author__ = "Juliho David Castillo Colmenares"
 __email__ = "juliho.colmenares@gmail.com"
 

@@ -24,10 +24,11 @@ git worktree remove ../epydemics.worktrees/feature-name
 ```
 
 ### Version Management
-- Current version: 0.6.1-dev (defined in `pyproject.toml`)
+- Current version: 0.7.0 (defined in `pyproject.toml`)
 - Version also appears in `src/epydemics/__init__.py` as `__version__`
 - Main branch: `main`
-- When bumping versions, update both `pyproject.toml` and `src/epydemics/__init__.py`
+- When bumping versions, update both `pyproject.toml` (line 7) and `src/epydemics/__init__.py` (line 51)
+- **IMPORTANT**: These must be kept in sync. Check both files before releasing.
 
 ### Result Caching (v0.6.1+)
 The library supports file-based caching of generated results to avoid recomputation when running the same analysis multiple times.
@@ -493,6 +494,27 @@ model.forecasting_box.alpha.upper  # Upper CI
 
 # Simulation results structure (27 scenarios)
 model.results.simulation[alpha_level][beta_level][gamma_level].C  # Cases
+```
+
+### VAR Model API Pattern
+When working with statsmodels VAR models, use attribute access for information criteria:
+```python
+from statsmodels.tsa.api import VAR
+
+# Create and select order
+var_model = VAR(data)
+selector = var_model.select_order(maxlags=max_lag)
+
+# CORRECT: Access information criteria as attributes
+optimal_lag_aic = selector.aic
+optimal_lag_bic = selector.bic
+optimal_lag_hqic = selector.hqic
+
+# INCORRECT: Do NOT pass ic as parameter to select_order
+# selector = var_model.select_order(maxlags=max_lag, ic="aic")  # Will fail
+
+# Fit with selected lag
+fitted = var_model.fit(optimal_lag_aic)
 ```
 
 ## Testing Conventions
