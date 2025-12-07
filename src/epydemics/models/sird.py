@@ -679,9 +679,7 @@ class Model(BaseModel, SIRDModelMixin):
             )
 
         if compartment_code not in self.results:
-            raise ValueError(
-                f"Compartment '{compartment_code}' not found in results"
-            )
+            raise ValueError(f"Compartment '{compartment_code}' not found in results")
 
         if methods is None:
             methods = ["mean", "median"]
@@ -696,6 +694,11 @@ class Model(BaseModel, SIRDModelMixin):
 
         # Get daily forecast results
         daily_results = self.results[compartment_code]
+
+        # Convert to modern frequency alias to avoid FutureWarnings
+        from epydemics.core.constants import MODERN_FREQUENCY_ALIASES
+
+        modern_freq = MODERN_FREQUENCY_ALIASES.get(target_frequency, target_frequency)
 
         # Define aggregation function
         agg_funcs = {
@@ -712,8 +715,8 @@ class Model(BaseModel, SIRDModelMixin):
                 f"Must be one of {list(agg_funcs.keys())}"
             )
 
-        # Resample to target frequency
-        resampler = daily_results.resample(target_frequency)
+        # Resample to target frequency using modern alias
+        resampler = daily_results.resample(modern_freq)
         aggregated = resampler.apply(agg_funcs[aggregate_func])
 
         # Only keep the central tendency columns requested
