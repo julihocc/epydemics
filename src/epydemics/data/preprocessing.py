@@ -165,6 +165,11 @@ def detect_frequency(data: pd.DataFrame) -> str:
     diffs = data.index.to_series().diff().dropna()
     median_diff = diffs.median()
 
+    # Handle case where median returns numeric instead of Timedelta
+    if not isinstance(median_diff, pd.Timedelta):
+        # Convert to Timedelta if numeric (in nanoseconds)
+        median_diff = pd.Timedelta(median_diff)
+
     # Classify based on median difference
     if median_diff <= pd.Timedelta(days=2):
         return "D"
