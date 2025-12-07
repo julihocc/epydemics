@@ -61,7 +61,7 @@ def reindex_data(
         >>> reindexed = reindex_data(data)
 
         >>> # Explicit annual frequency (no reindexing warning)
-        >>> reindexed = reindex_data(data, freq='Y')
+        >>> reindexed = reindex_data(data, freq='YE')
     """
     from epydemics.core.constants import DEFAULT_FREQUENCY
 
@@ -151,7 +151,7 @@ def detect_frequency(data: pd.DataFrame) -> str:
 
         >>> # Annual measles data
         >>> annual_data = pd.DataFrame({'cases': [50, 60, 55]},
-        ...                            index=pd.date_range('2015', periods=3, freq='Y'))
+        ...                            index=pd.date_range('2015', periods=3, freq='YE'))
         >>> detect_frequency(annual_data)
         'Y'
     """
