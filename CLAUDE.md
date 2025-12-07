@@ -317,6 +317,159 @@ print(model.results.V)  # Vaccination forecasts
 - Simulation time ~3x longer due to 81 scenarios vs 27
 - Parallel execution (`n_jobs=None`) recommended for SIRDV
 
+### Annual Surveillance Data Support (v0.8.0+)
+
+Version 0.8.0 introduces basic support for annual surveillance data (e.g., measles) through frequency detection, mismatch warnings, and temporal aggregation. This is a Phase 1 workaround - full native support will come in v0.9.0.
+
+**Key v0.8.0 Features:**
+- **Frequency Detection**: Automatically detects data frequency (D, W, M, Y)
+- **Frequency Mismatch Warnings**: Warns when annual data is reindexed to daily
+- **Temporal Aggregation**: Aggregate daily forecasts back to annual/monthly/weekly
+- **Backward Compatible**: All existing code works unchanged (defaults to daily)
+
+**Current Limitations (Phase 1):**
+- No native annual modeling - annual data is still reindexed to daily
+- Reindexing creates ~365x artificial data points via forward-fill
+- VAR models may fail with artificial data patterns
+- Phase 2 (v0.9.0) will add native frequency support
+
+**Frequency Detection:**
+```python
+from epydemics.data.preprocessing import detect_frequency
+import pandas as pd
+
+# Daily data
+daily_data = pd.DataFrame(
+    {"C": range(100), "D": range(100), "N": [1000000] * 100},
+    index=pd.date_range("2020-01-01", periods=100, freq="D")
+)
+freq = detect_frequency(daily_data)  # Returns "D"
+
+# Annual data
+annual_data = pd.DataFrame(
+    {"C": range(10), "D": range(10), "N": [300000000] * 10},
+    index=pd.date_range("2015", periods=10, freq="YE")
+)
+freq = detect_frequency(annual_data)  # Returns "Y"
+```
+
+**Frequency Mismatch Warning:**
+```python
+from epydemics import DataContainer
+import warnings
+
+# Annual data will trigger warning when reindexed to daily
+with warnings.catch_warnings(record=True) as w:
+    warnings.simplefilter("always")
+    container = DataContainer(annual_data, window=1)
+
+    # Warning emitted:
+    # "FREQUENCY MISMATCH WARNING
+    #  Source data frequency: annual (Y)
+    #  Target frequency: daily (D)
+    #  Artificial data points created: 13516
+    #
+    #  Reindexing annual data to daily creates 13516 rows via forward-fill,
+    #  which may produce meaningless rate calculations and forecasts.
+    #
+    #  Recommended actions:
+    #  1. Use native frequency support (v0.9.0+): frequency='Y'
+    #  2. Use temporal aggregation to convert forecasts back to annual
+    #  3. See documentation for annual surveillance data best practices"
+```
+
+**Temporal Aggregation Workflow (Recommended):**
+```python
+from epydemics import DataContainer, Model
+
+# 1. Load annual measles data (will be reindexed to daily with warning)
+annual_data = pd.DataFrame({
+    "C": np.cumsum(np.random.exponential(200, 40)),
+    "D": np.cumsum(np.random.exponential(5, 40)),
+    "N": [330000000] * 40,
+}, index=pd.date_range("1980", periods=40, freq="YE"))
+
+# Suppress warning if you understand the limitation
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", message=".*FREQUENCY MISMATCH.*")
+    container = DataContainer(annual_data, window=1)
+
+# 2. Create model and forecast (in daily resolution)
+model = Model(container, start="1982", stop="2010")
+model.create_model()
+model.fit_model(max_lag=3)
+model.forecast(steps=365 * 10)  # 10 years in days
+model.run_simulations(n_jobs=1)
+model.generate_result()
+
+# 3. Aggregate daily forecasts back to annual
+annual_forecast = model.aggregate_forecast(
+    "C",  # Compartment
+    target_frequency="Y",  # Annual
+    aggregate_func="last",  # End-of-year value
+    methods=["mean", "median"]  # Central tendency methods
+)
+
+# Result: DataFrame with annual forecasts
+print(annual_forecast.head())
+#             mean     median  lower|lower|lower  ...
+# 2010-12-31  1234.5   1200.3  1100.2            ...
+# 2011-12-31  1456.7   1420.1  1300.4            ...
+```
+
+**Aggregation Functions:**
+```python
+# Different aggregation strategies
+model.aggregate_forecast("C", target_frequency="Y", aggregate_func="sum")    # Total cases per year
+model.aggregate_forecast("C", target_frequency="Y", aggregate_func="mean")   # Average daily cases
+model.aggregate_forecast("C", target_frequency="Y", aggregate_func="last")   # End-of-year value
+model.aggregate_forecast("C", target_frequency="Y", aggregate_func="max")    # Peak value
+
+# Weekly and monthly aggregation
+model.aggregate_forecast("C", target_frequency="W", aggregate_func="sum")    # Weekly totals
+model.aggregate_forecast("C", target_frequency="M", aggregate_func="last")   # Monthly snapshots
+```
+
+**Supported Frequencies:**
+```python
+from epydemics.core.constants import (
+    SUPPORTED_FREQUENCIES,
+    FREQUENCY_ALIASES,
+    DEFAULT_FREQUENCY,
+)
+
+# Supported frequency codes
+print(SUPPORTED_FREQUENCIES)  # ["D", "W", "M", "Y", "A"]
+
+# Frequency aliases (user-friendly names)
+print(FREQUENCY_ALIASES)  # {"D": "daily", "W": "weekly", "M": "monthly", "Y": "annual", ...}
+
+# Default frequency (backward compatibility)
+print(DEFAULT_FREQUENCY)  # "D"
+```
+
+**Best Practices for Annual Data (v0.8.0):**
+1. Use `window=1` for annual data (no smoothing needed)
+2. Suppress frequency warnings if you accept the limitations
+3. Use temporal aggregation to convert forecasts back to annual
+4. Test with smaller date ranges first to validate the approach
+5. Consider waiting for v0.9.0 for native annual modeling
+
+**Looking Ahead to v0.9.0 (Native Frequency Support):**
+```python
+# Future API (not available in v0.8.0)
+container = DataContainer(annual_data, frequency="Y", mode="cumulative")
+model = Model(container, start="1982", stop="2010")
+model.create_model()
+model.fit_model(max_lag=3)
+model.forecast(steps=10)  # 10 years natively
+model.run_simulations(n_jobs=1)
+model.generate_result()
+
+# No reindexing, no artificial data, native annual modeling
+annual_results = model.results.C  # Already in annual frequency
+```
+
 ## Common Development Patterns
 
 ### Typical Analysis Workflow
