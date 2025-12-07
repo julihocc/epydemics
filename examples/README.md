@@ -2,7 +2,7 @@
 
 This directory contains example notebooks and scripts demonstrating the capabilities of the epydemics library for epidemiological modeling and forecasting.
 
-**Version**: 0.7.0 (includes SIRDV vaccination model)
+**Version**: 0.8.0 (includes multi-frequency support & annual data workarounds)
 
 ## Directory Structure
 
@@ -96,6 +96,54 @@ Performance optimization using parallel execution.
 
 **Expected runtime:** 5-10 minutes  
 **Recommendation:** Use for SIRDV models (81 scenarios)
+
+---
+
+### 5. Multi-Backend Comparison
+**File:** `notebooks/05_multi_backend_comparison.ipynb`
+
+Comparison of different time series backends (VAR, ARIMA, Prophet).
+
+**Topics:**
+- Multiple forecasting backends
+- Performance comparison
+- Backend selection guidance
+- Trade-offs between complexity and accuracy
+
+**Expected runtime:** 10-15 minutes (if optional backends installed)
+
+---
+
+### 6. Annual Measles Data Workaround ⭐ NEW in v0.8.0
+**File:** `notebooks/06_annual_measles_workaround.ipynb`
+
+Complete guide to working with annual surveillance data using Phase 1 workarounds.
+
+**Topics:**
+- Annual frequency detection and warnings
+- Understanding reindexing limitations
+- Temporal aggregation workflow
+- Converting daily forecasts to annual output
+- Comparison with COVID-19 workflow
+- Preview of v0.9.0 native support
+- USA measles simulation (1980-2020)
+
+**Expected runtime:** 5-7 minutes  
+**Data type:** Annual surveillance data  
+**Status:** Phase 1 workaround (native support in v0.9.0)
+
+**Key workflow:**
+1. Load annual data (40 years)
+2. Suppress frequency warnings
+3. Forecast in daily resolution (internal)
+4. Aggregate back to annual output
+
+**Limitations:**
+- Not production-ready for critical decisions
+- Suitable for exploratory analysis
+- Requires temporal aggregation for meaningful results
+
+---
 
 ## Running the Examples
 
