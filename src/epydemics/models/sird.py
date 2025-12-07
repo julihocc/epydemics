@@ -626,6 +626,106 @@ class Model(BaseModel, SIRDModelMixin):
 
         return result
 
+    def aggregate_forecast(
+        self,
+        compartment_code: str,
+        target_frequency: str = "Y",
+        aggregate_func: str = "sum",
+        methods: Optional[list] = None,
+    ) -> pd.DataFrame:
+        """
+        Aggregate daily forecasts to target frequency (e.g., annual).
+
+        This enables forecasting with daily internal model but reporting
+        results at coarser frequency (e.g., annual cases from daily model).
+
+        Args:
+            compartment_code: Compartment to aggregate (C, I, R, D, V)
+            target_frequency: Target frequency ('W', 'M', 'Y')
+            aggregate_func: Aggregation function:
+                - 'sum': Sum values (for incident cases, deaths)
+                - 'mean': Average values (for prevalence)
+                - 'last': Last value in period (for cumulative totals)
+                - 'max': Maximum value (for peak detection)
+                - 'min': Minimum value
+            methods: Central tendency methods to include.
+                     Defaults to ['mean', 'median']
+
+        Returns:
+            DataFrame with aggregated forecasts
+
+        Raises:
+            ValueError: If forecast not generated or invalid parameters
+
+        Examples:
+            >>> # Forecast 365 days, aggregate to annual
+            >>> model.forecast(steps=365)
+            >>> model.run_simulations()
+            >>> model.generate_result()
+            >>> annual = model.aggregate_forecast('C', target_frequency='Y', aggregate_func='last')
+
+            >>> # Weekly aggregation for incident cases
+            >>> model.forecast(steps=52*7)  # 1 year
+            >>> model.run_simulations()
+            >>> model.generate_result()
+            >>> weekly = model.aggregate_forecast('C', target_frequency='W', aggregate_func='sum')
+        """
+        from epydemics.core.constants import CENTRAL_TENDENCY_METHODS
+        import numpy as np
+
+        if self.results is None:
+            raise ValueError(
+                "Must generate results before aggregating. Call generate_result() first."
+            )
+
+        if compartment_code not in self.results:
+            raise ValueError(
+                f"Compartment '{compartment_code}' not found in results"
+            )
+
+        if methods is None:
+            methods = ["mean", "median"]
+
+        # Validate methods
+        invalid_methods = [m for m in methods if m not in CENTRAL_TENDENCY_METHODS]
+        if invalid_methods:
+            raise ValueError(
+                f"Invalid methods: {invalid_methods}. "
+                f"Must be in {CENTRAL_TENDENCY_METHODS}"
+            )
+
+        # Get daily forecast results
+        daily_results = self.results[compartment_code]
+
+        # Define aggregation function
+        agg_funcs = {
+            "sum": lambda x: x.sum(),
+            "mean": lambda x: x.mean(),
+            "last": lambda x: x.iloc[-1] if len(x) > 0 else np.nan,
+            "max": lambda x: x.max(),
+            "min": lambda x: x.min(),
+        }
+
+        if aggregate_func not in agg_funcs:
+            raise ValueError(
+                f"Invalid aggregate_func: {aggregate_func}. "
+                f"Must be one of {list(agg_funcs.keys())}"
+            )
+
+        # Resample to target frequency
+        resampler = daily_results.resample(target_frequency)
+        aggregated = resampler.apply(agg_funcs[aggregate_func])
+
+        # Only keep the central tendency columns requested
+        all_cols = list(aggregated.columns)
+        scenario_cols = [col for col in all_cols if "|" in col]  # Scenario columns
+
+        # Keep scenarios + requested methods
+        cols_to_keep = scenario_cols + methods
+        cols_to_keep = [col for col in cols_to_keep if col in aggregated.columns]
+
+        return aggregated[cols_to_keep]
+
     def visualize_results(
         self,
         compartment_code: str,
