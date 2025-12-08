@@ -180,9 +180,11 @@ class DataContainer:
         """
 
         # Process data through the pipeline
-        self.data = preprocess_data(self.raw_data, window=self.window)
+        # Pass frequency to preprocessing for frequency-aware reindexing
+        self.data = preprocess_data(self.raw_data, window=self.window, frequency=self.frequency)
 
         logging.debug(f"Preprocessed data columns: {self.data.columns}")
+        logging.debug(f"Preprocessed data shape: {self.data.shape}")
 
         # Apply feature engineering (mode-aware and frequency-aware)
         self.data = feature_engineering(self.data, mode=self.mode, handler=self.handler)

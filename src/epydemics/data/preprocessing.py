@@ -12,23 +12,91 @@ from typing import Optional
 import pandas as pd
 
 
-def preprocess_data(data: pd.DataFrame, window: int = 7) -> pd.DataFrame:
+def _get_effective_window(window: int, frequency: str) -> int:
     """
-    Preprocess raw data by applying rolling window smoothing and reindexing.
+    Calculate effective rolling window size adapted to data frequency.
+    
+    Sparse frequencies (monthly, annual) should use smaller windows to avoid
+    excessive smoothing with limited data points.
+    
+    Args:
+        window: Requested window size
+        frequency: Data frequency ('D', 'W', 'ME', 'YE')
+        
+    Returns:
+        Effective window size capped for frequency
+    """
+    if frequency in ("D", "W"):
+        return window  # Use requested window for dense frequencies
+    elif frequency == "ME":  # Monthly
+        return min(window, 2)  # Cap at 2 months
+    elif frequency == "YE":  # Annual
+        return 1  # No smoothing for annual (only 1 observation per year)
+    else:
+        return window
+
+
+def preprocess_data(
+    data: pd.DataFrame, 
+    window: int = 7,
+    frequency: str = None
+) -> pd.DataFrame:
+    """
+    Preprocess raw data by applying rolling window smoothing and conditional reindexing.
+
+    Behavior is frequency-aware:
+    - Daily/Weekly: Applies rolling window smoothing and reindexes to daily (current behavior)
+    - Monthly/Annual: Applies minimal smoothing and keeps native frequency (no reindexing)
 
     Args:
-        data: Raw input DataFrame
-        window: Rolling window size for smoothing
+        data: Raw input DataFrame with DatetimeIndex
+        window: Rolling window size for smoothing (default: 7)
+                Automatically reduced for sparse frequencies:
+                - Daily/Weekly: uses provided window
+                - Monthly: min(window, 2)
+                - Annual: min(window, 1) - effectively no smoothing
+        frequency: Data frequency ('D', 'W', 'ME', 'YE'). If None, attempts auto-detection.
+                  Controls whether data is reindexed to daily or kept in native frequency.
 
     Returns:
-        Preprocessed DataFrame
+        Preprocessed DataFrame with native frequency preserved (or reindexed to daily for D/W)
+
+    Examples:
+        >>> # Daily data: normal smoothing and daily reindexing
+        >>> daily_processed = preprocess_data(daily_data, window=7, frequency='D')
+
+        >>> # Annual data: minimal smoothing, NO reindexing
+        >>> annual_processed = preprocess_data(annual_data, window=7, frequency='YE')
+        >>> # Result: input had ~10 rows → output has ~10 rows (not ~3650)
     """
+    # Auto-detect frequency if not provided
+    if frequency is None:
+        try:
+            frequency = detect_frequency(data)
+            logging.info(f"Auto-detected frequency in preprocessing: {frequency}")
+        except ValueError:
+            logging.warning("Could not auto-detect frequency; defaulting to daily")
+            frequency = "D"
+    
+    # Adapt window size for sparse frequencies
+    effective_window = _get_effective_window(window, frequency)
+    
     # Apply rolling window smoothing
-    smoothed_data = data.rolling(window=window).mean()[window:]
-
-    # Reindex to ensure consistent date range
-    reindexed_data = reindex_data(smoothed_data)
-
+    if effective_window > 1:
+        smoothed_data = data.rolling(window=effective_window).mean()[effective_window:]
+    else:
+        smoothed_data = data.copy()
+    
+    # Conditional reindexing based on frequency
+    if frequency in ("D", "W"):
+        # Daily/Weekly: Reindex to daily (backward compatible)
+        reindexed_data = reindex_data(smoothed_data, freq="D", warn_on_mismatch=True)
+    else:
+        # Monthly/Annual: Skip reindexing, keep native frequency
+        logging.info(f"Preserving native {frequency} frequency (skipping reindexing)")
+        reindexed_data = smoothed_data.ffill()
+    
+    logging.debug(f"Preprocessing complete: frequency={frequency}, window={effective_window}, shape={reindexed_data.shape}")
     return reindexed_data
 
 
