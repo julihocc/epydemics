@@ -1,6 +1,6 @@
 # Epydemics User Guide
 
-**Version**: 0.8.0  
+**Version**: 0.9.0-dev  
 **Last Updated**: December 2025
 
 ## Table of Contents
@@ -9,10 +9,11 @@
 2. [When NOT to Use](#when-not-to-use)
 3. [Data Preparation Guide](#data-preparation-guide)
 4. [Working with Different Data Frequencies](#working-with-different-data-frequencies)
-5. [Annual Surveillance Data Workaround](#annual-surveillance-data-workaround)
-6. [Best Practices](#best-practices)
-7. [Troubleshooting](#troubleshooting)
-8. [Looking Ahead: v0.9.0](#looking-ahead-v090)
+5. [Incidence Mode (v0.9.0+)](#incidence-mode-v090)
+6. [Annual Surveillance Data Workaround](#annual-surveillance-data-workaround)
+7. [Best Practices](#best-practices)
+8. [Troubleshooting](#troubleshooting)
+9. [Additional Resources](#additional-resources)
 
 ---
 
@@ -389,43 +390,120 @@ model.run_simulations(n_jobs=1)
 
 ---
 
-## Looking Ahead: v0.9.0
+## Incidence Mode (v0.9.0+)
 
-Phase 2 (v0.9.0) will bring **native multi-frequency support**:
+**New in v0.9.0**: Native support for **incidence data** (incident cases per period) without requiring conversion to cumulative format.
+
+### Understanding Incidence vs Cumulative
+
+**Cumulative Mode** (default):
+- Input: Total cumulative cases `C` (monotonically increasing)
+- Derived: Incident cases `I = dC/dt` (calculated from differences)
+- Use case: COVID-19, flu pandemics, most OWID data
+
+**Incidence Mode** (v0.9.0+):
+- Input: Incident cases per period `I` (can vary up/down)
+- Derived: Cumulative cases `C = cumsum(I)` (generated automatically)
+- Use case: Measles, polio, vaccine-preventable diseases with elimination cycles
+
+### When to Use Incidence Mode
+
+✅ **Use `mode='incidence'` when:**
+- Data reports **new cases per time period** (not running totals)
+- Cases can **decrease between periods** (e.g., outbreak → elimination)
+- Disease: Near-elimination status, sporadic outbreaks
+- Examples: Measles, polio, rubella in countries with strong vaccination
+- Frequency: Typically annual, quarterly, or monthly surveillance
+
+❌ **Use default `mode='cumulative'` when:**
+- Data reports **total cumulative cases**
+- Cases **always increase** (or stay constant)
+- Disease: Ongoing epidemic, endemic circulation
+- Examples: COVID-19, seasonal flu, most OWID datasets
+- Frequency: Daily, weekly observations
+
+### Basic Workflow
 
 ```python
-# FUTURE API - NOT AVAILABLE in v0.8.0
+import pandas as pd
+from epydemics import DataContainer, Model
 
-# Annual measles data - native support
-container = DataContainer(
-    annual_data,
-    frequency='Y',           # Native annual frequency
-    mode='incidence'         # Incident cases mode
-)
+# Example: Mexico measles (annual incident cases)
+dates = pd.date_range('2010', periods=15, freq='YE')
+data = pd.DataFrame({
+    'I': [220, 55, 667, 164, 81,      # Incident cases (can vary)
+          34, 12, 0, 0, 4,            # Near-elimination
+          18, 45, 103, 67, 89],       # Reintroduction
+    'D': [1, 1, 3, 4, 4, ...],        # Cumulative deaths
+    'N': [120_000_000] * 15
+}, index=dates)
 
-model = Model(container, start="1982", stop="2010")
+# Create container with incidence mode
+container = DataContainer(data, mode='incidence', window=3)
+
+# Standard workflow (no changes!)
+model = Model(container)
 model.create_model()
 model.fit_model(max_lag=3)
-model.forecast(steps=10)  # 10 YEARS natively
+model.forecast(steps=5)
 model.run_simulations(n_jobs=1)
 model.generate_result()
 
-# Results already in annual frequency - no aggregation needed
-annual_results = model.results.C  # Already annual
+# Results include both I and C
+print(model.results['I'])  # Incident (can vary)
+print(model.results['C'])  # Cumulative (monotonic)
 ```
 
-**Key v0.9.0 Features:**
-- Native annual/monthly/weekly/daily modeling
-- Incidence-first mode (no cumulative conversion needed)
-- Frequency-specific rate calculations
-- No reindexing or artificial data
+### How It Works
 
-**Migration Path:**
-1. Use v0.8.0 workarounds now
-2. Test results and validate approach
-3. Upgrade to v0.9.0 when released (Q1 2026)
-4. Switch to native frequency API
-5. Compare results to validate
+1. **Data Processing:**
+   - Incidence mode: `I` preserved, `C = cumsum(I)` generated
+   - Cumulative mode: `C` preserved, `I = diff(C)` generated
+
+2. **Feature Engineering:**
+   - Same SIRD compartments for both modes
+   - Same rate formulas: `alpha`, `beta`, `gamma`
+   - Same VAR forecasting approach
+
+3. **Mode Propagation:**
+   ```python
+   container = DataContainer(data, mode='incidence')
+   model = Model(container)  
+   print(model.mode)  # → 'incidence' (auto-inherited)
+   ```
+
+### Example: Measles Outbreak Cycles
+
+```python
+# Elimination → reintroduction pattern
+incident_cases = np.array([
+    220, 55, 667, 164, 81,   # Sporadic
+    34, 12, 0, 0, 4,         # Elimination
+    18, 45, 103, 67, 89      # Reintroduction
+])
+
+container = DataContainer(data, mode='incidence')
+
+# I can decrease to zero (elimination achieved)
+print("Elimination years:", (container.data['I'] == 0).sum())
+
+# But C is always monotonic
+print("C monotonic:", all(container.data['C'].diff() >= 0))
+```
+
+### See Also
+
+- **Notebook**: `examples/notebooks/07_incidence_mode_measles.ipynb`
+- **Tests**: `tests/integration/test_incidence_mode_workflow.py`
+
+---
+
+## Looking Ahead: v0.10.0+
+
+Future enhancements may include:
+- Custom frequency parameters
+- Frequency-specific rate calculations
+- Native annual/monthly model fitting
 
 ---
 
