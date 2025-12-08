@@ -366,9 +366,11 @@ class Model(BaseModel, SIRDModelMixin):
                     merged_kwargs.setdefault("max_lag", settings.VAR_MAX_LAG)
             
             # Adjust max_lag if it exceeds available data
-            # VAR needs roughly max_lag * n_equations observations, so be conservative
+            # VAR needs roughly max_lag * n_equations observations, so be very conservative
             available_obs = len(self.data)
-            max_allowed_lag = max(1, (available_obs - 10) // 5)  # Conservative: leave buffer, assume 5 eq
+            # Rule: max_lag should leave at least 20 observations for stable covariance
+            # With 3 rates: each lag costs ~3 df, so (available - 20) / 3 / 2 (additional safety)
+            max_allowed_lag = max(1, (available_obs - 20) // 6)
             if merged_kwargs["max_lag"] > max_allowed_lag:
                 old_lag = merged_kwargs["max_lag"]
                 merged_kwargs["max_lag"] = max_allowed_lag
