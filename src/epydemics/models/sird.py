@@ -38,24 +38,64 @@ class Model(BaseModel, SIRDModelMixin):
     compartmental model with time-varying rates. Supports multiple forecasting
     backends: VAR (default), Prophet, ARIMA, and LSTM (stub).
 
-    The model operates in two modes (inherited from DataContainer):
-    - **Cumulative mode** (default): C is input data, monotonically increasing.
-      Suitable for COVID-19 and similar diseases with persistent tracking.
-    - **Incidence mode** (v0.9.0+): I is input data, can vary up/down.
-      Suitable for measles and eliminated diseases with sporadic outbreaks.
+    **Data Modes (v0.9.0+):**
+    
+    The model operates in two modes (automatically inherited from DataContainer):
+    
+    - **Cumulative mode** (default): 
+      * Input: C (cumulative cases) - monotonically increasing
+      * Derived: I = dC (incident cases calculated from differences)
+      * Use for: COVID-19, flu pandemics, ongoing epidemics
+      * Data example: [100, 150, 200] total cases
+    
+    - **Incidence mode** (NEW in v0.9.0):
+      * Input: I (incident cases per period) - can vary up/down
+      * Derived: C = cumsum(I) (cumulative generated automatically)
+      * Use for: Measles, polio, diseases with elimination cycles
+      * Data example: [100, 50, 120] new cases per period
 
-    The forecasting backend is selected via the `forecaster` parameter, with
-    backend-specific configuration passed through `forecaster_kwargs`.
+    **Forecasting Backends:**
+    
+    The forecasting backend is selected via the `forecaster` parameter:
+    - 'var' (default): Vector Autoregression - fast, reliable
+    - 'prophet': Facebook Prophet - handles seasonality, holidays
+    - 'arima': Auto-ARIMA - automatic order selection
+    - Backend-specific configuration via `forecaster_kwargs`
+
+    Attributes:
+        mode (str): Data mode inherited from DataContainer ('cumulative' or 'incidence')
+        forecaster_name (str): Active forecasting backend
+        data (pd.DataFrame): Processed epidemiological data
+        forecasting_box (Box): Forecasted rates with confidence intervals
+        simulation (Box): Monte Carlo simulation scenarios
+        results (Box): Final aggregated compartment predictions
 
     Examples:
-        Default VAR backend (v0.7.0 behavior):
-
+        **COVID-19 with default VAR backend:**
+        
+        >>> data = pd.DataFrame({'C': [100, 150, 200], 'D': [1, 2, 3], 'N': [1e6]*3})
+        >>> container = DataContainer(data)  # mode='cumulative' by default
         >>> model = Model(container, start="2020-03-01", stop="2020-12-31")
         >>> model.create_model()
         >>> model.fit_model(max_lag=10)
+        >>> model.forecast(steps=30)
+        >>> model.run_simulations(n_jobs=None)
+        >>> model.generate_result()
 
-        Prophet with seasonality:
+        **Measles with incidence mode:**
+        
+        >>> data = pd.DataFrame({'I': [220, 55, 667, 164], 'D': [1, 1, 3, 4], 'N': [120e6]*4})
+        >>> container = DataContainer(data, mode='incidence')
+        >>> model = Model(container)
+        >>> print(f"Mode: {model.mode}")  # → 'incidence'
+        >>> model.create_model()
+        >>> model.fit_model(max_lag=3)
+        >>> model.forecast(steps=5)
+        >>> model.run_simulations(n_jobs=1)
+        >>> model.generate_result()
 
+        **Prophet backend with seasonality:**
+        
         >>> model = Model(
         ...     container,
         ...     forecaster="prophet",
@@ -64,13 +104,13 @@ class Model(BaseModel, SIRDModelMixin):
         ... )
         >>> model.create_model()
         >>> model.fit_model()
+        >>> model.forecast(steps=30)
 
-        Incidence mode for measles:
-
-        >>> raw = pd.DataFrame({'I': [220, 55, 667], 'D': [1, 0, 2], 'N': [120e6]*3})
-        >>> container = DataContainer(raw, mode='incidence')
-        >>> model = Model(container)
-        >>> model.mode  # 'incidence'
+    See Also:
+        - DataContainer: Data preprocessing and mode selection
+        - examples/notebooks/07_incidence_mode_measles.ipynb: Incidence mode tutorial
+        - examples/notebooks/05_multi_backend_comparison.ipynb: Backend comparison
+        - docs/USER_GUIDE.md: Comprehensive usage guide
     """
 
     def __init__(
@@ -85,58 +125,82 @@ class Model(BaseModel, SIRDModelMixin):
         """
         Initialize the SIRD Model.
 
-        The model's data mode (cumulative vs incidence) is inherited from the
-        DataContainer. Use cumulative mode for monotonically increasing case data
-        (COVID-19) and incidence mode for sporadic outbreak patterns (measles).
+        The model's data mode (cumulative vs incidence) is **automatically inherited**
+        from the DataContainer. The mode affects data interpretation but not the
+        underlying SIRD equations or forecasting approach.
 
         Args:
             data_container: DataContainer instance with preprocessed data.
                           The model inherits the mode ('cumulative' or 'incidence')
-                          from the container.
-            start: Start date for model training (YYYY-MM-DD format)
-            stop: Stop date for model training (YYYY-MM-DD format)
-            days_to_forecast: Number of days to forecast ahead
+                          from this container.
+            start: Start date for model training (YYYY-MM-DD format).
+                  If None, uses first available date in data.
+            stop: Stop date for model training (YYYY-MM-DD format).
+                 If None, uses last available date in data.
+            days_to_forecast: Number of days to forecast ahead.
+                            If None, determined by model.forecast(steps=N)
             forecaster: Forecasting backend to use. Options:
-                - 'var' (default): Vector Autoregression (statsmodels)
+                - 'var' (default): Vector Autoregression (statsmodels VAR)
+                  Fast, reliable, no external dependencies
                 - 'prophet': Facebook Prophet
+                  Handles seasonality, holidays (requires fbprophet)
                 - 'arima': Auto-ARIMA (pmdarima)
-                - 'lstm': LSTM neural network (stub - not yet implemented)
+                  Automatic order selection (requires pmdarima)
+                - 'lstm': LSTM neural network
+                  NOT YET IMPLEMENTED (stub only)
             **forecaster_kwargs: Backend-specific configuration parameters.
-                For VAR: max_lag, ic (information criterion)
-                For Prophet: yearly_seasonality, weekly_seasonality, changepoint_prior_scale
-                For ARIMA: max_p, max_q, seasonal
+                VAR: max_lag (int), ic (str: 'aic'/'bic'/'hqic')
+                Prophet: yearly_seasonality (bool), weekly_seasonality (bool),
+                        changepoint_prior_scale (float)
+                ARIMA: max_p (int), max_q (int), seasonal (bool)
+
+        Raises:
+            ValueError: If forecaster not in ['var', 'prophet', 'arima', 'lstm']
+            ImportError: If forecaster backend not installed (Prophet, ARIMA)
 
         Examples:
-            >>> # Default VAR backend (100% backward compatible)
+            **Cumulative mode (COVID-19):**
+            
+            >>> covid_data = pd.DataFrame({'C': [100, 150, 200], ...})
+            >>> container = DataContainer(covid_data)  # cumulative by default
             >>> model = Model(container, start="2020-03-01", stop="2020-12-31")
-            >>>
-            >>> # Prophet with custom seasonality
+            
+            **Incidence mode (Measles):**
+            
+            >>> measles_data = pd.DataFrame({'I': [220, 55, 667], ...})
+            >>> container = DataContainer(measles_data, mode='incidence')
+            >>> model = Model(container)
+            >>> assert model.mode == 'incidence'  # Inherited
+            
+            **Prophet backend:**
+            
             >>> model = Model(
             ...     container,
             ...     forecaster="prophet",
             ...     yearly_seasonality=True,
             ...     changepoint_prior_scale=0.05
             ... )
-            >>>
-            >>> # ARIMA with custom parameters
+            
+            **ARIMA backend:**
+            
             >>> model = Model(
             ...     container,
             ...     forecaster="arima",
             ...     max_p=3,
-            ...     max_q=3,
-            ...     seasonal=False
+            ...     max_q=3
             ... )
-            >>>
-            >>> # Incidence mode for measles data
-            >>> raw = pd.DataFrame({'I': [220, 55, 667], 'D': [1, 0, 2], 'N': [120e6]*3})
-            >>> container = DataContainer(raw, mode='incidence')
-            >>> model = Model(container)  # Inherits incidence mode
+
+        Notes:
+            - Mode propagates automatically: DataContainer.mode → Model.mode
+            - Both modes use identical SIRD equations and forecasting methods
+            - Only difference: data interpretation (I from input vs I from dC)
+            - VAR backend is 100% backward compatible with v0.6.x API
         """
         # Data and model attributes
         self.data: Optional[pd.DataFrame] = None
         self.data_container = data_container
         self.window = data_container.window
-        self.mode = data_container.mode  # 'cumulative' or 'incidence'
+        self.mode = data_container.mode  # Inherit: 'cumulative' or 'incidence'
         self.start = start
         self.stop = stop
 
