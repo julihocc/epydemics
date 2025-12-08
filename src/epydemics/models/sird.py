@@ -211,7 +211,15 @@ class Model(BaseModel, SIRDModelMixin):
         self.forecaster_name = forecaster
         self.forecaster_kwargs = forecaster_kwargs
 
-        self.data = reindex_data(data_container.data, start, stop)
+        # Reindex data (frequency-aware - skip reindexing for non-daily data)
+        if hasattr(data_container, 'frequency') and data_container.frequency in ("ME", "YE"):
+            # For monthly/annual: just slice by date range, no reindexing
+            freq_to_use = data_container.frequency
+            logging.debug(f"Using frequency-aware reindexing: {freq_to_use}")
+            self.data = reindex_data(data_container.data, start, stop, freq=freq_to_use, warn_on_mismatch=False)
+        else:
+            # For daily/weekly or when no frequency info: use default (daily reindexing)
+            self.data = reindex_data(data_container.data, start, stop)
 
         # Select only logit ratios that exist in the data (SIRD vs SIRDV)
         available_logit_ratios = [r for r in LOGIT_RATIOS if r in self.data.columns]
@@ -304,10 +312,17 @@ class Model(BaseModel, SIRDModelMixin):
         - Set defaults at initialization: Model(..., max_lag=10)
         - Override at fit time: model.fit_model(max_lag=15)
 
+        Frequency-aware defaults: If max_lag is not provided, uses frequency-specific
+        defaults from DataContainer.handler (if available), otherwise uses settings:
+        - Daily: max_lag=14 (rich time series)
+        - Weekly: max_lag=10
+        - Monthly: max_lag=6 (sparser data)
+        - Annual: max_lag=3 (very sparse data)
+
         Args:
             **kwargs: Backend-specific parameters. Common options:
                 For VAR:
-                    max_lag: Maximum lag order for selection (default from settings)
+                    max_lag: Maximum lag order for selection (default from frequency handler or settings)
                     ic: Information criterion ('aic', 'bic', etc.)
                 For Prophet:
                     yearly_seasonality: Enable yearly patterns
@@ -319,7 +334,7 @@ class Model(BaseModel, SIRDModelMixin):
                     seasonal: Enable seasonal ARIMA
 
         Examples:
-            >>> # VAR with defaults
+            >>> # VAR with defaults (frequency-aware)
             >>> model = Model(container)
             >>> model.create_model()
             >>> model.fit_model(max_lag=10)
@@ -339,7 +354,27 @@ class Model(BaseModel, SIRDModelMixin):
 
         # Apply backend-specific defaults from settings
         if self.forecaster_name == "var":
-            merged_kwargs.setdefault("max_lag", settings.VAR_MAX_LAG)
+            # Use frequency-specific max_lag if available and not explicitly provided
+            if "max_lag" not in merged_kwargs:
+                # Check if container has frequency handler
+                if hasattr(self.data_container, 'handler'):
+                    frequency_max_lag = self.data_container.handler.get_default_max_lag()
+                    merged_kwargs.setdefault("max_lag", frequency_max_lag)
+                    logging.info(f"Using frequency-specific max_lag={frequency_max_lag} "
+                               f"({self.data_container.handler.frequency_name})")
+                else:
+                    merged_kwargs.setdefault("max_lag", settings.VAR_MAX_LAG)
+            
+            # Adjust max_lag if it exceeds available data
+            # VAR needs roughly max_lag * n_equations observations, so be conservative
+            available_obs = len(self.data)
+            max_allowed_lag = max(1, (available_obs - 10) // 5)  # Conservative: leave buffer, assume 5 eq
+            if merged_kwargs["max_lag"] > max_allowed_lag:
+                old_lag = merged_kwargs["max_lag"]
+                merged_kwargs["max_lag"] = max_allowed_lag
+                logging.warning(f"Reduced max_lag from {old_lag} to {max_allowed_lag} "
+                              f"due to limited observations ({available_obs})")
+            
             merged_kwargs.setdefault("ic", settings.VAR_CRITERION)
 
         self.var_forecasting.fit_logit_ratios_model(*args, **merged_kwargs)
