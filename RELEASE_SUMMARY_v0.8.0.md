@@ -1,6 +1,7 @@
 # Epydemics v0.8.0 Release Summary
 
 **Release Date**: December 7, 2025  
+**Release Type**: GitHub Pre-release (Not on PyPI)  
 **Code Name**: Multi-Frequency Support & Annual Data Workarounds  
 **Phase**: 1 of 3 (Measles Integration)
 
@@ -78,6 +79,22 @@ annual_forecast = model.aggregate_forecast(
 - Annual data still reindexed to daily internally (creates artificial patterns)
 - Temporal aggregation is a workaround, not a true solution
 - Not recommended for production critical decisions
+
+## Installation
+
+**This is a pre-release available only via GitHub:**
+
+```bash
+# Install from GitHub (address-measles-integration branch)
+pip install git+https://github.com/julihocc/epydemics.git@address-measles-integration
+
+# Or clone and install locally
+git clone -b address-measles-integration https://github.com/julihocc/epydemics.git
+cd epydemics
+pip install -e .
+```
+
+**PyPI Release**: v0.7.0 remains the stable PyPI version. v0.9.0+ will be released to PyPI after Phase 2 (Incidence Mode + Native Multi-frequency) is complete.
 - Native annual support coming in v0.9.0 (Q1 2026)
 
 ## Migration Guide
