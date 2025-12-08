@@ -98,7 +98,11 @@ def add_logit_ratios(data: pd.DataFrame) -> pd.DataFrame:
     return data
 
 
-def feature_engineering(data: pd.DataFrame, mode: str = "cumulative") -> pd.DataFrame:
+def feature_engineering(
+    data: pd.DataFrame, 
+    mode: str = "cumulative",
+    handler=None
+) -> pd.DataFrame:
     """
     Perform feature engineering to create SIRD/SIRDV compartments and rate calculations.
 
@@ -114,6 +118,9 @@ def feature_engineering(data: pd.DataFrame, mode: str = "cumulative") -> pd.Data
               - cumulative mode: C, D, N (and optionally V)
               - incidence mode: I, D, N (and optionally V)
         mode: 'cumulative' (default) or 'incidence'
+        handler: FrequencyHandler instance for frequency-specific parameters
+                (default: None - uses daily defaults). When provided, uses
+                handler.get_recovery_lag() instead of settings.RECOVERY_LAG.
 
     Returns:
         DataFrame with full feature set for epidemiological modeling
@@ -138,18 +145,26 @@ def feature_engineering(data: pd.DataFrame, mode: str = "cumulative") -> pd.Data
 
     # Mode-specific compartment calculations
     settings = get_settings()
+    
+    # Get recovery lag from handler or use settings default
+    if handler is not None:
+        recovery_lag = handler.get_recovery_lag()
+        logging.debug(f"Using frequency-specific recovery lag: {recovery_lag} ({handler.frequency_name})")
+    else:
+        recovery_lag = settings.RECOVERY_LAG
+        logging.debug(f"Using default recovery lag: {recovery_lag}")
 
     if mode == "cumulative":
         # CUMULATIVE MODE: C is cumulative cases (always increasing)
         # Calculate compartments from C
         engineered_data = _calculate_compartments_cumulative(
-            engineered_data, has_vaccination, settings
+            engineered_data, has_vaccination, settings, recovery_lag
         )
     elif mode == "incidence":
         # INCIDENCE MODE: I is incident cases (can vary)
         # Calculate compartments from I
         engineered_data = _calculate_compartments_incidence(
-            engineered_data, has_vaccination, settings
+            engineered_data, has_vaccination, settings, recovery_lag
         )
     else:
         raise ValueError(f"Invalid mode: {mode}. Must be 'cumulative' or 'incidence'")
@@ -180,11 +195,22 @@ def feature_engineering(data: pd.DataFrame, mode: str = "cumulative") -> pd.Data
 
 
 def _calculate_compartments_cumulative(
-    data: pd.DataFrame, has_vaccination: bool, settings
+    data: pd.DataFrame, has_vaccination: bool, settings, recovery_lag: int = None
 ) -> pd.DataFrame:
-    """Calculate SIRD compartments from cumulative cases C."""
-    # R: Recovered (using recovery_lag from settings)
-    data = data.assign(R=data["C"].shift(settings.RECOVERY_LAG).fillna(0) - data["D"])
+    """
+    Calculate SIRD compartments from cumulative cases C.
+    
+    Args:
+        data: DataFrame with C, D, N columns
+        has_vaccination: Whether V (vaccination) column is present
+        settings: Config settings object
+        recovery_lag: Recovery lag in periods (overrides settings.RECOVERY_LAG if provided)
+    """
+    # Use provided recovery_lag or default from settings
+    lag = recovery_lag if recovery_lag is not None else settings.RECOVERY_LAG
+    
+    # R: Recovered (using recovery_lag)
+    data = data.assign(R=data["C"].shift(lag).fillna(0) - data["D"])
 
     # I: Currently infected (active cases)
     data = data.assign(I=data["C"] - data["R"] - data["D"])
@@ -200,7 +226,7 @@ def _calculate_compartments_cumulative(
     # A: At-risk population (S + I)
     data = data.assign(A=data["S"] + data["I"])
 
-    # Calculate differences (daily changes)
+    # Calculate differences (changes across periods)
     data = data.assign(dC=-data["C"].diff(periods=-1))
     data = data.assign(dA=-data["A"].diff(periods=-1))
     data = data.assign(dS=-data["S"].diff(periods=-1))
@@ -217,9 +243,20 @@ def _calculate_compartments_cumulative(
 
 
 def _calculate_compartments_incidence(
-    data: pd.DataFrame, has_vaccination: bool, settings
+    data: pd.DataFrame, has_vaccination: bool, settings, recovery_lag: int = None
 ) -> pd.DataFrame:
-    """Calculate SIRD compartments from incident cases I."""
+    """
+    Calculate SIRD compartments from incident cases I.
+    
+    Args:
+        data: DataFrame with I, D, N columns
+        has_vaccination: Whether V (vaccination) column is present
+        settings: Config settings object
+        recovery_lag: Recovery lag in periods (overrides settings.RECOVERY_LAG if provided)
+    """
+    # Use provided recovery_lag or default from settings
+    lag = recovery_lag if recovery_lag is not None else settings.RECOVERY_LAG
+    
     # I is already present (incident cases per period)
     # Need to calculate C, R, S, A
 
@@ -228,7 +265,7 @@ def _calculate_compartments_incidence(
 
     # R: Recovered (cumulative incident minus deaths, lagged)
     # Simplified: assume recovery after lag period
-    recovered_cumulative = data["I"].shift(settings.RECOVERY_LAG).fillna(0).cumsum()
+    recovered_cumulative = data["I"].shift(lag).fillna(0).cumsum()
     data = data.assign(R=(recovered_cumulative - data["D"]).clip(lower=0))
 
     # S: Susceptible population
