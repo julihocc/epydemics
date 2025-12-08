@@ -38,6 +38,12 @@ class Model(BaseModel, SIRDModelMixin):
     compartmental model with time-varying rates. Supports multiple forecasting
     backends: VAR (default), Prophet, ARIMA, and LSTM (stub).
 
+    The model operates in two modes (inherited from DataContainer):
+    - **Cumulative mode** (default): C is input data, monotonically increasing.
+      Suitable for COVID-19 and similar diseases with persistent tracking.
+    - **Incidence mode** (v0.9.0+): I is input data, can vary up/down.
+      Suitable for measles and eliminated diseases with sporadic outbreaks.
+
     The forecasting backend is selected via the `forecaster` parameter, with
     backend-specific configuration passed through `forecaster_kwargs`.
 
@@ -59,14 +65,12 @@ class Model(BaseModel, SIRDModelMixin):
         >>> model.create_model()
         >>> model.fit_model()
 
-        Auto-ARIMA:
+        Incidence mode for measles:
 
-        >>> model = Model(
-        ...     container,
-        ...     forecaster="arima",
-        ...     max_p=5,
-        ...     seasonal=False
-        ... )
+        >>> raw = pd.DataFrame({'I': [220, 55, 667], 'D': [1, 0, 2], 'N': [120e6]*3})
+        >>> container = DataContainer(raw, mode='incidence')
+        >>> model = Model(container)
+        >>> model.mode  # 'incidence'
     """
 
     def __init__(
@@ -81,8 +85,14 @@ class Model(BaseModel, SIRDModelMixin):
         """
         Initialize the SIRD Model.
 
+        The model's data mode (cumulative vs incidence) is inherited from the
+        DataContainer. Use cumulative mode for monotonically increasing case data
+        (COVID-19) and incidence mode for sporadic outbreak patterns (measles).
+
         Args:
-            data_container: DataContainer instance with preprocessed data
+            data_container: DataContainer instance with preprocessed data.
+                          The model inherits the mode ('cumulative' or 'incidence')
+                          from the container.
             start: Start date for model training (YYYY-MM-DD format)
             stop: Stop date for model training (YYYY-MM-DD format)
             days_to_forecast: Number of days to forecast ahead
@@ -116,11 +126,17 @@ class Model(BaseModel, SIRDModelMixin):
             ...     max_q=3,
             ...     seasonal=False
             ... )
+            >>>
+            >>> # Incidence mode for measles data
+            >>> raw = pd.DataFrame({'I': [220, 55, 667], 'D': [1, 0, 2], 'N': [120e6]*3})
+            >>> container = DataContainer(raw, mode='incidence')
+            >>> model = Model(container)  # Inherits incidence mode
         """
         # Data and model attributes
         self.data: Optional[pd.DataFrame] = None
         self.data_container = data_container
         self.window = data_container.window
+        self.mode = data_container.mode  # 'cumulative' or 'incidence'
         self.start = start
         self.stop = stop
 
