@@ -34,7 +34,7 @@ class DataContainer:
         >>> # COVID-19 style: cumulative cases (default)
         >>> data = pd.DataFrame({'C': [100, 150, 200], 'D': [1, 2, 3], 'N': [1e6]*3})
         >>> container = DataContainer(data)  # mode='cumulative' by default
-        
+
         >>> # Measles style: incident cases per year
         >>> data = pd.DataFrame({'I': [50, 30, 80], 'D': [1, 1, 2], 'N': [1e6]*3})
         >>> container = DataContainer(data, mode='incidence')
@@ -73,10 +73,10 @@ class DataContainer:
         Examples:
             >>> # Daily COVID-19 data (cumulative)
             >>> container = DataContainer(covid_data, window=7, mode='cumulative')
-            
+
             >>> # Annual measles data (incidence)
             >>> container = DataContainer(measles_data, window=3, mode='incidence')
-            
+
             >>> # Access processed data
             >>> print(container.data.head())
             >>> print(f"Mode: {container.mode}")

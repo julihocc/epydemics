@@ -39,15 +39,15 @@ class Model(BaseModel, SIRDModelMixin):
     backends: VAR (default), Prophet, ARIMA, and LSTM (stub).
 
     **Data Modes (v0.9.0+):**
-    
+
     The model operates in two modes (automatically inherited from DataContainer):
-    
-    - **Cumulative mode** (default): 
+
+    - **Cumulative mode** (default):
       * Input: C (cumulative cases) - monotonically increasing
       * Derived: I = dC (incident cases calculated from differences)
       * Use for: COVID-19, flu pandemics, ongoing epidemics
       * Data example: [100, 150, 200] total cases
-    
+
     - **Incidence mode** (NEW in v0.9.0):
       * Input: I (incident cases per period) - can vary up/down
       * Derived: C = cumsum(I) (cumulative generated automatically)
@@ -55,7 +55,7 @@ class Model(BaseModel, SIRDModelMixin):
       * Data example: [100, 50, 120] new cases per period
 
     **Forecasting Backends:**
-    
+
     The forecasting backend is selected via the `forecaster` parameter:
     - 'var' (default): Vector Autoregression - fast, reliable
     - 'prophet': Facebook Prophet - handles seasonality, holidays
@@ -72,7 +72,7 @@ class Model(BaseModel, SIRDModelMixin):
 
     Examples:
         **COVID-19 with default VAR backend:**
-        
+
         >>> data = pd.DataFrame({'C': [100, 150, 200], 'D': [1, 2, 3], 'N': [1e6]*3})
         >>> container = DataContainer(data)  # mode='cumulative' by default
         >>> model = Model(container, start="2020-03-01", stop="2020-12-31")
@@ -83,7 +83,7 @@ class Model(BaseModel, SIRDModelMixin):
         >>> model.generate_result()
 
         **Measles with incidence mode:**
-        
+
         >>> data = pd.DataFrame({'I': [220, 55, 667, 164], 'D': [1, 1, 3, 4], 'N': [120e6]*4})
         >>> container = DataContainer(data, mode='incidence')
         >>> model = Model(container)
@@ -95,7 +95,7 @@ class Model(BaseModel, SIRDModelMixin):
         >>> model.generate_result()
 
         **Prophet backend with seasonality:**
-        
+
         >>> model = Model(
         ...     container,
         ...     forecaster="prophet",
@@ -160,29 +160,29 @@ class Model(BaseModel, SIRDModelMixin):
 
         Examples:
             **Cumulative mode (COVID-19):**
-            
+
             >>> covid_data = pd.DataFrame({'C': [100, 150, 200], ...})
             >>> container = DataContainer(covid_data)  # cumulative by default
             >>> model = Model(container, start="2020-03-01", stop="2020-12-31")
-            
+
             **Incidence mode (Measles):**
-            
+
             >>> measles_data = pd.DataFrame({'I': [220, 55, 667], ...})
             >>> container = DataContainer(measles_data, mode='incidence')
             >>> model = Model(container)
             >>> assert model.mode == 'incidence'  # Inherited
-            
+
             **Prophet backend:**
-            
+
             >>> model = Model(
             ...     container,
             ...     forecaster="prophet",
             ...     yearly_seasonality=True,
             ...     changepoint_prior_scale=0.05
             ... )
-            
+
             **ARIMA backend:**
-            
+
             >>> model = Model(
             ...     container,
             ...     forecaster="arima",

@@ -18,6 +18,7 @@ def _prophet_available():
     """Check if Prophet is available."""
     try:
         import prophet  # noqa: F401
+
         return True
     except ImportError:
         return False
@@ -27,6 +28,7 @@ def _arima_available():
     """Check if pmdarima is available."""
     try:
         import pmdarima  # noqa: F401
+
         return True
     except ImportError:
         return False
@@ -106,9 +108,7 @@ class TestIncidenceModeVARBackend:
         assert model.var_forecasting is not None
 
 
-@pytest.mark.skipif(
-    not _prophet_available(), reason="Prophet not installed"
-)
+@pytest.mark.skipif(not _prophet_available(), reason="Prophet not installed")
 class TestIncidenceModeProphetBackend:
     """Test Prophet backend with incidence mode (skipped if not installed)."""
 
@@ -134,9 +134,7 @@ class TestIncidenceModeProphetBackend:
         assert len(model.results["I"]["mean"]) == 5
 
 
-@pytest.mark.skipif(
-    not _arima_available(), reason="pmdarima not installed"
-)
+@pytest.mark.skipif(not _arima_available(), reason="pmdarima not installed")
 class TestIncidenceModeARIMABackend:
     """Test ARIMA backend with incidence mode (skipped if not installed)."""
 
