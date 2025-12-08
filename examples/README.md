@@ -2,7 +2,7 @@
 
 This directory contains example notebooks and scripts demonstrating the capabilities of the epydemics library for epidemiological modeling and forecasting.
 
-**Version**: 0.7.0 (includes SIRDV vaccination model)
+**Version**: 0.9.0-dev (includes incidence mode support & multi-frequency support)
 
 ## Directory Structure
 
@@ -96,6 +96,86 @@ Performance optimization using parallel execution.
 
 **Expected runtime:** 5-10 minutes  
 **Recommendation:** Use for SIRDV models (81 scenarios)
+
+---
+
+### 5. Multi-Backend Comparison
+**File:** `notebooks/05_multi_backend_comparison.ipynb`
+
+Comparison of different time series backends (VAR, ARIMA, Prophet).
+
+**Topics:**
+- Multiple forecasting backends
+- Performance comparison
+- Backend selection guidance
+- Trade-offs between complexity and accuracy
+
+**Expected runtime:** 10-15 minutes (if optional backends installed)
+
+---
+
+### 6. Annual Measles Data Workaround
+**File:** `notebooks/06_annual_measles_workaround.ipynb`
+
+Complete guide to working with annual surveillance data using Phase 1 workarounds.
+
+**Topics:**
+- Annual frequency detection and warnings
+- Understanding reindexing limitations
+- Temporal aggregation workflow
+- Converting daily forecasts to annual output
+- Comparison with COVID-19 workflow
+- Preview of v0.9.0 native support
+- USA measles simulation (1980-2020)
+
+**Expected runtime:** 5-7 minutes  
+**Data type:** Annual surveillance data  
+**Status:** Phase 1 workaround (superseded by v0.9.0 incidence mode)
+
+**Key workflow:**
+1. Load annual data (40 years)
+2. Suppress frequency warnings
+3. Forecast in daily resolution (internal)
+4. Aggregate back to annual output
+
+**Limitations:**
+- Not production-ready for critical decisions
+- Suitable for exploratory analysis
+- Requires temporal aggregation for meaningful results
+
+---
+
+### 7. Incidence Mode: Measles Analysis ⭐ NEW in v0.9.0
+**File:** `notebooks/07_incidence_mode_measles.ipynb`
+
+**Native incidence mode support** for diseases where incident (not cumulative) cases are reported.
+
+**Topics:**
+- Understanding incidence vs cumulative data
+- Using `mode='incidence'` parameter
+- DataContainer automatic processing (C from I)
+- Model workflow (no changes needed!)
+- Forecasting sporadic outbreak patterns
+- Comparing incidence vs cumulative mode
+- Mexico measles case study (2010-2024)
+
+**Expected runtime:** 4-6 minutes  
+**Model type:** SIRD with incidence mode  
+**Data pattern:** Elimination/reintroduction cycles
+
+**Key Features:**
+- **I column**: Incident cases per period (can vary up/down)
+- **C column**: Auto-generated via cumsum (monotonic)
+- **No workarounds**: Native support, production-ready
+- **Use cases**: Measles, polio, vaccine-preventable diseases
+
+**When to use:**
+- ✅ Annual/quarterly surveillance data
+- ✅ Incident cases can decrease (elimination achieved)
+- ✅ Diseases with near-elimination status
+- ❌ Not needed for cumulative reporting (COVID-19, etc.)
+
+---
 
 ## Running the Examples
 

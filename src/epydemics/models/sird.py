@@ -38,17 +38,63 @@ class Model(BaseModel, SIRDModelMixin):
     compartmental model with time-varying rates. Supports multiple forecasting
     backends: VAR (default), Prophet, ARIMA, and LSTM (stub).
 
-    The forecasting backend is selected via the `forecaster` parameter, with
-    backend-specific configuration passed through `forecaster_kwargs`.
+    **Data Modes (v0.9.0+):**
+
+    The model operates in two modes (automatically inherited from DataContainer):
+
+    - **Cumulative mode** (default):
+      * Input: C (cumulative cases) - monotonically increasing
+      * Derived: I = dC (incident cases calculated from differences)
+      * Use for: COVID-19, flu pandemics, ongoing epidemics
+      * Data example: [100, 150, 200] total cases
+
+    - **Incidence mode** (NEW in v0.9.0):
+      * Input: I (incident cases per period) - can vary up/down
+      * Derived: C = cumsum(I) (cumulative generated automatically)
+      * Use for: Measles, polio, diseases with elimination cycles
+      * Data example: [100, 50, 120] new cases per period
+
+    **Forecasting Backends:**
+
+    The forecasting backend is selected via the `forecaster` parameter:
+    - 'var' (default): Vector Autoregression - fast, reliable
+    - 'prophet': Facebook Prophet - handles seasonality, holidays
+    - 'arima': Auto-ARIMA - automatic order selection
+    - Backend-specific configuration via `forecaster_kwargs`
+
+    Attributes:
+        mode (str): Data mode inherited from DataContainer ('cumulative' or 'incidence')
+        forecaster_name (str): Active forecasting backend
+        data (pd.DataFrame): Processed epidemiological data
+        forecasting_box (Box): Forecasted rates with confidence intervals
+        simulation (Box): Monte Carlo simulation scenarios
+        results (Box): Final aggregated compartment predictions
 
     Examples:
-        Default VAR backend (v0.7.0 behavior):
+        **COVID-19 with default VAR backend:**
 
+        >>> data = pd.DataFrame({'C': [100, 150, 200], 'D': [1, 2, 3], 'N': [1e6]*3})
+        >>> container = DataContainer(data)  # mode='cumulative' by default
         >>> model = Model(container, start="2020-03-01", stop="2020-12-31")
         >>> model.create_model()
         >>> model.fit_model(max_lag=10)
+        >>> model.forecast(steps=30)
+        >>> model.run_simulations(n_jobs=None)
+        >>> model.generate_result()
 
-        Prophet with seasonality:
+        **Measles with incidence mode:**
+
+        >>> data = pd.DataFrame({'I': [220, 55, 667, 164], 'D': [1, 1, 3, 4], 'N': [120e6]*4})
+        >>> container = DataContainer(data, mode='incidence')
+        >>> model = Model(container)
+        >>> print(f"Mode: {model.mode}")  # → 'incidence'
+        >>> model.create_model()
+        >>> model.fit_model(max_lag=3)
+        >>> model.forecast(steps=5)
+        >>> model.run_simulations(n_jobs=1)
+        >>> model.generate_result()
+
+        **Prophet backend with seasonality:**
 
         >>> model = Model(
         ...     container,
@@ -58,15 +104,13 @@ class Model(BaseModel, SIRDModelMixin):
         ... )
         >>> model.create_model()
         >>> model.fit_model()
+        >>> model.forecast(steps=30)
 
-        Auto-ARIMA:
-
-        >>> model = Model(
-        ...     container,
-        ...     forecaster="arima",
-        ...     max_p=5,
-        ...     seasonal=False
-        ... )
+    See Also:
+        - DataContainer: Data preprocessing and mode selection
+        - examples/notebooks/07_incidence_mode_measles.ipynb: Incidence mode tutorial
+        - examples/notebooks/05_multi_backend_comparison.ipynb: Backend comparison
+        - docs/USER_GUIDE.md: Comprehensive usage guide
     """
 
     def __init__(
@@ -81,46 +125,82 @@ class Model(BaseModel, SIRDModelMixin):
         """
         Initialize the SIRD Model.
 
+        The model's data mode (cumulative vs incidence) is **automatically inherited**
+        from the DataContainer. The mode affects data interpretation but not the
+        underlying SIRD equations or forecasting approach.
+
         Args:
-            data_container: DataContainer instance with preprocessed data
-            start: Start date for model training (YYYY-MM-DD format)
-            stop: Stop date for model training (YYYY-MM-DD format)
-            days_to_forecast: Number of days to forecast ahead
+            data_container: DataContainer instance with preprocessed data.
+                          The model inherits the mode ('cumulative' or 'incidence')
+                          from this container.
+            start: Start date for model training (YYYY-MM-DD format).
+                  If None, uses first available date in data.
+            stop: Stop date for model training (YYYY-MM-DD format).
+                 If None, uses last available date in data.
+            days_to_forecast: Number of days to forecast ahead.
+                            If None, determined by model.forecast(steps=N)
             forecaster: Forecasting backend to use. Options:
-                - 'var' (default): Vector Autoregression (statsmodels)
+                - 'var' (default): Vector Autoregression (statsmodels VAR)
+                  Fast, reliable, no external dependencies
                 - 'prophet': Facebook Prophet
+                  Handles seasonality, holidays (requires fbprophet)
                 - 'arima': Auto-ARIMA (pmdarima)
-                - 'lstm': LSTM neural network (stub - not yet implemented)
+                  Automatic order selection (requires pmdarima)
+                - 'lstm': LSTM neural network
+                  NOT YET IMPLEMENTED (stub only)
             **forecaster_kwargs: Backend-specific configuration parameters.
-                For VAR: max_lag, ic (information criterion)
-                For Prophet: yearly_seasonality, weekly_seasonality, changepoint_prior_scale
-                For ARIMA: max_p, max_q, seasonal
+                VAR: max_lag (int), ic (str: 'aic'/'bic'/'hqic')
+                Prophet: yearly_seasonality (bool), weekly_seasonality (bool),
+                        changepoint_prior_scale (float)
+                ARIMA: max_p (int), max_q (int), seasonal (bool)
+
+        Raises:
+            ValueError: If forecaster not in ['var', 'prophet', 'arima', 'lstm']
+            ImportError: If forecaster backend not installed (Prophet, ARIMA)
 
         Examples:
-            >>> # Default VAR backend (100% backward compatible)
+            **Cumulative mode (COVID-19):**
+
+            >>> covid_data = pd.DataFrame({'C': [100, 150, 200], ...})
+            >>> container = DataContainer(covid_data)  # cumulative by default
             >>> model = Model(container, start="2020-03-01", stop="2020-12-31")
-            >>>
-            >>> # Prophet with custom seasonality
+
+            **Incidence mode (Measles):**
+
+            >>> measles_data = pd.DataFrame({'I': [220, 55, 667], ...})
+            >>> container = DataContainer(measles_data, mode='incidence')
+            >>> model = Model(container)
+            >>> assert model.mode == 'incidence'  # Inherited
+
+            **Prophet backend:**
+
             >>> model = Model(
             ...     container,
             ...     forecaster="prophet",
             ...     yearly_seasonality=True,
             ...     changepoint_prior_scale=0.05
             ... )
-            >>>
-            >>> # ARIMA with custom parameters
+
+            **ARIMA backend:**
+
             >>> model = Model(
             ...     container,
             ...     forecaster="arima",
             ...     max_p=3,
-            ...     max_q=3,
-            ...     seasonal=False
+            ...     max_q=3
             ... )
+
+        Notes:
+            - Mode propagates automatically: DataContainer.mode → Model.mode
+            - Both modes use identical SIRD equations and forecasting methods
+            - Only difference: data interpretation (I from input vs I from dC)
+            - VAR backend is 100% backward compatible with v0.6.x API
         """
         # Data and model attributes
         self.data: Optional[pd.DataFrame] = None
         self.data_container = data_container
         self.window = data_container.window
+        self.mode = data_container.mode  # Inherit: 'cumulative' or 'incidence'
         self.start = start
         self.stop = stop
 
@@ -625,6 +705,109 @@ class Model(BaseModel, SIRDModelMixin):
         result["max"] = scenario_data.max(axis=1)
 
         return result
+
+    def aggregate_forecast(
+        self,
+        compartment_code: str,
+        target_frequency: str = "Y",
+        aggregate_func: str = "sum",
+        methods: Optional[list] = None,
+    ) -> pd.DataFrame:
+        """
+        Aggregate daily forecasts to target frequency (e.g., annual).
+
+        This enables forecasting with daily internal model but reporting
+        results at coarser frequency (e.g., annual cases from daily model).
+
+        Args:
+            compartment_code: Compartment to aggregate (C, I, R, D, V)
+            target_frequency: Target frequency ('W', 'M', 'Y')
+            aggregate_func: Aggregation function:
+                - 'sum': Sum values (for incident cases, deaths)
+                - 'mean': Average values (for prevalence)
+                - 'last': Last value in period (for cumulative totals)
+                - 'max': Maximum value (for peak detection)
+                - 'min': Minimum value
+            methods: Central tendency methods to include.
+                     Defaults to ['mean', 'median']
+
+        Returns:
+            DataFrame with aggregated forecasts
+
+        Raises:
+            ValueError: If forecast not generated or invalid parameters
+
+        Examples:
+            >>> # Forecast 365 days, aggregate to annual
+            >>> model.forecast(steps=365)
+            >>> model.run_simulations()
+            >>> model.generate_result()
+            >>> annual = model.aggregate_forecast('C', target_frequency='Y', aggregate_func='last')
+
+            >>> # Weekly aggregation for incident cases
+            >>> model.forecast(steps=52*7)  # 1 year
+            >>> model.run_simulations()
+            >>> model.generate_result()
+            >>> weekly = model.aggregate_forecast('C', target_frequency='W', aggregate_func='sum')
+        """
+        from epydemics.core.constants import CENTRAL_TENDENCY_METHODS
+        import numpy as np
+
+        if self.results is None:
+            raise ValueError(
+                "Must generate results before aggregating. Call generate_result() first."
+            )
+
+        if compartment_code not in self.results:
+            raise ValueError(f"Compartment '{compartment_code}' not found in results")
+
+        if methods is None:
+            methods = ["mean", "median"]
+
+        # Validate methods
+        invalid_methods = [m for m in methods if m not in CENTRAL_TENDENCY_METHODS]
+        if invalid_methods:
+            raise ValueError(
+                f"Invalid methods: {invalid_methods}. "
+                f"Must be in {CENTRAL_TENDENCY_METHODS}"
+            )
+
+        # Get daily forecast results
+        daily_results = self.results[compartment_code]
+
+        # Convert to modern frequency alias to avoid FutureWarnings
+        from epydemics.core.constants import MODERN_FREQUENCY_ALIASES
+
+        modern_freq = MODERN_FREQUENCY_ALIASES.get(target_frequency, target_frequency)
+
+        # Define aggregation function
+        agg_funcs = {
+            "sum": lambda x: x.sum(),
+            "mean": lambda x: x.mean(),
+            "last": lambda x: x.iloc[-1] if len(x) > 0 else np.nan,
+            "max": lambda x: x.max(),
+            "min": lambda x: x.min(),
+        }
+
+        if aggregate_func not in agg_funcs:
+            raise ValueError(
+                f"Invalid aggregate_func: {aggregate_func}. "
+                f"Must be one of {list(agg_funcs.keys())}"
+            )
+
+        # Resample to target frequency using modern alias
+        resampler = daily_results.resample(modern_freq)
+        aggregated = resampler.apply(agg_funcs[aggregate_func])
+
+        # Only keep the central tendency columns requested
+        all_cols = list(aggregated.columns)
+        scenario_cols = [col for col in all_cols if "|" in col]  # Scenario columns
+
+        # Keep scenarios + requested methods
+        cols_to_keep = scenario_cols + methods
+        cols_to_keep = [col for col in cols_to_keep if col in aggregated.columns]
+
+        return aggregated[cols_to_keep]
 
     def visualize_results(
         self,

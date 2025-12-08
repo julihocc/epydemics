@@ -98,7 +98,7 @@ def add_logit_ratios(data: pd.DataFrame) -> pd.DataFrame:
     return data
 
 
-def feature_engineering(data: pd.DataFrame) -> pd.DataFrame:
+def feature_engineering(data: pd.DataFrame, mode: str = "cumulative") -> pd.DataFrame:
     """
     Perform feature engineering to create SIRD/SIRDV compartments and rate calculations.
 
@@ -110,12 +110,15 @@ def feature_engineering(data: pd.DataFrame) -> pd.DataFrame:
     - Logit transformations of rates
 
     Args:
-        data: Preprocessed DataFrame with basic columns C, D, N (and optionally V)
+        data: Preprocessed DataFrame with basic columns
+              - cumulative mode: C, D, N (and optionally V)
+              - incidence mode: I, D, N (and optionally V)
+        mode: 'cumulative' (default) or 'incidence'
 
     Returns:
         DataFrame with full feature set for epidemiological modeling
     """
-    logging.debug(f"When starting feature engineering, columns are {data.columns}")
+    logging.debug(f"Feature engineering mode={mode}, columns={data.columns}")
 
     # Create a copy to avoid modifying original
     engineered_data = data.copy()
@@ -133,75 +136,26 @@ def feature_engineering(data: pd.DataFrame) -> pd.DataFrame:
     else:
         logging.info("No vaccination data detected. Using SIRD model.")
 
-    # Calculate SIRD compartments
-    # R: Recovered (using recovery_lag from settings)
+    # Mode-specific compartment calculations
     settings = get_settings()
-    engineered_data = engineered_data.assign(
-        R=engineered_data["C"].shift(settings.RECOVERY_LAG).fillna(0)
-        - engineered_data["D"]
-    )
 
-    # I: Currently infected (active cases)
-    engineered_data = engineered_data.assign(
-        I=engineered_data["C"] - engineered_data["R"] - engineered_data["D"]
-    )
-
-    # S: Susceptible population (MODIFIED for SIRDV)
-    if has_vaccination:
-        # SIRDV: S = N - C - V (vaccinated are removed from susceptible pool)
-        engineered_data = engineered_data.assign(
-            S=engineered_data["N"] - engineered_data["C"] - engineered_data["V"]
+    if mode == "cumulative":
+        # CUMULATIVE MODE: C is cumulative cases (always increasing)
+        # Calculate compartments from C
+        engineered_data = _calculate_compartments_cumulative(
+            engineered_data, has_vaccination, settings
+        )
+    elif mode == "incidence":
+        # INCIDENCE MODE: I is incident cases (can vary)
+        # Calculate compartments from I
+        engineered_data = _calculate_compartments_incidence(
+            engineered_data, has_vaccination, settings
         )
     else:
-        # SIRD: S = N - C
-        engineered_data = engineered_data.assign(
-            S=engineered_data["N"] - engineered_data["C"]
-        )
+        raise ValueError(f"Invalid mode: {mode}. Must be 'cumulative' or 'incidence'")
 
-    # A: At-risk population (S + I)
-    engineered_data = engineered_data.assign(
-        A=engineered_data["S"] + engineered_data["I"]
-    )
-
-    # Calculate differences (daily changes)
-    engineered_data = engineered_data.assign(dC=-engineered_data["C"].diff(periods=-1))
-    engineered_data = engineered_data.assign(dA=-engineered_data["A"].diff(periods=-1))
-    engineered_data = engineered_data.assign(dS=-engineered_data["S"].diff(periods=-1))
-    engineered_data = engineered_data.assign(dI=-engineered_data["I"].diff(periods=-1))
-    engineered_data = engineered_data.assign(dR=-engineered_data["R"].diff(periods=-1))
-    engineered_data = engineered_data.assign(dD=-engineered_data["D"].diff(periods=-1))
-
-    # Calculate vaccination difference if SIRDV
-    if has_vaccination:
-        engineered_data = engineered_data.assign(
-            dV=-engineered_data["V"].diff(periods=-1)
-        )
-        # Clip negative dV to 0 (handle data corrections/revisions)
-        engineered_data["dV"] = engineered_data["dV"].clip(lower=0)
-
-    # Calculate epidemiological rates
-    # Alpha: infection rate
-    engineered_data = engineered_data.assign(
-        alpha=(engineered_data.A * engineered_data.dC)
-        / (engineered_data.I * engineered_data.S)
-    )
-
-    # Beta: recovery rate
-    engineered_data = engineered_data.assign(
-        beta=engineered_data.dR / engineered_data.I
-    )
-
-    # Gamma: mortality rate
-    engineered_data = engineered_data.assign(
-        gamma=engineered_data.dD / engineered_data.I
-    )
-
-    # Delta: vaccination rate (SIRDV only)
-    if has_vaccination:
-        # delta = dV / S (fraction of susceptible vaccinated per day)
-        engineered_data = engineered_data.assign(
-            delta=engineered_data.dV / engineered_data.S
-        )
+    # Calculate epidemiological rates (same for both modes)
+    engineered_data = _calculate_rates(engineered_data, has_vaccination)
 
     # R0: Basic reproduction number
     engineered_data = engineered_data.assign(
@@ -223,3 +177,102 @@ def feature_engineering(data: pd.DataFrame) -> pd.DataFrame:
     )
 
     return engineered_data
+
+
+def _calculate_compartments_cumulative(
+    data: pd.DataFrame, has_vaccination: bool, settings
+) -> pd.DataFrame:
+    """Calculate SIRD compartments from cumulative cases C."""
+    # R: Recovered (using recovery_lag from settings)
+    data = data.assign(R=data["C"].shift(settings.RECOVERY_LAG).fillna(0) - data["D"])
+
+    # I: Currently infected (active cases)
+    data = data.assign(I=data["C"] - data["R"] - data["D"])
+
+    # S: Susceptible population
+    if has_vaccination:
+        # SIRDV: S = N - C - V
+        data = data.assign(S=data["N"] - data["C"] - data["V"])
+    else:
+        # SIRD: S = N - C
+        data = data.assign(S=data["N"] - data["C"])
+
+    # A: At-risk population (S + I)
+    data = data.assign(A=data["S"] + data["I"])
+
+    # Calculate differences (daily changes)
+    data = data.assign(dC=-data["C"].diff(periods=-1))
+    data = data.assign(dA=-data["A"].diff(periods=-1))
+    data = data.assign(dS=-data["S"].diff(periods=-1))
+    data = data.assign(dI=-data["I"].diff(periods=-1))
+    data = data.assign(dR=-data["R"].diff(periods=-1))
+    data = data.assign(dD=-data["D"].diff(periods=-1))
+
+    # Calculate vaccination difference if SIRDV
+    if has_vaccination:
+        data = data.assign(dV=-data["V"].diff(periods=-1))
+        data["dV"] = data["dV"].clip(lower=0)
+
+    return data
+
+
+def _calculate_compartments_incidence(
+    data: pd.DataFrame, has_vaccination: bool, settings
+) -> pd.DataFrame:
+    """Calculate SIRD compartments from incident cases I."""
+    # I is already present (incident cases per period)
+    # Need to calculate C, R, S, A
+
+    # C: Cumulative cases (cumsum of incident)
+    data = data.assign(C=data["I"].cumsum())
+
+    # R: Recovered (cumulative incident minus deaths, lagged)
+    # Simplified: assume recovery after lag period
+    recovered_cumulative = data["I"].shift(settings.RECOVERY_LAG).fillna(0).cumsum()
+    data = data.assign(R=(recovered_cumulative - data["D"]).clip(lower=0))
+
+    # S: Susceptible population
+    if has_vaccination:
+        # SIRDV: S = N - C - V
+        data = data.assign(S=data["N"] - data["C"] - data["V"])
+    else:
+        # SIRD: S = N - C (simplified, assumes no recovered flow back to S)
+        data = data.assign(S=data["N"] - data["C"])
+
+    # A: At-risk population (S + I)
+    # For annual data, I represents average active during period
+    data = data.assign(A=data["S"] + data["I"])
+
+    # Calculate differences
+    # dC is just I (incident cases)
+    data = data.assign(dC=data["I"])
+    data = data.assign(dA=-data["A"].diff(periods=-1))
+    data = data.assign(dS=-data["S"].diff(periods=-1))
+    data = data.assign(dI=-data["I"].diff(periods=-1))
+    data = data.assign(dR=-data["R"].diff(periods=-1))
+    data = data.assign(dD=-data["D"].diff(periods=-1))
+
+    # Calculate vaccination difference if SIRDV
+    if has_vaccination:
+        data = data.assign(dV=-data["V"].diff(periods=-1))
+        data["dV"] = data["dV"].clip(lower=0)
+
+    return data
+
+
+def _calculate_rates(data: pd.DataFrame, has_vaccination: bool) -> pd.DataFrame:
+    """Calculate epidemiological rates (alpha, beta, gamma, delta)."""
+    # Alpha: infection rate
+    data = data.assign(alpha=(data.A * data.dC) / (data.I * data.S))
+
+    # Beta: recovery rate
+    data = data.assign(beta=data.dR / data.I)
+
+    # Gamma: mortality rate
+    data = data.assign(gamma=data.dD / data.I)
+
+    # Delta: vaccination rate (SIRDV only)
+    if has_vaccination:
+        data = data.assign(delta=data.dV / data.S)
+
+    return data
