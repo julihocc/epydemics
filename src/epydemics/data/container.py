@@ -27,7 +27,7 @@ class DataContainer:
     and comprehensive feature engineering to create all necessary epidemiological
     variables and rates.
 
-    **New in v0.10.0**: Supports native multi-frequency processing (daily, weekly, 
+    **New in v0.10.0**: Supports native multi-frequency processing (daily, weekly,
     monthly, annual) without forced reindexing to daily. Each frequency has its own
     recovery lag and max lag defaults.
 
@@ -58,9 +58,9 @@ class DataContainer:
     """
 
     def __init__(
-        self, 
-        raw_data: pd.DataFrame, 
-        window: int = None, 
+        self,
+        raw_data: pd.DataFrame,
+        window: int = None,
         mode: str = "cumulative",
         frequency: str = None,
     ) -> None:
@@ -88,7 +88,7 @@ class DataContainer:
                    Use for: Measles, polio, diseases with elimination cycles
             frequency: Data frequency code (default: auto-detect from index)
                  - 'D': Daily (365.25 observations/year)
-                 - 'W': Weekly (52.14 observations/year)  
+                 - 'W': Weekly (52.14 observations/year)
                  - 'ME': Monthly (12 observations/year)
                  - 'YE': Annual (1 observation/year) - for measles
                  Auto-detection requires DatetimeIndex with regular spacing.
@@ -104,7 +104,7 @@ class DataContainer:
             >>> container = DataContainer(covid_data, window=7, mode='cumulative')
 
             >>> # Annual measles data (incidence, explicit frequency)
-            >>> container = DataContainer(measles_data, window=3, mode='incidence', 
+            >>> container = DataContainer(measles_data, window=3, mode='incidence',
             ...                           frequency='YE')
 
             >>> # Monthly surveillance data (cumulative)
@@ -130,10 +130,10 @@ class DataContainer:
         self.raw_data = raw_data
         self.window = window if window is not None else settings.WINDOW_SIZE
         self.mode = mode
-        
+
         # Validate input data early (mode-specific)
         validate_data(self.raw_data, mode=self.mode)
-        
+
         # Detect or validate frequency
         if frequency is None:
             # Auto-detect from DatetimeIndex if available
@@ -146,17 +146,19 @@ class DataContainer:
                 logging.info("DatetimeIndex not found; defaulting to daily frequency")
         else:
             # Validate provided frequency
-            valid_frequencies = ["D", "W", "ME", "YE"]
+            valid_frequencies = ["D", "B", "W", "ME", "YE"]
             if frequency not in valid_frequencies:
                 raise ValueError(
                     f"Invalid frequency '{frequency}'. Must be one of {valid_frequencies}"
                 )
             self.frequency = frequency
-        
+
         # Get frequency-specific handler
         self.handler = get_frequency_handler(self.frequency)
-        logging.info(f"Using {self.handler.__class__.__name__} for {self.frequency} frequency")
-        
+        logging.info(
+            f"Using {self.handler.__class__.__name__} for {self.frequency} frequency"
+        )
+
         self.data = None
 
         # Run the processing pipeline
@@ -181,7 +183,9 @@ class DataContainer:
 
         # Process data through the pipeline
         # Pass frequency to preprocessing for frequency-aware reindexing
-        self.data = preprocess_data(self.raw_data, window=self.window, frequency=self.frequency)
+        self.data = preprocess_data(
+            self.raw_data, window=self.window, frequency=self.frequency
+        )
 
         logging.debug(f"Preprocessed data columns: {self.data.columns}")
         logging.debug(f"Preprocessed data shape: {self.data.shape}")
