@@ -15,9 +15,7 @@ class TestAggregrateForecast:
         """Create a model with generated results for testing."""
         # sample_data_container has data from 2020-03-01 to 2020-03-31
         # After smoothing with window=7, data starts from 2020-03-08
-        model = Model(
-            sample_data_container, start="2020-03-10", stop="2020-03-25"
-        )
+        model = Model(sample_data_container, start="2020-03-10", stop="2020-03-25")
         model.create_model()
         model.fit_model(max_lag=3)
         model.forecast(steps=30)  # 30 days
@@ -135,9 +133,7 @@ class TestAggregrateForecast:
 
     def test_aggregate_forecast_error_no_results(self, sample_data_container):
         """Test error when results not generated."""
-        model = Model(
-            sample_data_container, start="2020-03-10", stop="2020-03-25"
-        )
+        model = Model(sample_data_container, start="2020-03-10", stop="2020-03-25")
 
         with pytest.raises(ValueError, match="Must generate results"):
             model.aggregate_forecast("C", target_frequency="W")
@@ -145,9 +141,7 @@ class TestAggregrateForecast:
     def test_aggregate_forecast_error_invalid_compartment(self, model_with_results):
         """Test error with invalid compartment."""
         with pytest.raises(ValueError, match="not found in results"):
-            model_with_results.aggregate_forecast(
-                "INVALID", target_frequency="W"
-            )
+            model_with_results.aggregate_forecast("INVALID", target_frequency="W")
 
     def test_aggregate_forecast_error_invalid_function(self, model_with_results):
         """Test error with invalid aggregation function."""
@@ -184,6 +178,16 @@ class TestAggregrateForecast:
 
         assert isinstance(aggregated.index, pd.DatetimeIndex)
 
+    def test_aggregate_forecast_same_frequency_no_resample(self, model_with_results):
+        """Target frequency equal to source should not resample or alter length."""
+        original_len = len(model_with_results.results.C)
+        aggregated = model_with_results.aggregate_forecast(
+            "C", target_frequency="D", aggregate_func="last"
+        )
+
+        assert len(aggregated) == original_len
+        assert isinstance(aggregated.index, pd.DatetimeIndex)
+
     def test_aggregate_forecast_monthly_frequency(self, model_with_results):
         """Test aggregation to monthly frequency."""
         # Forecast 60 days to get ~2 months
@@ -199,6 +203,31 @@ class TestAggregrateForecast:
         # Should have 2 months
         assert len(aggregated) >= 1
         assert len(aggregated) <= 3  # Account for partial months
+
+    def test_aggregate_forecast_non_daily_source(self, sample_annual_processed_data):
+        """Aggregation works when source results are non-daily (e.g., annual)."""
+        # Build a model and manually attach annual results
+        container = DataContainer(
+            sample_annual_processed_data, mode="cumulative", frequency="YE"
+        )
+        model = Model(container)
+        model.results = {
+            "C": pd.DataFrame(
+                {
+                    "mean": np.arange(len(container.data)),
+                    "median": np.arange(len(container.data)),
+                },
+                index=container.data.index,
+            )
+        }
+
+        aggregated = model.aggregate_forecast(
+            "C", target_frequency="Y", aggregate_func="last"
+        )
+
+        # With matching frequency, length should be identical
+        assert len(aggregated) == len(container.data)
+        assert (aggregated.index == container.data.index).all()
 
 
 class TestAggregationIntegration:
