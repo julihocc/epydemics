@@ -67,11 +67,21 @@ pip install -e .
 
 ## Documentation
 
--   **[User Guide](docs/USER_GUIDE.md)**: Complete guide on when to use epydemics, data preparation, and frequency handling.
--   **[TUTORIAL.md](TUTORIAL.md)**: A step-by-step guide to using `epydemics` for COVID-19 forecasting.
--   **[ARCHITECTURE.md](ARCHITECTURE.md)**: A high-level overview of the project's architecture.
--   **[CONTRIBUTING.md](CONTRIBUTING.md)**: Instructions for contributing to the project.
--   **[CLAUDE.md](.github/copilot-instructions.md)**: Developer documentation and internal architecture.
+**User Documentation**:
+-   **[User Guide](docs/USER_GUIDE.md)**: Complete guide on when to use epydemics, data preparation, and frequency handling
+-   **[Tutorial](TUTORIAL.md)**: Step-by-step guide for COVID-19 forecasting
+-   **[CHANGELOG.md](CHANGELOG.md)**: Version history and detailed changes
+
+**Developer Documentation**:
+-   **[Architecture](ARCHITECTURE.md)**: High-level architecture overview
+-   **[Contributing](CONTRIBUTING.md)**: Contribution guidelines and workflow
+-   **[CLAUDE.md](CLAUDE.md)**: Developer guide for AI assistants
+-   **[Documentation Index](docs/INDEX.md)**: Complete documentation organization and navigation
+
+**Release Documentation**:
+-   **[v0.9.0 Release Notes](docs/releases/RELEASE_NOTES_v0.9.0.md)**: Latest release details
+-   **[Migration Guide](docs/releases/MIGRATION_GUIDE.md)**: Upgrade from v0.8.0 to v0.9.0
+-   **[PyPI Publication Guide](docs/releases/PYPI_PUBLICATION_GUIDE.md)**: Publishing to PyPI
 
 ## Further work
 
