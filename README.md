@@ -1,6 +1,6 @@
 # Epydemics: Forecasting COVID-19 using time series and machine learning
 
-**Version 0.8.0** - Multi-Frequency Support & Annual Data Workarounds
+**Version 0.9.0** - Native Multi-Frequency (Daily, Business Day, Weekly, Monthly, Annual)
 
 `epydemics` is a Python library for epidemiological modeling and forecasting. It provides tools for creating, fitting, and evaluating discrete SIRD/SIRDV models with time-dependent parameters. The library is designed to be flexible and extensible, allowing users to easily incorporate their own data and models.
 
@@ -11,15 +11,16 @@
 -   **Discrete SIRD Model**: A discrete Susceptible-Infected-Recovered-Deceased (SIRD) model with time-dependent parameters.
 -   **SIRDV Vaccination Model** (v0.7.0): Extended model including Vaccinated compartment (V) and vaccination rate (δ).
 -   **Time Series Forecasting**: Use of VAR (Vector Autoregression) models to forecast epidemic rates with logit transformation.
--   **Multi-Frequency Support** (v0.8.0): Automatic frequency detection (daily/weekly/monthly/annual) with mismatch warnings.
--   **Temporal Aggregation** (v0.8.0): Aggregate daily forecasts to annual/monthly/weekly output frequencies.
+-   **Multi-Frequency Support** (v0.9.0): Native processing of daily, business day, weekly, monthly, and annual data with automatic detection and handler-based validation (no artificial reindexing).
+-   **Temporal Aggregation** (v0.9.0): Frequency-aware aggregation that skips resampling when source and target frequencies match.
+-   **Business Day Support** (v0.9.0): Dedicated handler for trading-day calendars (252 days/year) with validated lags and recovery windows.
 -   **Data Container**: A convenient class for loading, preprocessing, and storing epidemiological data.
 -   **Parallel Simulations**: Multi-core support for faster Monte Carlo simulations (27 scenarios for SIRD, 81 for SIRDV).
 -   **Result Caching**: File-based caching to avoid recomputing identical analyses.
 -   **Model Evaluation**: Tools for evaluating model performance with MAE, MSE, RMSE, MAPE, SMAPE metrics.
 -   **Visualization**: Professional plotting functions for results and forecasts.
 
-> **⚠️ Annual Surveillance Data**: v0.8.0 provides workarounds for annual data (e.g., measles) through temporal aggregation. Native annual support coming in v0.9.0. See [User Guide](docs/USER_GUIDE.md#annual-surveillance-data-workaround) for details.
+> **✅ Native Multi-Frequency**: v0.9.0 processes annual/monthly/weekly/business-day data without artificial daily reindexing. See [User Guide](docs/USER_GUIDE.md#annual-surveillance-data-workaround) for frequency guidance.
 
 ## SIRDV Model (New in v0.7.0)
 
@@ -74,11 +75,11 @@ pip install -e .
 
 ## Further work
 
-Recent additions in v0.8.0:
--   ✅ **Frequency Detection & Warnings**: Automatic detection of data frequency with warnings for mismatches
--   ✅ **Temporal Aggregation**: Aggregate daily forecasts to annual/monthly/weekly for reporting
--   ✅ **Annual Data Workarounds**: Phase 1 support for annual surveillance data (native support in v0.9.0)
--   ✅ **Modern Pandas Compatibility**: Updated to use YE/ME frequency aliases (no FutureWarnings)
+Recent additions in v0.9.0:
+-   ✅ **Native Multi-Frequency**: Daily, business day, weekly, monthly, annual handlers; no artificial reindexing
+-   ✅ **Frequency-Aware Aggregation**: Skip resampling when source and target frequencies match
+-   ✅ **Frequency-Aware Seasonality**: Adaptive seasonal detection per frequency
+-   ✅ **Business Day Support**: Trading-day defaults (252 days/year, 10-lag VAR, 10-day recovery)
 
 Previous releases (v0.6.1-v0.7.0):
 -   ✅ **SIRDV Model Support**: Automatic detection and modeling of vaccination data
@@ -86,11 +87,11 @@ Previous releases (v0.6.1-v0.7.0):
 -   ✅ **Result Caching**: Optional caching to avoid recomputation
 -   ✅ **Enhanced Testing**: Comprehensive test coverage with slow test markers
 
-Future directions (v0.9.0+):
+Future directions (v1.0.0+):
 
--   **Native Multi-Frequency Support**: True annual/monthly/weekly modeling without reindexing
 -   **Incidence-First Mode**: Direct modeling of incident cases (not just cumulative)
 -   **Importation Modeling**: Handle external case introductions for eliminated diseases
+-   **Probabilistic & Scenario Forecasting**: Monte Carlo and intervention comparison workflows
 -   **More advanced time series models**: SARIMAX, Prophet, or deep learning approaches
 -   **Support for other epidemiological models**: Extend to SEIR, SEIRD, or metapopulation models
 -   **Improved visualization**: Interactive dashboards and real-time updating plots
