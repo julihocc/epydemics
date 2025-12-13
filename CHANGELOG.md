@@ -5,7 +5,72 @@ All notable changes to the epydemics project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.0] - 2025-12-08
+## [0.9.0] - TBD
+
+### Added - Phases 4-7: Native Multi-Frequency Support (COMPLETE)
+
+**Major Feature: Native Multi-Frequency Processing Without Resampling**
+
+The system now processes epidemiological data in its native frequency without artificial resampling. Supports 5 frequency types: Daily (D), Business Day (B), Weekly (W), Monthly (ME), and Annual (YE).
+
+**Phase 4: Frequency-Aware VAR Parameter Defaults**
+- Automatic max_lag selection based on frequency:
+  - Daily (D): 14 lags (2 weeks)
+  - Business Day (B): 10 lags (2 trading weeks)
+  - Weekly (W): 8 lags (2 months)
+  - Monthly (ME): 6 lags (6 months)
+  - Annual (YE): 3 lags (3 years)
+- Intelligent max_lag adjustment when data insufficient: `max(1, (n_obs-20)/6)`
+- Logging for max_lag adjustments and frequency detection
+
+**Phase 5: Frequency-Aware Forecast Aggregation**
+- `Model.aggregate_forecast()` now detects source frequency from forecasted data
+- Skips resampling when target frequency matches source (optimization)
+- Proper handling of modern pandas frequency aliases (ME, YE)
+- Maps deprecated aliases automatically (M→ME, Y→YE)
+
+**Phase 6: Frequency-Aware Seasonal Pattern Detection**
+- New `SeasonalPatternDetector` class in `src/epydemics/analysis/seasonality.py`
+- Adaptive threshold for periodicity detection (0.3 for frequent, 0.2 for long periods)
+- Frequency-specific candidate periods:
+  - Daily: 7, 14, 30, 91, 365 days (weekly, biweekly, monthly, quarterly, annual)
+  - Weekly: 4, 13, 26, 52 weeks (monthly, quarterly, semi-annual, annual)
+  - Monthly: 3, 6, 12 months (quarterly, semi-annual, annual)
+  - Annual: None (insufficient data for patterns)
+- ARIMA/Prophet recommendations based on detected seasonality
+- 13 comprehensive tests covering all frequencies
+
+**Phase 7: Business Day Frequency Support**
+- New `BusinessDayFrequencyHandler` class
+  - 252 trading days per year
+  - recovery_lag = 10 business days (2 trading weeks)
+  - max_lag = 10 (conservative for VAR)
+  - min_observations = 60 (3 months of trading data)
+- Extended frequency detection to recognize 'B' code
+- Business day pattern detection (1-day gaps with weekend skips)
+- DataContainer accepts 'B' in frequency validation
+- 12 comprehensive tests for business day support
+
+**System Integration:**
+- Pluggable `FrequencyHandler` architecture with concrete implementations
+- `FrequencyHandlerRegistry` for handler lookup
+- Frequency detection in `DataContainer.__init__()`
+- Automatic frequency propagation through pipeline
+- Zero breaking changes - fully backward compatible
+
+**Testing:**
+- 394 tests passing (32 skipped for optional dependencies)
+- +12 new tests for business day support
+- +13 new tests for seasonal pattern detection
+- All phases validated with comprehensive test coverage
+
+**Documentation:**
+- `MULTI_FREQUENCY_IMPLEMENTATION_COMPLETE.md` - 650+ line comprehensive guide
+- `PHASE_7_COMPLETION_SUMMARY.md` - Technical implementation details
+- `PHASE_7_SESSION_SUMMARY.md` - Development walkthrough
+- `PHASE_7_FILE_INDEX.md` - Quick reference guide
+
+### Added - Phase 2: Incidence Mode (Measles Integration Complete)
 
 ### Added - Phase 2: Incidence Mode (Measles Integration Complete)
 

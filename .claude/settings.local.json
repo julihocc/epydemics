@@ -36,7 +36,10 @@
       "Bash(done)",
       "Bash(python3:*)",
       "Bash(git --version)",
-      "Bash(gh:*)"
+      "Bash(gh:*)",
+      "Bash(chmod:*)",
+      "Bash(./organize_docs.sh:*)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []

@@ -211,7 +211,24 @@ class Model(BaseModel, SIRDModelMixin):
         self.forecaster_name = forecaster
         self.forecaster_kwargs = forecaster_kwargs
 
-        self.data = reindex_data(data_container.data, start, stop)
+        # Reindex data (frequency-aware - skip reindexing for non-daily data)
+        if hasattr(data_container, "frequency") and data_container.frequency in (
+            "ME",
+            "YE",
+        ):
+            # For monthly/annual: just slice by date range, no reindexing
+            freq_to_use = data_container.frequency
+            logging.debug(f"Using frequency-aware reindexing: {freq_to_use}")
+            self.data = reindex_data(
+                data_container.data,
+                start,
+                stop,
+                freq=freq_to_use,
+                warn_on_mismatch=False,
+            )
+        else:
+            # For daily/weekly or when no frequency info: use default (daily reindexing)
+            self.data = reindex_data(data_container.data, start, stop)
 
         # Select only logit ratios that exist in the data (SIRD vs SIRDV)
         available_logit_ratios = [r for r in LOGIT_RATIOS if r in self.data.columns]
@@ -304,10 +321,17 @@ class Model(BaseModel, SIRDModelMixin):
         - Set defaults at initialization: Model(..., max_lag=10)
         - Override at fit time: model.fit_model(max_lag=15)
 
+        Frequency-aware defaults: If max_lag is not provided, uses frequency-specific
+        defaults from DataContainer.handler (if available), otherwise uses settings:
+        - Daily: max_lag=14 (rich time series)
+        - Weekly: max_lag=10
+        - Monthly: max_lag=6 (sparser data)
+        - Annual: max_lag=3 (very sparse data)
+
         Args:
             **kwargs: Backend-specific parameters. Common options:
                 For VAR:
-                    max_lag: Maximum lag order for selection (default from settings)
+                    max_lag: Maximum lag order for selection (default from frequency handler or settings)
                     ic: Information criterion ('aic', 'bic', etc.)
                 For Prophet:
                     yearly_seasonality: Enable yearly patterns
@@ -319,7 +343,7 @@ class Model(BaseModel, SIRDModelMixin):
                     seasonal: Enable seasonal ARIMA
 
         Examples:
-            >>> # VAR with defaults
+            >>> # VAR with defaults (frequency-aware)
             >>> model = Model(container)
             >>> model.create_model()
             >>> model.fit_model(max_lag=10)
@@ -339,7 +363,35 @@ class Model(BaseModel, SIRDModelMixin):
 
         # Apply backend-specific defaults from settings
         if self.forecaster_name == "var":
-            merged_kwargs.setdefault("max_lag", settings.VAR_MAX_LAG)
+            # Use frequency-specific max_lag if available and not explicitly provided
+            if "max_lag" not in merged_kwargs:
+                # Check if container has frequency handler
+                if hasattr(self.data_container, "handler"):
+                    frequency_max_lag = (
+                        self.data_container.handler.get_default_max_lag()
+                    )
+                    merged_kwargs.setdefault("max_lag", frequency_max_lag)
+                    logging.info(
+                        f"Using frequency-specific max_lag={frequency_max_lag} "
+                        f"({self.data_container.handler.frequency_name})"
+                    )
+                else:
+                    merged_kwargs.setdefault("max_lag", settings.VAR_MAX_LAG)
+
+            # Adjust max_lag if it exceeds available data
+            # VAR needs roughly max_lag * n_equations observations, so be very conservative
+            available_obs = len(self.data)
+            # Rule: max_lag should leave at least 20 observations for stable covariance
+            # With 3 rates: each lag costs ~3 df, so (available - 20) / 3 / 2 (additional safety)
+            max_allowed_lag = max(1, (available_obs - 20) // 6)
+            if merged_kwargs["max_lag"] > max_allowed_lag:
+                old_lag = merged_kwargs["max_lag"]
+                merged_kwargs["max_lag"] = max_allowed_lag
+                logging.warning(
+                    f"Reduced max_lag from {old_lag} to {max_allowed_lag} "
+                    f"due to limited observations ({available_obs})"
+                )
+
             merged_kwargs.setdefault("ic", settings.VAR_CRITERION)
 
         self.var_forecasting.fit_logit_ratios_model(*args, **merged_kwargs)
@@ -772,13 +824,25 @@ class Model(BaseModel, SIRDModelMixin):
                 f"Must be in {CENTRAL_TENDENCY_METHODS}"
             )
 
-        # Get daily forecast results
+        # Get forecast results (may be daily or native frequency)
         daily_results = self.results[compartment_code]
 
-        # Convert to modern frequency alias to avoid FutureWarnings
+        # Convert to modern frequency aliases to avoid FutureWarnings
         from epydemics.core.constants import MODERN_FREQUENCY_ALIASES
 
-        modern_freq = MODERN_FREQUENCY_ALIASES.get(target_frequency, target_frequency)
+        modern_target_freq = MODERN_FREQUENCY_ALIASES.get(
+            target_frequency, target_frequency
+        )
+
+        # Detect source frequency: prefer inferred index freq, fallback to container
+        source_freq = pd.infer_freq(daily_results.index)
+        if source_freq is None and hasattr(self, "data_container"):
+            source_freq = getattr(self.data_container, "frequency", None)
+        modern_source_freq = (
+            MODERN_FREQUENCY_ALIASES.get(source_freq, source_freq)
+            if source_freq
+            else None
+        )
 
         # Define aggregation function
         agg_funcs = {
@@ -795,9 +859,12 @@ class Model(BaseModel, SIRDModelMixin):
                 f"Must be one of {list(agg_funcs.keys())}"
             )
 
-        # Resample to target frequency using modern alias
-        resampler = daily_results.resample(modern_freq)
-        aggregated = resampler.apply(agg_funcs[aggregate_func])
+        # If target frequency matches source, skip resampling
+        if modern_source_freq and modern_source_freq == modern_target_freq:
+            aggregated = daily_results.copy()
+        else:
+            resampler = daily_results.resample(modern_target_freq)
+            aggregated = resampler.apply(agg_funcs[aggregate_func])
 
         # Only keep the central tendency columns requested
         all_cols = list(aggregated.columns)

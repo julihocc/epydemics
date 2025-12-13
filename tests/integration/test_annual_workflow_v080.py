@@ -42,20 +42,38 @@ class TestAnnualDataWorkflow:
         return data
 
     def test_annual_data_detection_and_warning(self, annual_measles_data):
-        """Test that annual frequency is detected and warning is emitted."""
+        """Test that annual frequency is detected and NO warning (native support).
+        
+        In v0.10.0+, annual data is processed natively without reindexing,
+        so no frequency mismatch warning is emitted. Instead, verify that:
+        1. Frequency is correctly detected
+        2. Data shape is preserved (no artificial reindexing)
+        """
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
 
             # Create container with annual data
-            # This will trigger reindex_data with default freq='D'
-            container = DataContainer(annual_measles_data, window=1)
+            # With frequency support, should NOT reindex to daily
+            container = DataContainer(annual_measles_data, frequency='YE')
 
-            # Should emit frequency mismatch warning
-            assert len(w) >= 1
-            warning_messages = [str(warning.message) for warning in w]
-            assert any(
-                "FREQUENCY MISMATCH" in msg for msg in warning_messages
-            ), f"Expected frequency mismatch warning. Got: {warning_messages}"
+            # Should NOT emit frequency mismatch warning (native support)
+            frequency_warnings = [str(warning.message) for warning in w 
+                                if "FREQUENCY MISMATCH" in str(warning.message)]
+            assert len(frequency_warnings) == 0, (
+                f"Should not emit frequency mismatch warning with native annual support. "
+                f"Got: {frequency_warnings}"
+            )
+            
+            # Verify frequency is set correctly
+            assert container.frequency == 'YE'
+            
+            # Verify data shape is preserved (not expanded to daily)
+            # Input: ~10 annual observations → Output should be ~10 rows
+            # (not ~3650 rows from daily reindexing)
+            assert len(container.data) <= len(annual_measles_data) * 2, (
+                f"Annual data should not be massively expanded. "
+                f"Input: {len(annual_measles_data)}, Output: {len(container.data)}"
+            )
 
     def test_complete_annual_workflow_with_aggregation(self, sample_data_container):
         """Test complete workflow: daily data -> forecast -> annual aggregation.
