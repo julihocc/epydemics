@@ -24,10 +24,10 @@ git worktree remove ../epydemics.worktrees/feature-name
 ```
 
 ### Version Management
-- Current version: 0.7.0 (defined in `pyproject.toml`)
+- Current version: 0.9.0 (defined in `pyproject.toml`)
 - Version also appears in `src/epydemics/__init__.py` as `__version__`
 - Main branch: `main`
-- When bumping versions, update both `pyproject.toml` (line 7) and `src/epydemics/__init__.py` (line 51)
+- When bumping versions, update both `pyproject.toml` (line 7) and `src/epydemics/__init__.py`
 - **IMPORTANT**: These must be kept in sync. Check both files before releasing.
 
 ### Result Caching (v0.6.1+)
@@ -157,9 +157,10 @@ Raw OWID Data → DataContainer → Feature Engineering → Model → Forecast �
 
 **`src/epydemics/data/`** - Data pipeline
 - `container.py`: DataContainer class - main entry point for data processing
-- `preprocessing.py`: Rolling window smoothing, reindexing
+- `preprocessing.py`: Rolling window smoothing, frequency detection
 - `features.py`: SIRD compartment calculations, rate calculations, logit transforms
-- `validation.py`: Data validation and type checking
+- `validation.py`: Data validation and type checking (cumulative and incidence modes)
+- `frequency_handlers.py`: Pluggable frequency handlers (Daily, Business Day, Weekly, Monthly, Annual)
 
 **`src/epydemics/models/`** - Modeling components
 - `base.py`: BaseModel and SIRDModelMixin abstract classes
@@ -179,6 +180,9 @@ Raw OWID Data → DataContainer → Feature Engineering → Model → Forecast �
   - `add_forecast_highlight()`: Add shaded regions for forecast periods
   - `set_professional_style()`: Apply consistent styling across plots
   - `format_subplot_grid()`: Configure subplot layouts
+- `seasonality.py`: Frequency-aware seasonal pattern detection (v0.9.0)
+  - `SeasonalPatternDetector`: Adaptive threshold detection per frequency
+  - Frequency-specific candidate periods (daily: 7/14/30/91/365, weekly: 4/13/26/52, etc.)
 
 **`src/epydemics/utils/`** - Utilities
 - `transformations.py`: Logit/inverse logit transforms, rate bound handling
@@ -317,158 +321,188 @@ print(model.results.V)  # Vaccination forecasts
 - Simulation time ~3x longer due to 81 scenarios vs 27
 - Parallel execution (`n_jobs=None`) recommended for SIRDV
 
-### Annual Surveillance Data Support (v0.8.0+)
+### Native Multi-Frequency Support (v0.9.0)
 
-Version 0.8.0 introduces basic support for annual surveillance data (e.g., measles) through frequency detection, mismatch warnings, and temporal aggregation. This is a Phase 1 workaround - full native support will come in v0.9.0.
+Version 0.9.0 introduces **native multi-frequency support** without artificial reindexing. The system now processes epidemiological data in its native frequency (Daily, Business Day, Weekly, Monthly, Annual) using a pluggable handler architecture.
 
-**Key v0.8.0 Features:**
-- **Frequency Detection**: Automatically detects data frequency (D, W, M, Y)
-- **Frequency Mismatch Warnings**: Warns when annual data is reindexed to daily
-- **Temporal Aggregation**: Aggregate daily forecasts back to annual/monthly/weekly
+**Key v0.9.0 Features:**
+
+- **Native Frequency Processing**: No artificial reindexing - data stays in native frequency
+- **5 Supported Frequencies**: Daily (D), Business Day (B), Weekly (W), Monthly (ME), Annual (YE)
+- **Pluggable Architecture**: `FrequencyHandler` base class with concrete implementations
+- **Frequency-Aware VAR Defaults**: Automatic max_lag selection based on frequency
+- **Frequency-Aware Aggregation**: Skips resampling when source and target frequencies match
+- **Frequency-Aware Seasonality**: Adaptive seasonal pattern detection per frequency
+- **Business Day Support**: Trading-day calendars (252 days/year) with validated lags
 - **Backward Compatible**: All existing code works unchanged (defaults to daily)
 
-**Current Limitations (Phase 1):**
-- No native annual modeling - annual data is still reindexed to daily
-- Reindexing creates ~365x artificial data points via forward-fill
-- VAR models may fail with artificial data patterns
-- Phase 2 (v0.9.0) will add native frequency support
-
-**Frequency Detection:**
+**Frequency Handlers (v0.9.0):**
 ```python
-from epydemics.data.preprocessing import detect_frequency
-import pandas as pd
-
-# Daily data
-daily_data = pd.DataFrame(
-    {"C": range(100), "D": range(100), "N": [1000000] * 100},
-    index=pd.date_range("2020-01-01", periods=100, freq="D")
+from epydemics.data.frequency_handlers import (
+    FrequencyHandlerRegistry,
+    DailyFrequencyHandler,
+    BusinessDayFrequencyHandler,
+    WeeklyFrequencyHandler,
+    MonthlyFrequencyHandler,
+    AnnualFrequencyHandler,
 )
-freq = detect_frequency(daily_data)  # Returns "D"
 
-# Annual data
-annual_data = pd.DataFrame(
-    {"C": range(10), "D": range(10), "N": [300000000] * 10},
-    index=pd.date_range("2015", periods=10, freq="YE")
-)
-freq = detect_frequency(annual_data)  # Returns "Y"
+# Automatic frequency detection and handler selection
+registry = FrequencyHandlerRegistry()
+handler = registry.get_handler("YE")  # Annual handler
+print(handler.days_per_year)  # 365
+print(handler.recovery_lag)   # 0 (rounded from 14/365 years)
+print(handler.default_max_lag)  # 3 years
+
+# Business day handler (new in v0.9.0)
+bday_handler = registry.get_handler("B")
+print(bday_handler.days_per_year)  # 252 (trading days)
+print(bday_handler.recovery_lag)   # 10 (business days)
+print(bday_handler.default_max_lag)  # 10 (conservative for VAR)
 ```
 
-**Frequency Mismatch Warning:**
-```python
-from epydemics import DataContainer
-import warnings
-
-# Annual data will trigger warning when reindexed to daily
-with warnings.catch_warnings(record=True) as w:
-    warnings.simplefilter("always")
-    container = DataContainer(annual_data, window=1)
-
-    # Warning emitted:
-    # "FREQUENCY MISMATCH WARNING
-    #  Source data frequency: annual (Y)
-    #  Target frequency: daily (D)
-    #  Artificial data points created: 13516
-    #
-    #  Reindexing annual data to daily creates 13516 rows via forward-fill,
-    #  which may produce meaningless rate calculations and forecasts.
-    #
-    #  Recommended actions:
-    #  1. Use native frequency support (v0.9.0+): frequency='Y'
-    #  2. Use temporal aggregation to convert forecasts back to annual
-    #  3. See documentation for annual surveillance data best practices"
-```
-
-**Temporal Aggregation Workflow (Recommended):**
+**Native Annual Data Workflow (v0.9.0):**
 ```python
 from epydemics import DataContainer, Model
+import pandas as pd
+import numpy as np
 
-# 1. Load annual measles data (will be reindexed to daily with warning)
+# 1. Load annual measles data (native frequency - NO reindexing)
 annual_data = pd.DataFrame({
     "C": np.cumsum(np.random.exponential(200, 40)),
     "D": np.cumsum(np.random.exponential(5, 40)),
     "N": [330000000] * 40,
 }, index=pd.date_range("1980", periods=40, freq="YE"))
 
-# Suppress warning if you understand the limitation
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", message=".*FREQUENCY MISMATCH.*")
-    container = DataContainer(annual_data, window=1)
+# DataContainer automatically detects frequency and uses appropriate handler
+container = DataContainer(annual_data, window=1, frequency="YE")
+print(container.frequency)  # "YE" (year-end)
 
-# 2. Create model and forecast (in daily resolution)
+# 2. Create model (no frequency conversion - stays annual)
 model = Model(container, start="1982", stop="2010")
 model.create_model()
-model.fit_model(max_lag=3)
-model.forecast(steps=365 * 10)  # 10 years in days
+model.fit_model(max_lag=3)  # Auto-selected based on annual frequency
+
+# 3. Forecast in native annual frequency
+model.forecast(steps=10)  # 10 YEARS, not days
 model.run_simulations(n_jobs=1)
 model.generate_result()
 
-# 3. Aggregate daily forecasts back to annual
-annual_forecast = model.aggregate_forecast(
+# Results are already in annual frequency - no aggregation needed
+print(model.results.C)  # Annual case forecasts
+```
+
+**Incidence Mode for Eliminated Diseases (v0.9.0):**
+```python
+# Measles surveillance: incident cases (not cumulative)
+measles_data = pd.DataFrame({
+    "I": [220, 55, 667, 164, 81, 34, 12, 0, 0, 4, 18, 45, 103, 67, 89],  # Annual incident cases
+    "D": [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],  # Deaths
+    "N": [110000000] * 15,  # Population
+}, index=pd.date_range("2010", periods=15, freq="YE"))
+
+# Use incidence mode (NEW in v0.9.0)
+container = DataContainer(measles_data, window=1, frequency="YE", mode="incidence")
+print(container.mode)  # "incidence"
+
+# Model automatically inherits incidence mode
+model = Model(container, start="2010", stop="2020")
+print(model.mode)  # "incidence"
+
+# Feature engineering handles incidence → cumulative conversion
+# C = cumsum(I), then rates calculated identically
+model.create_model()
+model.fit_model(max_lag=3)
+model.forecast(steps=5)  # 5 years
+model.run_simulations(n_jobs=1)
+model.generate_result()
+```
+
+**Frequency-Aware Aggregation (v0.9.0):**
+```python
+# Aggregation now detects source frequency and skips resampling when unnecessary
+# Example: Daily forecasts → Annual aggregation
+daily_model = Model(daily_container, start="2020-01", stop="2020-12")
+daily_model.forecast(steps=365)
+
+annual_forecast = daily_model.aggregate_forecast(
     "C",  # Compartment
-    target_frequency="Y",  # Annual
+    target_frequency="YE",  # Annual (use modern alias)
     aggregate_func="last",  # End-of-year value
     methods=["mean", "median"]  # Central tendency methods
 )
 
-# Result: DataFrame with annual forecasts
-print(annual_forecast.head())
-#             mean     median  lower|lower|lower  ...
-# 2010-12-31  1234.5   1200.3  1100.2            ...
-# 2011-12-31  1456.7   1420.1  1300.4            ...
+# Example: Annual forecasts (already annual) → Annual aggregation (no resampling)
+annual_model = Model(annual_container, start="2010", stop="2020")
+annual_model.forecast(steps=10)
+
+# No resampling occurs here (source=YE, target=YE)
+annual_agg = annual_model.aggregate_forecast("C", target_frequency="YE", aggregate_func="last")
 ```
 
-**Aggregation Functions:**
+**Frequency-Aware Seasonality Detection (v0.9.0):**
 ```python
-# Different aggregation strategies
-model.aggregate_forecast("C", target_frequency="Y", aggregate_func="sum")    # Total cases per year
-model.aggregate_forecast("C", target_frequency="Y", aggregate_func="mean")   # Average daily cases
-model.aggregate_forecast("C", target_frequency="Y", aggregate_func="last")   # End-of-year value
-model.aggregate_forecast("C", target_frequency="Y", aggregate_func="max")    # Peak value
+from epydemics.analysis.seasonality import SeasonalPatternDetector
 
-# Weekly and monthly aggregation
-model.aggregate_forecast("C", target_frequency="W", aggregate_func="sum")    # Weekly totals
-model.aggregate_forecast("C", target_frequency="M", aggregate_func="last")   # Monthly snapshots
+# Automatic frequency-specific seasonality detection
+detector = SeasonalPatternDetector()
+
+# Daily data: checks for weekly, monthly, quarterly, annual patterns
+daily_seasonality = detector.detect_seasonal_patterns(daily_data, frequency="D")
+print(daily_seasonality)
+# {'has_seasonality': True, 'periods': [7, 365], 'model_recommendation': 'ARIMA'}
+
+# Annual data: no seasonal patterns (insufficient data)
+annual_seasonality = detector.detect_seasonal_patterns(annual_data, frequency="YE")
+print(annual_seasonality)
+# {'has_seasonality': False, 'periods': [], 'model_recommendation': 'Simple VAR'}
 ```
 
 **Supported Frequencies:**
 ```python
 from epydemics.core.constants import (
-    SUPPORTED_FREQUENCIES,
-    FREQUENCY_ALIASES,
-    DEFAULT_FREQUENCY,
+    MODERN_FREQUENCY_ALIASES,
+    RECOVERY_LAG_BY_FREQUENCY,
 )
 
-# Supported frequency codes
-print(SUPPORTED_FREQUENCIES)  # ["D", "W", "M", "Y", "A"]
+# Modern pandas frequency aliases (v0.9.0)
+print(MODERN_FREQUENCY_ALIASES)
+# {"D": "D", "W": "W", "M": "ME", "Y": "YE", "A": "YE", "B": "B"}
 
-# Frequency aliases (user-friendly names)
-print(FREQUENCY_ALIASES)  # {"D": "daily", "W": "weekly", "M": "monthly", "Y": "annual", ...}
-
-# Default frequency (backward compatibility)
-print(DEFAULT_FREQUENCY)  # "D"
+# Recovery lag by frequency (biological constant: 14 days)
+print(RECOVERY_LAG_BY_FREQUENCY)
+# {"D": 14, "W": 2, "M": 0.5, "Y": 0.038, "A": 0.038}
 ```
 
-**Best Practices for Annual Data (v0.8.0):**
-1. Use `window=1` for annual data (no smoothing needed)
-2. Suppress frequency warnings if you accept the limitations
-3. Use temporal aggregation to convert forecasts back to annual
-4. Test with smaller date ranges first to validate the approach
-5. Consider waiting for v0.9.0 for native annual modeling
+**Best Practices for Multi-Frequency Data (v0.9.0):**
 
-**Looking Ahead to v0.9.0 (Native Frequency Support):**
-```python
-# Future API (not available in v0.8.0)
-container = DataContainer(annual_data, frequency="Y", mode="cumulative")
-model = Model(container, start="1982", stop="2010")
-model.create_model()
-model.fit_model(max_lag=3)
-model.forecast(steps=10)  # 10 years natively
-model.run_simulations(n_jobs=1)
-model.generate_result()
+1. **Always specify frequency explicitly** to avoid auto-detection errors
+   ```python
+   container = DataContainer(data, frequency="YE")  # Explicit
+   ```
 
-# No reindexing, no artificial data, native annual modeling
-annual_results = model.results.C  # Already in annual frequency
-```
+2. **Use modern pandas aliases** to avoid FutureWarnings
+   - Use `"YE"` instead of `"Y"` or `"A"` for annual
+   - Use `"ME"` instead of `"M"` for monthly
+   - Use `"W"` for weekly (unchanged)
+   - Use `"D"` for daily (unchanged)
+   - Use `"B"` for business days (new)
+
+3. **Match window size to frequency**
+   - Annual: `window=1` (no smoothing)
+   - Monthly: `window=1-3` (minimal smoothing)
+   - Weekly: `window=1-4` (1-4 weeks)
+   - Daily: `window=7-14` (1-2 weeks)
+   - Business days: `window=5-10` (1-2 trading weeks)
+
+4. **Use incidence mode for eliminated diseases** (measles, polio, rubella)
+   ```python
+   container = DataContainer(data, mode="incidence", frequency="YE")
+   ```
+
+5. **Trust frequency-aware defaults** for VAR parameters
+   - System automatically selects appropriate `max_lag` based on frequency
+   - Override only when domain knowledge suggests otherwise
 
 ## Common Development Patterns
 
@@ -616,18 +650,60 @@ python benchmarks/parallel_simulation_benchmark.py
 
 Results saved to `benchmarks/parallel_benchmark_report.md`
 
+### Incidence Mode for Eliminated Diseases (v0.9.0)
+
+The library now supports **dual-mode data processing** for both cumulative and incidence (incident cases) data patterns.
+
+**Key Insight**: The system forecasts **rates** (α, β, γ, δ), not compartments. After feature engineering converts incidence→cumulative, the forecasting and simulation engines work identically for both modes.
+
+**Incidence Mode Use Cases:**
+- Measles surveillance: Annual incident cases with sporadic outbreaks and elimination periods
+- Eliminated diseases: Polio, rubella with variable annual incidence and non-monotonic patterns
+- Outbreak data: Cases that increase → decrease → increase (unlike COVID-19 cumulative data)
+
+**Mode Selection:**
+```python
+from epydemics import DataContainer
+
+# Cumulative mode (default - COVID-19 style)
+covid_data = pd.DataFrame({"C": cumulative_cases, "D": cumulative_deaths, "N": population})
+container = DataContainer(covid_data, mode="cumulative")  # C as input, I derived
+
+# Incidence mode (measles, polio, rubella style)
+measles_data = pd.DataFrame({"I": incident_cases, "D": deaths, "N": population})
+container = DataContainer(measles_data, mode="incidence", frequency="YE")  # I as input, C derived
+```
+
+**Feature Engineering Differences:**
+
+| Mode | Input Compartments | Derived Compartments | Conservation Law |
+|------|-------------------|---------------------|------------------|
+| Cumulative | C (cumulative cases) | I = C - R - D | C = I + R + D |
+| Incidence | I (incident cases) | C = cumsum(I) | Same after conversion |
+
+**After feature engineering, both modes produce identical rate calculations:**
+```python
+# Both modes ultimately calculate:
+α(t) = (A * dC) / (I * S)  # Infection rate
+β(t) = dR / I               # Recovery rate
+γ(t) = dD / I               # Mortality rate
+# Rates are then logit-transformed and fed to VAR model
+```
+
 ### Working with Constants
 Always import and use predefined constants from `epydemics.core.constants`:
 ```python
 from epydemics.core.constants import (
-    RATIOS,                      # ["alpha", "beta", "gamma"]
-    LOGIT_RATIOS,                # ["logit_alpha", "logit_beta", "logit_gamma"]
-    COMPARTMENTS,                # ["A", "C", "S", "I", "R", "D"]
+    RATIOS,                      # ["alpha", "beta", "gamma", "delta"] (v0.9.0: added delta)
+    LOGIT_RATIOS,                # ["logit_alpha", "logit_beta", "logit_gamma", "logit_delta"]
+    COMPARTMENTS,                # ["A", "C", "S", "I", "R", "D", "V"] (v0.7.0: added V)
     COMPARTMENT_LABELS,          # {"A": "Active", "C": "Confirmed", ...}
     FORECASTING_LEVELS,          # ["lower", "point", "upper"]
     CENTRAL_TENDENCY_METHODS,    # ["mean", "median", "gmean", "hmean"]
     METHOD_NAMES,                # {"mean": "Mean", "median": "Median", ...}
     METHOD_COLORS,               # {"mean": "blue", "median": "orange", ...}
+    MODERN_FREQUENCY_ALIASES,    # {"D": "D", "W": "W", "M": "ME", "Y": "YE", "A": "YE", "B": "B"}
+    RECOVERY_LAG_BY_FREQUENCY,   # {"D": 14, "W": 2, "M": 0.5, "Y": 0.038, "A": 0.038}
 )
 ```
 
@@ -766,17 +842,25 @@ Never use emojis in:
 When making changes to specific functionality, review these key files:
 
 **Data Processing**:
-- `src/epydemics/data/features.py` - Feature engineering logic
-- `src/epydemics/data/validation.py` - Data validation rules
+- `src/epydemics/data/features.py` - Feature engineering logic (cumulative and incidence modes)
+- `src/epydemics/data/validation.py` - Data validation rules (dual-mode support)
+- `src/epydemics/data/frequency_handlers.py` - Frequency handler implementations (v0.9.0)
+- `src/epydemics/data/preprocessing.py` - Frequency detection and smoothing
 
 **Modeling**:
-- `src/epydemics/models/sird.py` - Main model API
-- `src/epydemics/models/var_forecasting.py` - VAR forecasting logic
-- `src/epydemics/models/simulation.py` - Simulation engine
+- `src/epydemics/models/sird.py` - Main model API (mode-aware, frequency-aware)
+- `src/epydemics/models/var_forecasting.py` - VAR forecasting logic (frequency-aware defaults)
+- `src/epydemics/models/simulation.py` - Simulation engine (parallel/sequential)
+
+**Analysis**:
+- `src/epydemics/analysis/seasonality.py` - Frequency-aware seasonal pattern detection (v0.9.0)
+- `src/epydemics/analysis/evaluation.py` - Model evaluation metrics
+- `src/epydemics/analysis/visualization.py` - Plotting functions
 
 **Configuration**:
 - `pyproject.toml` - Project metadata, dependencies, tool configs
 - `src/epydemics/core/config.py` - Runtime settings (caching, parallel simulations)
+- `src/epydemics/core/constants.py` - Frequency aliases, recovery lags, compartments, rates
 - `.env` - Environment configuration for caching and parallel execution (optional)
 
 **Examples**:
@@ -790,3 +874,59 @@ When making changes to specific functionality, review these key files:
 **Testing**:
 - `tests/models/test_result_caching.py` - Result caching tests
 - `tests/test_parallel_simulations.py` - Parallel simulation tests
+- `tests/unit/data/test_incidence_mode.py` - Incidence mode unit tests (v0.9.0)
+- `tests/integration/test_incidence_mode_workflow.py` - Incidence mode integration tests (v0.9.0)
+- `tests/unit/analysis/test_seasonality.py` - Seasonal pattern detection tests (v0.9.0)
+
+## What's New in v0.9.0 (Current Release)
+
+This release represents a major architectural expansion enabling the library to handle diverse epidemiological data patterns beyond COVID-19.
+
+**Native Multi-Frequency Support (Phases 4-7)**:
+- **No More Reindexing**: Data stays in native frequency (Daily, Business Day, Weekly, Monthly, Annual)
+- **Pluggable Architecture**: `FrequencyHandler` base class with 5 concrete implementations
+- **Frequency-Aware Defaults**: Automatic `max_lag` selection per frequency (Annual: 3, Monthly: 6, Weekly: 8, Daily: 14, Business: 10)
+- **Business Day Support**: Trading-day calendars (252 days/year) with validated recovery lags
+- **Frequency-Aware Aggregation**: Skips resampling when source and target match
+- **Seasonal Pattern Detection**: Adaptive thresholds and frequency-specific candidate periods
+
+**Incidence Mode (Phase 2 - Measles Integration)**:
+- **Dual-Mode Data Support**: Handle cumulative (COVID-19) and incidence (measles, polio, rubella) data
+- **Mode-Aware Feature Engineering**: `I` as input for incidence mode, `C` derived via cumsum
+- **Eliminated Disease Support**: Non-monotonic patterns, elimination periods (0 cases), sporadic reintroduction
+- **Transparent Integration**: Mode propagates automatically from DataContainer → Model → Results
+- **Zero Breaking Changes**: Existing cumulative mode code works unchanged
+
+**Key Architectural Changes**:
+1. **DataContainer API**: New `frequency` and `mode` parameters (both optional, backward compatible)
+2. **Validation Split**: Separate validators for cumulative vs incidence data patterns
+3. **Constants Expansion**: `MODERN_FREQUENCY_ALIASES`, `RECOVERY_LAG_BY_FREQUENCY` mappings
+4. **New Modules**:
+   - `src/epydemics/data/frequency_handlers.py` - Handler implementations
+   - `src/epydemics/analysis/seasonality.py` - Pattern detection
+
+**Performance & Testing**:
+- 394 tests passing (32 skipped for optional dependencies)
+- +27 new tests for incidence mode (21 unit + 6 integration)
+- +13 new tests for seasonal pattern detection
+- +12 new tests for business day support
+- Zero regressions - 100% backward compatible
+
+**When to Use v0.9.0 Features**:
+
+| Use Case | Frequency | Mode | Example |
+|----------|-----------|------|---------|
+| COVID-19 daily data | `"D"` | `"cumulative"` | Daily confirmed cases (monotonic) |
+| Stock/trading analysis | `"B"` | `"cumulative"` | Business day data (252 days/year) |
+| Weekly disease reports | `"W"` | `"cumulative"` or `"incidence"` | Weekly case counts |
+| Monthly surveillance | `"ME"` | `"incidence"` | Monthly incident cases |
+| Annual measles data | `"YE"` | `"incidence"` | Annual sporadic outbreaks |
+
+**Migration from v0.8.0 or earlier**:
+```python
+# Old way (v0.8.0): Annual data reindexed to daily with warnings
+container = DataContainer(annual_data, window=1)  # Created ~13,500 artificial rows
+
+# New way (v0.9.0): Native annual processing
+container = DataContainer(annual_data, window=1, frequency="YE", mode="incidence")  # 40 rows stay 40 rows
+```
