@@ -681,6 +681,74 @@ class Model(BaseModel, SIRDModelMixin):
 
         return R0
 
+    def create_scenario(
+        self, name: str, parameter_modifiers: Dict[str, float]
+    ) -> Box:
+        """
+        Run a simulation scenario with modified parameters.
+
+        Allows exploring "what-if" scenarios by modifying forecasted rates or parameters.
+
+        Args:
+            name: Name of the scenario (for metadata)
+            parameter_modifiers: Dictionary of parameter modifiers.
+                - Multipliers for rates: 'beta': 0.9 (reduce beta by 10%)
+                - Overrides for scalars: 'importation_rate': 0.05
+
+        Returns:
+            Box: Results object containing simulated compartments (same structure as `model.generate_result()`)
+
+        Raises:
+            RuntimeError: If forecast has not been generated yet.
+
+        Examples:
+            >>> # Scenario 1: Increase transmission by 20%
+            >>> results_high = model.create_scenario("High Beta", {'beta': 1.2})
+            >>>
+            >>> # Scenario 2: Stop importation
+            >>> results_closed = model.create_scenario("Closed Border", {'importation_rate': 0.0})
+        """
+        if self.forecasting_box is None:
+            raise RuntimeError("Forecast must be generated before running scenarios.")
+
+        logging.info(f"Running scenario '{name}' with modifiers: {parameter_modifiers}")
+
+        # Create a COPY of the forecasting box to avoid mutating the baseline
+        # Box matches the structure: rate -> level -> Series
+        scenario_forecasting_box = Box()
+
+        # Apply rate modifiers (alpha, beta, gamma, delta)
+        # We iterate through the original box and apply multipliers if present
+        for rate in self.forecasting_box.keys():
+            scenario_forecasting_box[rate] = Box()
+            multiplier = parameter_modifiers.get(rate, 1.0)
+            
+            for level in self.forecasting_box[rate].keys():
+                original_series = self.forecasting_box[rate][level]
+                # Apply multiplier
+                modified_series = original_series * multiplier
+                scenario_forecasting_box[rate][level] = modified_series
+
+        # Determine importation rate for this scenario
+        # Default to model's current rate, override if in modifiers
+        scenario_importation = parameter_modifiers.get(
+            "importation_rate", self.importation_rate
+        )
+
+        # Initialize a temporary simulation engine
+        temp_simulation = EpidemicSimulation(
+            self.data,
+            scenario_forecasting_box,
+            self.forecasting_interval,
+            importation_rate=scenario_importation,
+        )
+        
+        # Run simulation (using default/auto n_jobs)
+        temp_simulation.run_simulations(n_jobs=None)
+        temp_simulation.generate_result()
+        
+        return temp_simulation.results
+
     def forecast_R0(self) -> pd.DataFrame:
         """Calculate R₀(t) for forecasted parameters across all scenarios.
 
