@@ -22,6 +22,7 @@ def _run_single_simulation(
     forecasting_box: Dict[str, pd.DataFrame],
     forecasting_interval: pd.DatetimeIndex,
     simulation_levels: Tuple[str, ...],
+    importation_rate: float = 0.0,
 ) -> Tuple[Tuple[str, ...], pd.DataFrame]:
     """
     Helper function to run a single simulation scenario.
@@ -35,12 +36,15 @@ def _run_single_simulation(
         simulation_levels: Tuple of rate levels (3 for SIRD, 4 for SIRDV)
             SIRD: (alpha_level, beta_level, gamma_level)
             SIRDV: (alpha_level, beta_level, gamma_level, delta_level)
+        importation_rate: External force of infection (epsilon)
 
     Returns:
         Tuple of (simulation_levels, simulation_dataframe)
     """
     # Create temporary simulation object to use its method
-    temp_sim = EpidemicSimulation(data, forecasting_box, forecasting_interval)
+    temp_sim = EpidemicSimulation(
+        data, forecasting_box, forecasting_interval, importation_rate=importation_rate
+    )
     result = temp_sim.simulate_for_given_levels(simulation_levels)
     return (simulation_levels, result)
 
@@ -55,10 +59,12 @@ class EpidemicSimulation:
         data: pd.DataFrame,
         forecasting_box: Dict[str, pd.DataFrame],
         forecasting_interval: pd.DatetimeIndex,
+        importation_rate: float = 0.0,
     ):
         self.data = data
         self.forecasting_box = forecasting_box
         self.forecasting_interval = forecasting_interval
+        self.importation_rate = importation_rate
 
         # Detect if we have vaccination (delta rate present)
         self.has_vaccination = "delta" in forecasting_box
@@ -66,6 +72,9 @@ class EpidemicSimulation:
             logging.info("Simulation initialized with vaccination (SIRDV mode)")
         else:
             logging.info("Simulation initialized without vaccination (SIRD mode)")
+
+        if self.importation_rate > 0:
+            logging.info(f"Importation enabled (rate={self.importation_rate})")
 
         self.simulation: Optional[Box] = None
         self.results: Optional[Box] = None
@@ -147,7 +156,11 @@ class EpidemicSimulation:
         for i in range(n_steps):
             # Dynamics using CURRENT (previous step's) state and rates
             # Calculate flows
-            infection = I * alpha * S / A
+            # Force of Infection = alpha * I / A + epsilon (importation)
+            # New Infections = FoI * S
+            force_of_infection = (alpha * I / A) + self.importation_rate
+            infection = force_of_infection * S
+            
             recovery = beta * I
             death = gamma * I
 
@@ -345,6 +358,7 @@ class EpidemicSimulation:
                         self.forecasting_box,
                         self.forecasting_interval,
                         scenario,
+                        self.importation_rate,
                     ): scenario
                     for scenario in scenarios
                 }

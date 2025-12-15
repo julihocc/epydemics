@@ -103,5 +103,63 @@ def visualize_results(
         ax = plt.gca()
         format_time_axis(ax, compartment.index, time_range="auto")
 
+
+def compare_scenarios(
+    scenarios: Dict[str, Any],
+    compartment_code: str = "I",
+    level: str = "point",  # Default to point estimate (beta_level='point')
+    title: Optional[str] = None,
+) -> None:
+    """
+    Compare multiple simulation scenarios on a single plot.
+
+    Args:
+        scenarios: Dictionary mapping scenario names to results Box objects
+                  (output of model.create_scenario() or model.results)
+        compartment: Compartment code to visualize (default 'I')
+        level: Forecasting level to plot (default 'point').
+               This refers to the middle component of the scenario key
+               (alpha|beta|gamma), specifically the beta level which drives transmission.
+        title: Optional custom title
+
+    Examples:
+        >>> scenarios = {
+        ...     "Baseline": model.results,
+        ...     "High Beta": results_high,
+        ...     "No Importation": results_closed
+        ... }
+        >>> compare_scenarios(scenarios, "I")
+    """
+    plt.figure(figsize=(10, 6))
+
+    for name, results_box in scenarios.items():
+        if compartment_code not in results_box:
+            print(f"Warning: Compartment {compartment_code} not found in scenario {name}")
+            continue
+
+        df = results_box[compartment_code]
+
+        # We need to select a specific column representing the 'level'
+        # The columns are formatted as "alpha|beta|gamma" (or +delta)
+        # We'll calculate the MEAN across all combinations for simplicity in this view
+        # or use the pre-calculated 'mean' column
+        
+        if "mean" in df.columns:
+            series = df["mean"]
+        else:
+            # Fallback: calculate mean if not present
+            series = df.mean(axis=1)
+
+        plt.plot(series.index, series.values, label=name, linewidth=2)
+
+    plt.xlabel("Date")
+    plt.ylabel(f"{COMPARTMENT_LABELS.get(compartment_code, compartment_code)} (Mean)")
+    plt.title(title or f"Scenario Comparison: {COMPARTMENT_LABELS.get(compartment_code, compartment_code)}")
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+
+    ax = plt.gca()
+    format_time_axis(ax, series.index if 'series' in locals() else None)
+
     plt.tight_layout()
     plt.show()

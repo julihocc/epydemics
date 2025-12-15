@@ -120,6 +120,7 @@ class Model(BaseModel, SIRDModelMixin):
         stop: Optional[str] = None,
         days_to_forecast: Optional[int] = None,
         forecaster: str = "var",
+        importation_rate: float = 0.0,
         **forecaster_kwargs,
     ):
         """
@@ -148,6 +149,9 @@ class Model(BaseModel, SIRDModelMixin):
                   Automatic order selection (requires pmdarima)
                 - 'lstm': LSTM neural network
                   NOT YET IMPLEMENTED (stub only)
+            importation_rate: External force of infection (epsilon).
+                            Represents sporadic cases arriving from outside.
+                            Useful for eliminated diseases (R0 < 1).
             **forecaster_kwargs: Backend-specific configuration parameters.
                 VAR: max_lag (int), ic (str: 'aic'/'bic'/'hqic')
                 Prophet: yearly_seasonality (bool), weekly_seasonality (bool),
@@ -165,36 +169,15 @@ class Model(BaseModel, SIRDModelMixin):
             >>> container = DataContainer(covid_data)  # cumulative by default
             >>> model = Model(container, start="2020-03-01", stop="2020-12-31")
 
-            **Incidence mode (Measles):**
+            **Incidence mode (Measles) with importation:**
 
             >>> measles_data = pd.DataFrame({'I': [220, 55, 667], ...})
             >>> container = DataContainer(measles_data, mode='incidence')
-            >>> model = Model(container)
-            >>> assert model.mode == 'incidence'  # Inherited
-
-            **Prophet backend:**
-
-            >>> model = Model(
-            ...     container,
-            ...     forecaster="prophet",
-            ...     yearly_seasonality=True,
-            ...     changepoint_prior_scale=0.05
-            ... )
-
-            **ARIMA backend:**
-
-            >>> model = Model(
-            ...     container,
-            ...     forecaster="arima",
-            ...     max_p=3,
-            ...     max_q=3
-            ... )
+            >>> model = Model(container, importation_rate=0.5)
 
         Notes:
             - Mode propagates automatically: DataContainer.mode → Model.mode
             - Both modes use identical SIRD equations and forecasting methods
-            - Only difference: data interpretation (I from input vs I from dC)
-            - VAR backend is 100% backward compatible with v0.6.x API
         """
         # Data and model attributes
         self.data: Optional[pd.DataFrame] = None
@@ -206,6 +189,7 @@ class Model(BaseModel, SIRDModelMixin):
 
         # Model parameters
         self.days_to_forecast = days_to_forecast
+        self.importation_rate = importation_rate
 
         # Forecasting configuration
         self.forecaster_name = forecaster
@@ -434,7 +418,10 @@ class Model(BaseModel, SIRDModelMixin):
 
         # Initialize simulation engine after forecasting is done
         self.simulation_engine = EpidemicSimulation(
-            self.data, self.forecasting_box, self.forecasting_interval
+            self.data,
+            self.forecasting_box,
+            self.forecasting_interval,
+            importation_rate=self.importation_rate,
         )
 
     def forecast_logit_ratios(self, steps: Optional[int] = None, **kwargs) -> None:
@@ -693,6 +680,74 @@ class Model(BaseModel, SIRDModelMixin):
         R0.name = "R0"
 
         return R0
+
+    def create_scenario(
+        self, name: str, parameter_modifiers: Dict[str, float]
+    ) -> Box:
+        """
+        Run a simulation scenario with modified parameters.
+
+        Allows exploring "what-if" scenarios by modifying forecasted rates or parameters.
+
+        Args:
+            name: Name of the scenario (for metadata)
+            parameter_modifiers: Dictionary of parameter modifiers.
+                - Multipliers for rates: 'beta': 0.9 (reduce beta by 10%)
+                - Overrides for scalars: 'importation_rate': 0.05
+
+        Returns:
+            Box: Results object containing simulated compartments (same structure as `model.generate_result()`)
+
+        Raises:
+            RuntimeError: If forecast has not been generated yet.
+
+        Examples:
+            >>> # Scenario 1: Increase transmission by 20%
+            >>> results_high = model.create_scenario("High Beta", {'beta': 1.2})
+            >>>
+            >>> # Scenario 2: Stop importation
+            >>> results_closed = model.create_scenario("Closed Border", {'importation_rate': 0.0})
+        """
+        if self.forecasting_box is None:
+            raise RuntimeError("Forecast must be generated before running scenarios.")
+
+        logging.info(f"Running scenario '{name}' with modifiers: {parameter_modifiers}")
+
+        # Create a COPY of the forecasting box to avoid mutating the baseline
+        # Box matches the structure: rate -> level -> Series
+        scenario_forecasting_box = Box()
+
+        # Apply rate modifiers (alpha, beta, gamma, delta)
+        # We iterate through the original box and apply multipliers if present
+        for rate in self.forecasting_box.keys():
+            scenario_forecasting_box[rate] = Box()
+            multiplier = parameter_modifiers.get(rate, 1.0)
+            
+            for level in self.forecasting_box[rate].keys():
+                original_series = self.forecasting_box[rate][level]
+                # Apply multiplier
+                modified_series = original_series * multiplier
+                scenario_forecasting_box[rate][level] = modified_series
+
+        # Determine importation rate for this scenario
+        # Default to model's current rate, override if in modifiers
+        scenario_importation = parameter_modifiers.get(
+            "importation_rate", self.importation_rate
+        )
+
+        # Initialize a temporary simulation engine
+        temp_simulation = EpidemicSimulation(
+            self.data,
+            scenario_forecasting_box,
+            self.forecasting_interval,
+            importation_rate=scenario_importation,
+        )
+        
+        # Run simulation (using default/auto n_jobs)
+        temp_simulation.run_simulations(n_jobs=None)
+        temp_simulation.generate_result()
+        
+        return temp_simulation.results
 
     def forecast_R0(self) -> pd.DataFrame:
         """Calculate R₀(t) for forecasted parameters across all scenarios.
