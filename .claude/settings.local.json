@@ -39,7 +39,9 @@
       "Bash(gh:*)",
       "Bash(chmod:*)",
       "Bash(./organize_docs.sh:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(dist/epydemics-0.9.1-py3-none-any.whl )",
+      "Bash(dist/epydemics-0.9.1.tar.gz)"
     ],
     "deny": [],
     "ask": []
