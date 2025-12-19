@@ -5,7 +5,33 @@ All notable changes to the epydemics project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.0] - TBD
+## [0.9.1] - 2025-12-13
+
+### Added - Measles Integration Phase 2 Extensions
+
+**Importation Modeling for Eliminated Diseases**
+- Added `importation_rate` parameter to Model and EpidemicSimulation
+- Supports diseases with R0 < 1 or sporadic imported cases
+- Enables modeling of measles in elimination phase
+- Closes #106, #116
+
+**Scenario Analysis and Intervention Comparison**
+- New `Model.create_scenario()` method for intervention modeling
+- New `compare_scenarios()` function for visualizing intervention impacts
+- Support for vaccination, importation, and combined interventions
+- Scenario comparison visualizations
+- Closes #111, #120, #121
+
+**USA Measles Validation**
+- Added USA measles validation notebook (1980-2020 data)
+- OWID data fetching script for measles surveillance
+- Verification scripts for importation and scenario analysis
+- Closes #107, #122
+
+### Fixed
+- Minor visualization test adjustments
+
+## [0.9.0] - 2025-12-13
 
 ### Added - Phases 4-7: Native Multi-Frequency Support (COMPLETE)
 

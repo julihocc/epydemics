@@ -3,16 +3,14 @@
 This package provides tools for modeling and analyzing epidemic data using
 discrete SIRD/SIRDV models combined with time series analysis.
 
-v0.9.0 Features:
-- Incidence mode for sporadic disease patterns (measles, eliminated diseases)
-- Dual-mode support: cumulative (monotonic) and incidence (variable)
-- Multi-frequency data support (daily, weekly, monthly, annual)
-- Automatic frequency detection and mismatch warnings
-- Temporal aggregation (aggregate_forecast method)
-- Modern pandas 2.2+ compatibility
-- Full backward compatibility with v0.8.0
+v0.9.1 Features:
+- Importation modeling for eliminated diseases (importation_rate)
+- Scenario analysis (create_scenario, compare_scenarios)
+- USA measles validation examples and data fetching tools
+- All v0.9.0 features: incidence mode, multi-frequency, dual-mode
+- Full backward compatibility
 
-Version: 0.9.0
+Version: 0.9.1
 """
 
 import logging
@@ -50,7 +48,7 @@ from .models.sird import Model
 from .utils.transformations import prepare_for_logit_function
 from .core.config import get_settings
 
-__version__ = "0.9.0"
+__version__ = "0.9.1"
 __author__ = "Juliho David Castillo Colmenares"
 __email__ = "juliho.colmenares@gmail.com"
 
