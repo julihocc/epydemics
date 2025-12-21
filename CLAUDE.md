@@ -495,6 +495,63 @@ annual_result = detector.detect_seasonal_patterns(annual_data, frequency="YE")
 # Returns: {'has_seasonality': False, 'periods': [], 'model_recommendation': 'Simple VAR'}
 ```
 
+## Known Limitations
+
+### Annual Frequency + Incidence Mode + VAR (v0.9.0+)
+
+**Issue**: VAR model fitting fails when combining annual frequency with incidence mode.
+
+**Root Cause**:
+- Annual frequency → `recovery_lag = 0` (14 days / 365 days ≈ 0)
+- In incidence mode, everyone infected in year t recovers in year t
+- This makes `beta = R/I = I/I = 1.0` (constant)
+- All rates become constant → VAR cannot fit (singular covariance matrix)
+
+**Error Symptom**:
+```python
+numpy.linalg.LinAlgError: N-th leading minor not positive definite
+```
+
+**What Works**:
+- ✅ DataContainer creation
+- ✅ Feature engineering
+- ✅ Model creation
+- ❌ VAR fitting (fails here)
+
+**Solutions**:
+
+1. **Use Monthly/Weekly Data** (Recommended):
+```python
+# Instead of annual
+container = DataContainer(data, mode='incidence', frequency='ME')  # Monthly
+model = Model(container)
+model.fit_model(max_lag=6)  # Works! Rates vary over time
+```
+
+2. **Use Cumulative Mode** (if applicable):
+```python
+# If data is cumulative totals
+container = DataContainer(data, mode='cumulative', frequency='YE')
+model = Model(container)
+model.fit_model(max_lag=2)  # May work with 20+ years
+```
+
+3. **Wait for Non-VAR Backends** (v0.10.0+):
+   - ARIMA, Prophet will handle annual incidence data
+   - See `docs/development/OPTION_D_IMPLEMENTATION.md`
+
+**Detection**:
+```python
+# Check if rates are constant
+rate_variance = container.data[['alpha', 'beta', 'gamma']].var()
+if rate_variance.max() < 1e-10:
+    print("⚠️ Constant rates detected - VAR will fail")
+```
+
+**Documentation**: See `docs/user-guide/known-limitations.md` for complete details.
+
+---
+
 ## Best Practices
 
 ### Multi-Frequency Data

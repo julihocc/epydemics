@@ -6,6 +6,8 @@
 
 **📖 New Users?** Start with the **[User Guide](docs/USER_GUIDE.md)** to understand when and how to use epydemics.
 
+⚠️ **Known Limitation**: Annual frequency + incidence mode is incompatible with VAR forecasting. Use monthly/weekly data instead. See [Known Limitations](docs/user-guide/known-limitations.md) for details.
+
 ## Features
 
 -   **Discrete SIRD Model**: A discrete Susceptible-Infected-Recovered-Deceased (SIRD) model with time-dependent parameters.
