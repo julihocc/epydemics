@@ -42,7 +42,11 @@
       "Bash(tree:*)",
       "Bash(dist/epydemics-0.9.1-py3-none-any.whl )",
       "Bash(dist/epydemics-0.9.1.tar.gz)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)",
+      "Bash(git worktree:*)",
+      "Bash(jupyter nbconvert:*)"
     ],
     "deny": [],
     "ask": []
