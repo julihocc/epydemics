@@ -2,6 +2,7 @@
 Vector Autoregression (VAR) forecasting implementation.
 """
 
+import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -37,12 +38,32 @@ class VARForecaster(BaseForecaster):
         """
         Create the underlying VAR model.
         """
+        import numpy as np
+
         # statsmodels VAR handles both array and dataframe, but usually expects array-like
         # If it's a DataFrame, .values extracts the numpy array.
         # If it's already an array, we use it directly.
         data_values = (
             self.data.values if isinstance(self.data, pd.DataFrame) else self.data
         )
+
+        # Check for constant columns
+        if isinstance(data_values, np.ndarray):
+            col_stds = np.std(data_values, axis=0)
+            has_constant = np.any(col_stds < 1e-10)
+
+            if has_constant:
+                # Store which columns are constant for later handling
+                self._constant_columns = np.where(col_stds < 1e-10)[0]
+                logging.warning(
+                    f"Detected constant columns: {self._constant_columns.tolist()}. "
+                    "VAR fitting will use trend='n' to avoid conflicts."
+                )
+            else:
+                self._constant_columns = None
+        else:
+            self._constant_columns = None
+
         self.model = VAR(data_values)
 
     def fit(self, *args, **kwargs) -> None:
@@ -59,9 +80,21 @@ class VARForecaster(BaseForecaster):
         max_lag = kwargs.pop("max_lag", None)
         ic = kwargs.pop("ic", None)
 
+        # If constant columns detected, use trend='n' to avoid conflicts
+        if hasattr(self, '_constant_columns') and self._constant_columns is not None:
+            if 'trend' not in kwargs:
+                kwargs['trend'] = 'n'
+                logging.info(
+                    "Using trend='n' (no trend) due to constant columns"
+                )
+
         if max_lag is not None and ic is not None:
             # Select optimal lag order
-            selector = self.model.select_order(maxlags=max_lag)
+            # Pass trend parameter to select_order as well
+            selector = self.model.select_order(
+                maxlags=max_lag,
+                trend=kwargs.get('trend', 'c')
+            )
             # The chosen lag is stored in different attributes depending on IC
             # selector.aic, selector.bic, selector.hqic, selector.fpe
             optimal_lag = getattr(selector, ic.lower(), selector.aic)

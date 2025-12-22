@@ -50,16 +50,16 @@ class FrequencyHandler(ABC):
         pass
 
     @abstractmethod
-    def get_recovery_lag(self) -> int:
+    def get_recovery_lag(self) -> float:
         """
         Get recovery lag in periods (not days) for this frequency.
 
         For daily data: 14 days = 14 periods
-        For annual data: 14 days ≈ 1 year = 1 period
-        For monthly data: 14 days ≈ 0.5 months, round to 1 period
+        For annual data: 14 days ≈ 0.038 years = 0.038 periods
+        For monthly data: 14 days ≈ 0.5 months = 0.5 periods
 
         Returns:
-            Recovery lag in periods (must be >= 1)
+            Recovery lag in periods (can be fractional for sub-period accuracy)
         """
         pass
 
@@ -195,9 +195,9 @@ class MonthlyFrequencyHandler(FrequencyHandler):
         if not isinstance(data.index, pd.DatetimeIndex):
             raise ValueError("Monthly frequency data must have DatetimeIndex")
 
-    def get_recovery_lag(self) -> int:
-        """14 days ≈ 0.5 months, round to 1 month."""
-        return 1
+    def get_recovery_lag(self) -> float:
+        """14 days ≈ 0.47 months (14/30)."""
+        return 14 / 30
 
     def get_default_max_lag(self) -> int:
         """Use up to 6 lags for monthly data."""
@@ -239,9 +239,9 @@ class AnnualFrequencyHandler(FrequencyHandler):
         if not isinstance(data.index, pd.DatetimeIndex):
             raise ValueError("Annual frequency data must have DatetimeIndex")
 
-    def get_recovery_lag(self) -> int:
-        """14 days ≈ ~0.04 years, round to 1 year."""
-        return 1
+    def get_recovery_lag(self) -> float:
+        """14 days ≈ 0.038 years (14/365)."""
+        return 14 / 365
 
     def get_default_max_lag(self) -> int:
         """Use up to 3 lags for annual data (sparse time series)."""
