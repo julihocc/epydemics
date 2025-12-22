@@ -195,22 +195,39 @@ def feature_engineering(
 
 
 def _calculate_compartments_cumulative(
-    data: pd.DataFrame, has_vaccination: bool, settings, recovery_lag: int = None
+    data: pd.DataFrame, has_vaccination: bool, settings, recovery_lag: float = None
 ) -> pd.DataFrame:
     """
     Calculate SIRD compartments from cumulative cases C.
-    
+
     Args:
         data: DataFrame with C, D, N columns
         has_vaccination: Whether V (vaccination) column is present
         settings: Config settings object
-        recovery_lag: Recovery lag in periods (overrides settings.RECOVERY_LAG if provided)
+        recovery_lag: Recovery lag in periods (can be fractional)
     """
+    import numpy as np
+
     # Use provided recovery_lag or default from settings
     lag = recovery_lag if recovery_lag is not None else settings.RECOVERY_LAG
-    
-    # R: Recovered (using recovery_lag)
-    data = data.assign(R=data["C"].shift(lag).fillna(0) - data["D"])
+
+    # R: Recovered (using recovery_lag with interpolation for fractional)
+    if lag == int(lag):
+        # Integer lag - use standard shift
+        C_lagged = data["C"].shift(int(lag)).fillna(0)
+    else:
+        # Fractional lag - use weighted interpolation
+        lag_floor = int(np.floor(lag))
+        lag_ceil = int(np.ceil(lag))
+        weight = lag - lag_floor
+
+        C_floor = data["C"].shift(lag_floor).fillna(0)
+        C_ceil = data["C"].shift(lag_ceil).fillna(0)
+
+        # Linear interpolation
+        C_lagged = (1 - weight) * C_floor + weight * C_ceil
+
+    data = data.assign(R=C_lagged - data["D"])
 
     # I: Currently infected (active cases)
     data = data.assign(I=data["C"] - data["R"] - data["D"])
@@ -243,20 +260,22 @@ def _calculate_compartments_cumulative(
 
 
 def _calculate_compartments_incidence(
-    data: pd.DataFrame, has_vaccination: bool, settings, recovery_lag: int = None
+    data: pd.DataFrame, has_vaccination: bool, settings, recovery_lag: float = None
 ) -> pd.DataFrame:
     """
     Calculate SIRD compartments from incident cases I.
-    
+
     Args:
         data: DataFrame with I, D, N columns
         has_vaccination: Whether V (vaccination) column is present
         settings: Config settings object
-        recovery_lag: Recovery lag in periods (overrides settings.RECOVERY_LAG if provided)
+        recovery_lag: Recovery lag in periods (can be fractional)
     """
+    import numpy as np
+
     # Use provided recovery_lag or default from settings
     lag = recovery_lag if recovery_lag is not None else settings.RECOVERY_LAG
-    
+
     # I is already present (incident cases per period)
     # Need to calculate C, R, S, A
 
@@ -264,8 +283,23 @@ def _calculate_compartments_incidence(
     data = data.assign(C=data["I"].cumsum())
 
     # R: Recovered (cumulative incident minus deaths, lagged)
-    # Simplified: assume recovery after lag period
-    recovered_cumulative = data["I"].shift(lag).fillna(0).cumsum()
+    # Support fractional lags via interpolation
+    if lag == int(lag):
+        # Integer lag - use standard shift
+        recovered_cumulative = data["I"].shift(int(lag)).fillna(0).cumsum()
+    else:
+        # Fractional lag - use weighted interpolation
+        lag_floor = int(np.floor(lag))
+        lag_ceil = int(np.ceil(lag))
+        weight = lag - lag_floor
+
+        shifted_floor = data["I"].shift(lag_floor).fillna(0)
+        shifted_ceil = data["I"].shift(lag_ceil).fillna(0)
+
+        # Linear interpolation between floor and ceil
+        recovered_incident = (1 - weight) * shifted_floor + weight * shifted_ceil
+        recovered_cumulative = recovered_incident.cumsum()
+
     data = data.assign(R=(recovered_cumulative - data["D"]).clip(lower=0))
 
     # S: Susceptible population
