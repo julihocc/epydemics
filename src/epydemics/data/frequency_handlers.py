@@ -209,7 +209,21 @@ class MonthlyFrequencyHandler(FrequencyHandler):
 
 
 class AnnualFrequencyHandler(FrequencyHandler):
-    """Handler for annual frequency data."""
+    """
+    Handler for annual frequency data.
+
+    Warning:
+        Annual frequency with incidence mode may produce constant rates, preventing
+        VAR model fitting. This occurs because recovery_lag rounds to 0 years,
+        causing beta = I/I = 1.0 (constant).
+
+        Recommended alternatives:
+        - Use monthly (ME) or weekly (W) frequency for eliminated diseases
+        - Use cumulative mode if data represents cumulative totals
+        - Wait for non-VAR backends (ARIMA, Prophet) in future versions
+
+        See docs/user-guide/known-limitations.md for details.
+    """
 
     frequency_code = "YE"  # Modern pandas alias for year-end
     frequency_name = "annual"
