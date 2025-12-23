@@ -130,8 +130,8 @@ class TestMonthlyFrequencyHandler:
         assert handler.periods_per_year == 12
     
     def test_recovery_lag(self, handler):
-        """14 days ≈ 1 month."""
-        assert handler.get_recovery_lag() == 1
+        """14 days ≈ 0.47 months (14/30)."""
+        assert handler.get_recovery_lag() == pytest.approx(14/30, rel=1e-3)
     
     def test_default_max_lag(self, handler):
         """Monthly data supports up to 6 lags."""
@@ -172,8 +172,8 @@ class TestAnnualFrequencyHandler:
         assert handler.periods_per_year == 1
     
     def test_recovery_lag(self, handler):
-        """14 days ≈ 1 year."""
-        assert handler.get_recovery_lag() == 1
+        """14 days ≈ 0.038 years (14/365)."""
+        assert handler.get_recovery_lag() == pytest.approx(14/365, rel=1e-3)
     
     def test_default_max_lag(self, handler):
         """Annual data supports up to 3 lags (sparse)."""
@@ -275,7 +275,7 @@ class TestConvenienceFunctions:
         """Test get_frequency_handler convenience function."""
         handler = get_frequency_handler('annual')
         assert isinstance(handler, AnnualFrequencyHandler)
-        assert handler.get_recovery_lag() == 1
+        assert handler.get_recovery_lag() == pytest.approx(14/365, rel=1e-3)
         assert handler.get_default_max_lag() == 3
     
     def test_detect_frequency_daily(self):
@@ -330,8 +330,8 @@ class TestFrequencyHandlerInterfaces:
         assert callable(handler.get_min_observations)
         
         # Check return types
-        assert isinstance(handler.get_recovery_lag(), int)
-        assert handler.get_recovery_lag() >= 1
+        assert isinstance(handler.get_recovery_lag(), (int, float))
+        assert handler.get_recovery_lag() > 0
         assert isinstance(handler.get_default_max_lag(), int)
         assert handler.get_default_max_lag() >= 1
         assert isinstance(handler.get_min_observations(), int)
@@ -345,16 +345,16 @@ class TestFrequencyHandlerInterfaces:
         # Recovery lags should be reasonable in each frequency's units
         # Daily: ~14 periods (days)
         # Weekly: ~2 periods (weeks, ~14 days)
-        # Monthly: ~1-1.5 periods (~14-30 days)
-        # Annual: 1 period (~14 days when scaled to yearly, but annual data only has 1 period)
+        # Monthly: ~0.47 periods (~14 days)
+        # Annual: ~0.038 periods (~14 days)
         if frequency == "D":
             assert 10 < lag < 20
         elif frequency == "W":
             assert 1.5 < lag < 3
         elif frequency == "ME":
-            assert 0.4 < lag < 2
+            assert 0.4 < lag < 0.5
         elif frequency == "YE":
-            assert lag == 1
+            assert 0.03 < lag < 0.05
     
     @pytest.mark.parametrize("frequency", ["D", "W", "ME", "YE"])
     def test_max_lag_inversely_proportional_to_frequency(self, frequency):
