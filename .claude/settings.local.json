@@ -46,7 +46,9 @@
       "Bash(git pull:*)",
       "Bash(git stash:*)",
       "Bash(git worktree:*)",
-      "Bash(jupyter nbconvert:*)"
+      "Bash(jupyter nbconvert:*)",
+      "Bash(git fetch:*)",
+      "Bash(git cherry-pick:*)"
     ],
     "deny": [],
     "ask": []
