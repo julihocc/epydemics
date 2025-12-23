@@ -5,6 +5,78 @@ All notable changes to the epydemics project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2025-12-24
+
+### Added - Fractional Recovery Lag for Annual Frequency
+
+**Critical Fix: Native Annual Frequency with Incidence Mode**
+
+This release resolves the `LinAlgError` when using annual frequency with incidence mode, enabling modeling of eliminated diseases (measles, polio, rubella) with sporadic outbreak patterns.
+
+**Core Implementation:**
+- **Fractional Recovery Lag**: Changed from integer to float
+  - Annual frequency: 14 days = 0.0384 years (14/365)
+  - Monthly frequency: 14 days = 0.47 months (14/30)
+  - Weekly/Daily: Unchanged (already optimal)
+- **Linear Interpolation**: Implemented fractional lag shifts using weighted interpolation
+  - Formula: `(1-weight) * shift(floor) + weight * shift(ceil)`
+  - Applied to both cumulative and incidence modes
+- **Automatic Constant Detection**: VAR models detect constant columns (e.g., alpha=1.0)
+  - Uses `trend='n'` (no trend) to prevent multicollinearity errors
+  - Handles elimination-phase disease patterns gracefully
+
+**Problem Solved:**
+- Before: Annual + incidence mode → `LinAlgError` (beta = 1.0 constant → singular covariance matrix)
+- After: Beta varies (0.038 to 1.0) → VAR fits successfully → Forecasts work
+
+**Files Changed:**
+- `src/epydemics/data/frequency_handlers.py`: Changed `get_recovery_lag()` return type to `float`
+- `src/epydemics/data/features.py`: Implemented fractional lag interpolation
+- `src/epydemics/models/forecasting/var.py`: Added constant column detection
+
+**Testing:**
+- Added 10 comprehensive integration tests in `tests/integration/test_annual_incidence_native.py`
+- Updated 51 frequency handler tests for fractional lag expectations
+- Test pass rate: 421/423 (99.5%)
+- All 6 example notebooks validated
+
+**Notebooks:**
+- Deleted obsolete `06_annual_measles_workaround.ipynb` (pre-v0.10.0 workaround)
+- Renamed `07_incidence_mode_measles.ipynb` → `06_incidence_mode_measles.ipynb`
+- Updated notebook 06 with native annual frequency workflow
+
+**Documentation:**
+- `RELEASE_NOTES_v0.10.0.md`: Complete release documentation
+- `FIX_SUMMARY.md`: Technical details of fractional lag implementation
+- `TESTING_RESULTS.md`: Comprehensive test validation report
+
+### Changed
+- Recovery lag return type: `int` → `float` in all frequency handlers
+- Monthly recovery lag: 1 month → 0.47 months (more accurate)
+- Annual recovery lag: 1 year → 0.0384 years (critical fix)
+
+### Fixed
+- `LinAlgError` when using annual frequency with incidence mode (#138)
+- Beta rate now varies correctly in annual data (was constant 1.0)
+- VAR models handle constant columns without errors
+
+### Migration Notes
+**100% Backward Compatible** - No breaking changes. Existing code continues to work.
+
+New capability (optional):
+```python
+# Old: Would fail with LinAlgError
+container = DataContainer(annual_data, mode="incidence")
+
+# New: Works natively
+container = DataContainer(annual_data, mode="incidence", frequency="YE")
+```
+
+**References:**
+- PR #138: Implementation
+- Issue #139: Release tracking
+- Release: https://github.com/julihocc/epydemics/releases/tag/v0.10.0
+
 ## [0.9.1] - 2025-12-13
 
 ### Added - Measles Integration Phase 2 Extensions
