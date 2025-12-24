@@ -8,7 +8,47 @@ Epydemics is a Python library for epidemiological modeling and forecasting that 
 
 **Key Innovation**: Rates (α, β, γ, δ) are logit-transformed before VAR modeling to ensure they stay within (0,1) bounds, then inverse-transformed back for epidemic simulations.
 
-**Version**: 0.9.0 - Native multi-frequency support with incidence mode for eliminated diseases
+**Version**: 0.9.1 (in development towards v0.10.0) - Fractional recovery lag fix + comprehensive reporting tools
+
+## What's New in v0.10.0 (Current Development)
+
+**Fractional Recovery Lag Fix**:
+- Annual frequency now uses 14/365 = 0.0384 years instead of 0 (rounded)
+- Fixes LinAlgError when combining annual frequency + incidence mode
+- Native annual + incidence workflows now production-ready
+- 421/423 tests passing with 10 new fractional lag validation tests
+
+**Comprehensive Reporting Tools** (NEW):
+- `ModelReport` class for publication-ready analysis output
+- One-line generation of Markdown reports, LaTeX tables, and high-DPI figures
+- Automated summary statistics and forecast accuracy evaluation
+- Multi-panel visualization with professional formatting
+- Model comparison utilities for side-by-side analysis
+
+**Example Usage**:
+```python
+from epydemics.analysis import ModelReport
+
+# Create comprehensive report from model results
+report = ModelReport(model.results, testing_data)
+
+# Export to various formats
+report.export_markdown("analysis_report.md")
+report.export_latex_table("summary_table.tex", "summary")
+report.export_latex_table("metrics_table.tex", "metrics")
+
+# Generate publication-quality figures
+fig = report.plot_forecast_panel(dpi=600)  # For journal submission
+fig.savefig("forecast_panel.png", dpi=600, bbox_inches='tight')
+```
+
+## What's New in v0.9.1
+
+**Importation Modeling**:
+- Added `importation_rate` support for eliminated diseases (measles, polio, rubella)
+- Scenario analysis tools: `create_scenario()`, `compare_scenarios()`
+- USA measles validation examples and data fetching utilities
+- Full backward compatibility with v0.9.0
 
 ## What's New in v0.9.0
 
@@ -67,10 +107,11 @@ git worktree remove ../epydemics.worktrees/feature-name
 
 ### Version Management
 
-- Current version: 0.9.0 (defined in `pyproject.toml`)
-- Version also appears in `src/epydemics/__init__.py` as `__version__`
+- Current version: 0.9.1 (defined in both `pyproject.toml` and `src/epydemics/__init__.py`)
+- README.md references v0.10.0 features (fractional recovery lag fix)
 - Main branch: `main`
-- **IMPORTANT**: When bumping versions, update BOTH files - they must stay in sync
+- **IMPORTANT**: When bumping versions, update BOTH `pyproject.toml` and `src/epydemics/__init__.py` - they must stay in sync
+- Version inconsistencies across docs indicate v0.10.0 release is imminent
 
 ### Development Commands
 
@@ -182,6 +223,10 @@ Raw OWID Data → DataContainer → Feature Engineering → Model → Forecast �
 - `visualization.py`: Plotting functions for results
 - `formatting.py`: Professional plot formatting utilities
 - `seasonality.py`: Frequency-aware seasonal pattern detection (v0.9.0)
+- `reporting.py`: Publication-ready report generation (v0.10.0)
+  - ModelReport class for comprehensive analysis
+  - Markdown/LaTeX export, high-DPI figures
+  - Model comparison utilities
 
 **`src/epydemics/utils/`** - Utilities
 - `transformations.py`: Logit/inverse logit transforms, rate bound handling
@@ -300,6 +345,53 @@ Must follow this exact sequence in `features.py`:
 **Key Insight**: After feature engineering, both modes produce identical rate calculations. The system forecasts rates, not compartments, so forecasting/simulation code is mode-independent.
 
 ## Common Development Patterns
+
+### Publication-Ready Reporting Workflow (v0.10.0)
+
+```python
+from epydemics import DataContainer, Model
+from epydemics.analysis import ModelReport
+
+# 1. Create and fit model (standard workflow)
+container = DataContainer(data, window=7, frequency="ME", mode="incidence")
+model = Model(container, start="2010-01", stop="2020-12")
+model.create_model()
+model.fit_model(max_lag=6)
+model.forecast(steps=12)
+model.run_simulations(n_jobs=None)
+model.generate_result()
+
+# 2. Generate comprehensive report
+testing_data = container.data.loc[model.forecasting_interval]
+report = ModelReport(model.results, testing_data)
+
+# 3. Export to multiple formats
+report.export_markdown("results/monthly_forecast.md")
+report.export_latex_table("tables/summary.tex", "summary")
+report.export_latex_table("tables/metrics.tex", "metrics")
+
+# 4. Create publication-quality figures
+fig = report.plot_forecast_panel(compartments=["C", "I"], dpi=600)
+fig.savefig("figures/forecast_panel.png", dpi=600, bbox_inches='tight')
+
+# 5. Compare multiple models
+from epydemics.analysis.reporting import create_comparison_report
+
+comparison_df = create_comparison_report([
+    (model1.results, testing_data1, "Annual VAR"),
+    (model2.results, testing_data2, "Monthly VAR"),
+])
+print(comparison_df)  # Side-by-side metrics comparison
+```
+
+**Key Features**:
+- **Markdown Export**: GitHub-ready documentation with formatted tables
+- **LaTeX Export**: Academic manuscript-ready tables
+- **High-DPI Figures**: 600 DPI for journal submission requirements
+- **Multi-Panel Plots**: Automatic layout for 2-6 compartments
+- **Model Comparison**: Side-by-side evaluation metrics
+
+
 
 ### Typical Analysis Workflow
 
@@ -497,58 +589,46 @@ annual_result = detector.detect_seasonal_patterns(annual_data, frequency="YE")
 
 ## Known Limitations
 
-### Annual Frequency + Incidence Mode + VAR (v0.9.0+)
+### Annual Frequency + Incidence Mode + VAR (FIXED in v0.10.0)
 
-**Issue**: VAR model fitting fails when combining annual frequency with incidence mode.
+**Previous Issue** (v0.9.0 and earlier): VAR model fitting failed when combining annual frequency with incidence mode.
 
 **Root Cause**:
-- Annual frequency → `recovery_lag = 0` (14 days / 365 days ≈ 0)
-- In incidence mode, everyone infected in year t recovers in year t
-- This makes `beta = R/I = I/I = 1.0` (constant)
-- All rates become constant → VAR cannot fit (singular covariance matrix)
+- Annual frequency used `recovery_lag = 0` (14 days / 365 days rounded to 0)
+- In incidence mode, everyone infected in year t recovered in year t
+- This made `beta = R/I = I/I = 1.0` (constant)
+- All rates became constant → VAR could not fit (singular covariance matrix)
 
-**Error Symptom**:
+**Fix in v0.10.0**:
+- Annual frequency now uses `recovery_lag = 14/365 = 0.0384` years (fractional lag)
+- Recovery now happens 0.0384 years after infection
+- Rates vary over time → VAR can fit successfully
+- Annual + incidence mode is now production-ready
+
+**Current Status**:
+- ✅ DataContainer creation (all frequencies)
+- ✅ Feature engineering (fractional lag support)
+- ✅ Model creation and VAR fitting (annual + incidence works)
+- ✅ Forecasting and simulation (fully functional)
+
+**Usage** (v0.10.0+):
 ```python
-numpy.linalg.LinAlgError: N-th leading minor not positive definite
-```
-
-**What Works**:
-- ✅ DataContainer creation
-- ✅ Feature engineering
-- ✅ Model creation
-- ❌ VAR fitting (fails here)
-
-**Solutions**:
-
-1. **Use Monthly/Weekly Data** (Recommended):
-```python
-# Instead of annual
-container = DataContainer(data, mode='incidence', frequency='ME')  # Monthly
+# Annual + incidence mode now works!
+container = DataContainer(data, mode='incidence', frequency='YE')
 model = Model(container)
-model.fit_model(max_lag=6)  # Works! Rates vary over time
+model.fit_model(max_lag=3)  # Success! Rates vary due to fractional lag
+model.forecast(steps=5)
+model.run_simulations()
 ```
 
-2. **Use Cumulative Mode** (if applicable):
+**Validation**:
 ```python
-# If data is cumulative totals
-container = DataContainer(data, mode='cumulative', frequency='YE')
-model = Model(container)
-model.fit_model(max_lag=2)  # May work with 20+ years
-```
-
-3. **Wait for Non-VAR Backends** (v0.10.0+):
-   - ARIMA, Prophet will handle annual incidence data
-   - See `docs/development/OPTION_D_IMPLEMENTATION.md`
-
-**Detection**:
-```python
-# Check if rates are constant
+# Verify rates vary over time
 rate_variance = container.data[['alpha', 'beta', 'gamma']].var()
-if rate_variance.max() < 1e-10:
-    print("⚠️ Constant rates detected - VAR will fail")
+assert rate_variance.max() > 1e-10, "Rates should vary"
 ```
 
-**Documentation**: See `docs/user-guide/known-limitations.md` for complete details.
+**Documentation**: See `docs/user-guide/known-limitations.md` for complete details and `RELEASE_NOTES_v0.10.0.md` for the fix.
 
 ---
 
@@ -644,6 +724,7 @@ if rate_variance.max() < 1e-10:
 - `src/epydemics/analysis/seasonality.py` - Seasonal pattern detection
 - `src/epydemics/analysis/evaluation.py` - Model evaluation metrics
 - `src/epydemics/analysis/visualization.py` - Plotting functions
+- `src/epydemics/analysis/reporting.py` - Publication-ready reports (v0.10.0)
 
 **Configuration**:
 - `pyproject.toml` - Project metadata, dependencies, tool configs
@@ -654,12 +735,14 @@ if rate_variance.max() < 1e-10:
 **Examples**:
 - `examples/global_forecasting.ipynb` - COVID-19 analysis example
 - `examples/parallel_simulation_demo.ipynb` - Parallel simulation demonstrations
+- `examples/reporting_example.py` - Publication-ready reporting demonstration (v0.10.0)
 - `examples/README.md` - Guide to example notebooks
 
 **Testing**:
 - `tests/unit/data/test_incidence_mode.py` - Incidence mode unit tests (21 tests)
 - `tests/integration/test_incidence_mode_workflow.py` - Incidence mode integration (6 tests)
 - `tests/unit/analysis/test_seasonality.py` - Seasonal pattern detection (13 tests)
+- `tests/unit/data/test_fractional_recovery_lag.py` - Fractional lag validation (10 tests, v0.10.0)
 - `tests/models/test_result_caching.py` - Result caching tests
 - `tests/test_parallel_simulations.py` - Parallel simulation tests
 - `tests/conftest.py` - Shared fixtures (sample_data, sample_container)
@@ -695,6 +778,13 @@ if rate_variance.max() < 1e-10:
 
 ## Performance & Testing Summary
 
+**v0.10.0 Test Coverage** (Current):
+- 421/423 tests passing (2 skipped for optional dependencies)
+- +10 new tests for fractional recovery lag validation
+- Annual + incidence mode now fully functional
+- Comprehensive reporting tools added
+- Zero regressions - 100% backward compatible
+
 **v0.9.0 Test Coverage**:
 - 394 tests passing (32 skipped for optional dependencies)
 - +27 new tests for incidence mode (21 unit + 6 integration)
@@ -706,3 +796,4 @@ if rate_variance.max() < 1e-10:
 - Parallel simulations: 4-7x speedup on multi-core systems (for large datasets)
 - Result caching: Instant load for repeated analyses
 - Native frequency: No reindexing overhead (e.g., 40 annual rows stay 40 rows)
+- Report generation: <1 second for Markdown/LaTeX export

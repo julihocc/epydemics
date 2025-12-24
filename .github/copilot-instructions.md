@@ -1,38 +1,43 @@
 # GitHub Copilot Instructions for Epydemics
 
-**Version 0.6.1-dev** - SIRDV Model Implementation Complete
+**Version 0.10.0** - Fractional Recovery Lag Fix & Comprehensive Reporting
 
 ## Project Overview
-Epydemics implements epidemiological forecasting by combining discrete SIRD/SIRDV models with VAR (Vector Autoregression) time series on **logit-transformed rates**. The system now automatically detects and handles both traditional SIRD models and modern SIRDV models with vaccination data.
+Epydemics is a Python epidemiological forecasting library combining discrete **SIRD/SIRDV models** with **VAR time series** on logit-transformed rates. It handles multiple disease patterns (pandemics like COVID-19, elimination cycles like measles) across **native frequencies** (daily, weekly, monthly, annual).
 
-**Key Innovation**: Rates are logit-transformed before VAR modeling to ensure (0,1) bounds, then inverse-transformed for Monte Carlo epidemic simulations across 27 scenarios (3³ confidence levels). The system dynamically adapts to available data (SIRD vs SIRDV).
+**Key Innovations**:
+1. **Logit-Transformed Rates**: Time-varying infection (α), recovery (β), mortality (γ), vaccination (δ) rates stay (0,1) bounded
+2. **Fractional Recovery Lag** (v0.10.0): Annual frequency now uses 14/365 years instead of rounding to 0, fixing singular matrix errors
+3. **Native Multi-Frequency** (v0.9.0): Annual data stays annual (no artificial reindexing to 5,475 daily rows)
+4. **Dual-Mode Architecture**: Supports cumulative (COVID-19 cumsum) and incidence (measles per-year) data
+5. **Publication Tools** (v0.10.0): `ModelReport` class generates Markdown reports, LaTeX tables, and 300-600 DPI figures in one call
 
-**Current Status**: Branch `sirdv-model-implementation` - **COMPLETE** ✅
-- Dynamic SIRD/SIRDV detection implemented
-- Vaccination support fully functional
-- Result caching working with variable compartments
-- All fast tests passing (130+)
-- Slow tests properly marked
-
-**Important**: Version in `pyproject.toml` is `0.6.1-dev` and `src/epydemics/__init__.py` should match before release.
+**Current Status**: Main branch stable (v0.9.1) | Branch `improve-report-tools` in development (reporting enhancements)
+- 421/423 tests passing (99.5%), 25+ marked as `@pytest.mark.slow`
+- Reporting API stable, all 7 example notebooks validated
+- Annual + incidence workflows production-ready
 
 ## Architecture at a Glance
 
 ### Data Flow Pipeline
 ```
-OWID CSV → DataContainer → Feature Engineering → Model → VAR Forecast → Simulation → Results
-  ↓           ↓                 ↓                  ↓          ↓             ↓
-Validate   Smooth(7d)      SIRD+Rates        Logit→VAR   27 Scenarios  Evaluation
-          Rename→C,D,N    α,β,γ+Logit      Confidence   MonteCarlo    Viz+Metrics
+Raw Data → DataContainer → Feature Engineering → Model → VAR Forecast → Simulation → Results → ModelReport
+(CSV/DF)   (Freq-aware)   (Fractional lag)    (Rates)  (Logit-VAR)   (27 scenarios) (SIRD) (Markdown/LaTeX)
+           
+Modes: CUMULATIVE (COVID) or INCIDENCE (measles)
+Frequencies: Daily, Business, Weekly, Monthly, Annual (native, no reindexing)
 ```
 
 ### Critical Module Structure
-- **`src/epydemics/core/`**: Constants (`RATIOS`, `COMPARTMENTS`), config (pydantic-settings), exceptions
-- **`src/epydemics/data/container.py`**: `DataContainer` - orchestrates preprocessing pipeline
-- **`src/epydemics/models/sird.py`**: `Model` - main API delegating to forecasting/simulation engines
-- **`src/epydemics/models/simulation.py`**: `EpidemicSimulation` - **parallel/sequential** simulation with `n_jobs`
-- **`src/epydemics/models/forecasting/var.py`**: `VARForecaster` - statsmodels VAR wrapper
-- **`src/epydemics/analysis/`**: Evaluation metrics + visualization with professional formatting
+- **`src/epydemics/core/`**: Constants (`RATIOS`, `COMPARTMENTS`), pydantic config, exceptions
+- **`src/epydemics/data/container.py`**: `DataContainer` - mode/frequency detection, validation, smoothing
+- **`src/epydemics/data/frequency_handlers.py`**: Frequency-specific handling (fractional lags, VAR defaults)
+- **`src/epydemics/data/features.py`**: Feature engineering (SIRD compartments, rate calculation, logit transform)
+- **`src/epydemics/models/sird.py`**: `Model` - main API, orchestrates forecasting/simulation
+- **`src/epydemics/models/forecasting/var.py`**: `VARForecaster` - statsmodels VAR wrapper with constant detection
+- **`src/epydemics/models/simulation.py`**: `EpidemicSimulation` - parallel/sequential (ProcessPoolExecutor)
+- **`src/epydemics/analysis/reporting.py`**: `ModelReport` - publication-ready Markdown, LaTeX, figures
+- **`src/epydemics/analysis/evaluation.py`**: Metrics (MAE, RMSE, MAPE, SMAPE) per compartment/method
 
 ## Mathematical Foundation
 
@@ -57,29 +62,34 @@ A = S + I            # 4. Active (for rate calculations)
 
 ## Essential Development Patterns
 
-### Standard Analysis Workflow
+### Standard Analysis Workflow (v0.10.0)
 ```python
-from epydemics import DataContainer, Model, process_data_from_owid
+from epydemics import DataContainer, Model
+from epydemics.analysis import ModelReport
 
-# 1. Load data (auto-validates OWID format)
-raw = process_data_from_owid(iso_code="OWID_WRL")  # or "MEX", "USA"
-container = DataContainer(raw, window=7)
+# 1. Prepare data (auto-detects mode & frequency)
+data = pd.DataFrame({'I': [...], 'D': [...], 'N': [...]}, index=dates)
+container = DataContainer(data, mode='incidence', frequency='YE', window=1)
 
-# 2. Create model with date range
-model = Model(container, start="2020-03-01", stop="2020-12-31")
+# 2. Create and fit model
+model = Model(container)
 model.create_model()
-model.fit_model(max_lag=10, ic="aic")  # VAR lag selection
-
-# 3. Forecast and simulate (NEW: parallel support)
-model.forecast(steps=30)
-model.run_simulations(n_jobs=None)  # None=auto-detect CPUs, 1=sequential
+model.fit_model(max_lag=3)  # VAR lag selection (auto-detects constant columns)
+model.forecast(steps=5)
+model.run_simulations(n_jobs=None)  # None=auto-CPU, 1=sequential
 model.generate_result()
 
-# 4. Evaluate
-testing_data = container.data.loc[model.forecasting_interval]
-evaluation = model.evaluate_forecast(testing_data)
-model.visualize_results("C", testing_data, log_response=True)
+# 3. Generate publication-ready reports (NEW in v0.10.0)
+report = ModelReport(model.results, testing_data, compartments=['I', 'D'])
+report.export_markdown("analysis.md", include_figure=True)
+report.export_latex_table("table1.tex", "summary")
+fig = report.plot_forecast_panel(dpi=600, save_path="forecast.png")
 ```
+
+**Key Mode Behaviors**:
+- **Cumulative mode**: Input `C` (monotonic cases), auto-derives `I = diff(C)`
+- **Incidence mode**: Input `I` (incident cases), auto-derives `C = cumsum(I)` - USE FOR MEASLES/POLIO
+- **Frequency handling**: Annual stays annual, fractional lags handled automatically (14/365 for annual)
 
 ### Always Use Constants from `epydemics.core.constants`
 ```python
@@ -145,15 +155,17 @@ pre-commit run --all-files
 pre-commit install
 ```
 
-### VAR Model API Pattern (Recent Fix)
+### VAR Model API Pattern (v0.10.0: Constant Detection)
 ```python
-# INCORRECT (old usage - will fail):
-selector = model.select_order(maxlags=max_lag, ic="aic")  # ic NOT accepted
+# VAR models automatically detect constant columns (e.g., alpha=1.0 in elimination phase)
+# Use statsmodels VAR.select_order() then access .aic/.bic/.hqic attributes
 
-# CORRECT (current implementation in var.py):
-selector = model.select_order(maxlags=max_lag)
-optimal_lag = getattr(selector, "aic", selector.aic)  # Access .aic, .bic, .hqic attributes
-fitted = model.fit(optimal_lag)
+selector = model.select_order(maxlags=max_lag)  # Returns LagOrderResults
+optimal_lag = selector.aic  # Direct attribute access (not ic parameter)
+
+# Constant column handling: automatically uses trend='n' when detected
+# This prevents multicollinearity errors with elimination-phase data
+fitted = model.fit(optimal_lag)  # Works even if alpha/gamma are constant
 ```
 
 ## Project-Specific Conventions
@@ -205,11 +217,15 @@ def process(data: pd.DataFrame) -> tuple[str, ...]:
 **Cause**: Zeros or out-of-bounds rates  
 **Solution**: Pipeline auto-applies `prepare_for_logit_function()` + `ffill()` - ensure feature engineering order is correct
 
-### 3. VAR model fails with "singular matrix"
-**Cause**: Insufficient data for lag order  
-**Solution**: Reduce `max_lag` parameter or increase training period length
+### 3. VAR model fails with "singular matrix" (FIXED in v0.10.0)
+**Cause**: Constant columns (e.g., alpha=1.0 in elimination phase) with `trend='c'`  
+**Solution**: Auto-detection in `VARForecaster` now uses `trend='n'` when constants detected - no manual fix needed
 
-### 4. Slow simulation performance
+### 4. Annual + incidence mode: "LinAlgError: 1-th leading minor not positive definite"
+**Cause**: Integer recovery lag (14 days → 0 years) made beta constant  
+**Solution**: v0.10.0 uses fractional lag (14/365 = 0.0384 years) - beta now varies, VAR fits successfully
+
+### 5. Slow simulation performance
 **Solution**: Use `model.run_simulations(n_jobs=None)` for auto-detected parallel execution (4-7x speedup on multi-core)
 
 ## Style Requirements (Critical)
@@ -241,13 +257,60 @@ def forecast(self, steps: int) -> None:
     """
 ```
 
+## Reporting Tools (v0.10.0)
+
+### ModelReport API
+```python
+from epydemics.analysis import ModelReport
+
+# Create comprehensive report from model results
+report = ModelReport(
+    results=model.results,
+    testing_data=test_data,
+    compartments=['I', 'D'],  # Optional: auto-detects if omitted
+    model_name="Mexico Measles 2010-2024"
+)
+
+# Generate summary statistics
+summary_df = report.generate_summary()  # Returns DataFrame with mean, median, std, CV, etc.
+
+# Evaluate forecast accuracy against test data
+eval_df = report.get_evaluation_summary()  # MAE, RMSE, MAPE, SMAPE per compartment/method
+
+# Create multi-panel visualization
+fig = report.plot_forecast_panel(figsize=(14, 8), dpi=300, save_path="forecast.png")
+
+# Export to multiple formats
+report.export_markdown("analysis.md", include_summary=True, include_figure=True)
+report.export_latex_table("table1.tex", table_type="summary")  # or "evaluation"
+```
+
+### Model Comparison
+```python
+from epydemics.analysis import create_comparison_report
+
+models = {
+    "Model A": results_a,
+    "Model B": results_b,
+    "Model C": results_c,
+}
+
+fig = create_comparison_report(
+    models=models,
+    testing_data=test_data,
+    compartment='I',
+    save_path="comparison.png"
+)
+```
+
 ## Key Files for Common Tasks
 
+**Reporting**: `src/epydemics/analysis/reporting.py` (ModelReport class + create_comparison_report)  
 **Modify Data Processing**: `src/epydemics/data/features.py` (feature engineering logic)  
 **Modify Modeling API**: `src/epydemics/models/sird.py` (main Model class)  
 **Modify Simulation Logic**: `src/epydemics/models/simulation.py` (parallel/sequential execution)  
 **Add Configuration**: `src/epydemics/core/config.py` (pydantic Settings)  
-**View Examples**: `examples/global_forecasting.ipynb` (complete COVID-19 analysis)  
+**View Examples**: `examples/notebooks/07_reporting_and_publication.ipynb` (comprehensive reporting demo)  
 **Test Patterns**: `tests/conftest.py` (fixtures: `sample_data`, `sample_container`)
 
 ## Integration Points
@@ -257,31 +320,41 @@ def forecast(self, steps: int) -> None:
 - **Parallel Processing**: `concurrent.futures.ProcessPoolExecutor` (Python stdlib)
 - **Config Management**: Environment variables via pydantic-settings (`.env` file support)
 
-## Recent Major Changes (v0.6.1-dev)
+## Recent Major Changes (v0.10.0)
 
-1. **✅ SIRDV Model Support (COMPLETE - Nov 2025)**: 
-   - Automatic detection of vaccination column (V)
+1. **✅ Fractional Recovery Lag Fix (v0.10.0 - COMPLETE)**:
+   - Annual frequency now uses 14/365 = 0.0384 years instead of 0 (rounded)
+   - Fixes LinAlgError when combining annual frequency + incidence mode
+   - Automatic constant column detection in VAR models
+   - Uses `trend='n'` when alpha/gamma are constant (elimination phase)
+   - See [RELEASE_NOTES_v0.10.0.md](RELEASE_NOTES_v0.10.0.md) for details
+
+2. **✅ Comprehensive Reporting Tools (v0.10.0)**:
+   - `ModelReport` class for publication-ready analysis
+   - One-line export to Markdown, LaTeX tables, and 300-600 DPI figures
+   - Automated summary statistics and forecast accuracy evaluation
+   - Model comparison utilities (`create_comparison_report()`)
+   - See [examples/notebooks/07_reporting_and_publication.ipynb](examples/notebooks/07_reporting_and_publication.ipynb) for complete demo
+
+3. **✅ Multi-Frequency Native Support (v0.9.0)**:
+   - Annual data stays annual (no artificial reindexing to 5,475 daily rows)
+   - Pluggable frequency handlers with 5 implementations
+   - Frequency-aware VAR defaults: Annual (3), Monthly (6), Weekly (8), Daily (14)
+
+4. **✅ Incidence Mode (v0.9.0)**:
+   - Dual-mode support: cumulative (COVID-19) and incidence (measles/polio)
+   - Mode propagates through DataContainer → Model → Results automatically
+   - Handles elimination cycles and sporadic reintroduction
+
+5. **✅ SIRDV Model Support (v0.6.1)**:
+   - Automatic detection of vaccination column
    - Dynamic rate calculation including delta (vaccination rate)
-   - Modified susceptible calculation: `S = N - C - V` for SIRDV
    - Backward compatible with SIRD models
-   - See `SIRDV_IMPLEMENTATION_COMPLETE.md` for details
 
-2. **✅ Result Caching (v0.6.1)**: File-based caching of `generate_result()` output to avoid recomputation
-   - Configure via `.env`: `RESULT_CACHING_ENABLED=True`, `CACHE_DIR=.epydemics_cache`, `CACHE_STRICT_VERSION=False`
-   - Cache key based on: model params, data state (SHA-256), forecast values, optionally package version
-   - Dynamic compartment saving/loading (handles both SIRD and SIRDV)
-   
-3. **✅ Parallel Simulations (v0.6.0)**: Added `n_jobs` parameter to `run_simulations()` with auto-CPU detection
+6. **✅ Parallel Simulations (v0.6.0)**:
+   - Added `n_jobs` parameter to `run_simulations()` with auto-CPU detection
+   - 4-7x speedup on multi-core systems using ProcessPoolExecutor
 
-4. **✅ VAR API Fix (v0.6.0)**: Corrected `select_order()` usage (no `ic` parameter - use attribute access)
-
-5. **✅ Modular Architecture (v0.6.0)**: Extracted analysis functions to `epydemics/analysis/` module
-
-6. **✅ Modern Pandas (v0.6.0)**: Replaced deprecated `fillna(method="ffill")` with `.ffill()`
-
-7. **✅ Test Infrastructure**: Added `@pytest.mark.slow` to 25+ integration tests for faster CI/CD
-
-## Testing New Features
-- **Result Caching**: `tests/models/test_result_caching.py` - cache hit/miss, invalidation, version handling
-- **Parallel Simulations**: `tests/test_parallel_simulations.py` - sequential vs parallel equivalence, n_jobs validation
-- **Vaccination**: `tests/unit/data/test_features_vaccination.py` - SIRDV feature engineering patterns
+7. **✅ Test Infrastructure**:
+   - Added `@pytest.mark.slow` to 25+ integration tests for faster CI/CD
+   - 421/423 tests passing (99.5%), comprehensive coverage
