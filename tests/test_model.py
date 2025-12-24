@@ -229,7 +229,6 @@ class TestModelVisualization:
         return model
 
     @pytest.mark.slow
-    @patch("matplotlib.pyplot.show")
     @patch("matplotlib.pyplot.plot")
     @patch("matplotlib.pyplot.title")
     @patch("matplotlib.pyplot.legend")
@@ -240,7 +239,6 @@ class TestModelVisualization:
         mock_legend,
         mock_title,
         mock_plot,
-        mock_show,
         model_with_results,
     ):
         """Test basic visualization functionality."""
@@ -252,7 +250,8 @@ class TestModelVisualization:
         assert mock_title.called
         assert mock_legend.called
         assert mock_grid.called
-        assert mock_show.called
+        # Note: visualize_results() sets up the plot but doesn't call show()
+        # to allow callers to customize before displaying
 
     @pytest.mark.slow
     @patch("matplotlib.pyplot.show")

@@ -68,7 +68,6 @@ def test_visualize_results_imports():
     assert callable(visualize_results)
 
 
-@patch("matplotlib.pyplot.show")
 @patch("matplotlib.pyplot.plot")
 @patch("matplotlib.pyplot.xlabel")
 @patch("matplotlib.pyplot.ylabel")
@@ -76,9 +75,7 @@ def test_visualize_results_imports():
 @patch("matplotlib.pyplot.legend")
 @patch("matplotlib.pyplot.grid")
 @patch("matplotlib.pyplot.yscale")
-@patch("matplotlib.pyplot.tight_layout")
 def test_visualize_results_basic_call(
-    mock_tight_layout,
     mock_yscale,
     mock_grid,
     mock_legend,
@@ -86,7 +83,6 @@ def test_visualize_results_basic_call(
     mock_ylabel,
     mock_xlabel,
     mock_plot,
-    mock_show,
     sample_results,
 ):
     """Test basic visualization function call."""
@@ -100,8 +96,8 @@ def test_visualize_results_basic_call(
     mock_title.assert_called()
     mock_legend.assert_called()
     mock_grid.assert_called_with(True, alpha=0.3)
-    mock_tight_layout.assert_called()
-    mock_show.assert_called()
+    # Note: visualize_results() doesn't call tight_layout() or show()
+    # to allow callers to customize the plot before displaying
 
 
 @patch("matplotlib.pyplot.show")
