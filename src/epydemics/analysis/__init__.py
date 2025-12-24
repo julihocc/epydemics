@@ -11,13 +11,14 @@ Modules:
 """
 
 from .evaluation import evaluate_forecast, evaluate_model
-from .visualization import visualize_results
 from .formatting import (
-    format_time_axis,
-    format_subplot_grid,
     add_forecast_highlight,
+    format_subplot_grid,
+    format_time_axis,
     set_professional_style,
 )
+from .reporting import ModelReport, create_comparison_report
+from .visualization import visualize_results
 
 __all__ = [
     "evaluate_forecast",
@@ -27,4 +28,6 @@ __all__ = [
     "format_subplot_grid",
     "add_forecast_highlight",
     "set_professional_style",
+    "ModelReport",
+    "create_comparison_report",
 ]
