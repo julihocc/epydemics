@@ -41,7 +41,7 @@ class ModelReport:
         results: Dict[str, Any],
         testing_data: Optional[pd.DataFrame] = None,
         compartments: Optional[List[str]] = None,
-        model_name: str = "SIRD Model"
+        model_name: str = "SIRD Model",
     ):
         """
         Initialize model report.
@@ -78,24 +78,30 @@ class ModelReport:
             comp_data = self.results[comp]
 
             # Get mean and median if available
-            if 'mean' in comp_data.columns:
-                mean_val = comp_data['mean'].mean()
-                median_val = comp_data['median'].mean() if 'median' in comp_data.columns else mean_val
-                std_val = comp_data['mean'].std()
-                min_val = comp_data['mean'].min()
-                max_val = comp_data['mean'].max()
+            if "mean" in comp_data.columns:
+                mean_val = comp_data["mean"].mean()
+                median_val = (
+                    comp_data["median"].mean()
+                    if "median" in comp_data.columns
+                    else mean_val
+                )
+                std_val = comp_data["mean"].std()
+                min_val = comp_data["mean"].min()
+                max_val = comp_data["mean"].max()
 
-                summary_data.append({
-                    'Compartment': COMPARTMENT_LABELS.get(comp, comp),
-                    'Code': comp,
-                    'Mean': mean_val,
-                    'Median': median_val,
-                    'Std Dev': std_val,
-                    'Min': min_val,
-                    'Max': max_val,
-                    'Range': max_val - min_val,
-                    'CV (%)': (std_val / mean_val * 100) if mean_val > 0 else 0
-                })
+                summary_data.append(
+                    {
+                        "Compartment": COMPARTMENT_LABELS.get(comp, comp),
+                        "Code": comp,
+                        "Mean": mean_val,
+                        "Median": median_val,
+                        "Std Dev": std_val,
+                        "Min": min_val,
+                        "Max": max_val,
+                        "Range": max_val - min_val,
+                        "CV (%)": (std_val / mean_val * 100) if mean_val > 0 else 0,
+                    }
+                )
 
         return pd.DataFrame(summary_data)
 
@@ -116,11 +122,11 @@ class ModelReport:
             raise ValueError("Testing data required for evaluation")
 
         if self._evaluation is None:
-            comp_tuple = tuple(compartments) if compartments else tuple(self.compartments)
+            comp_tuple = (
+                tuple(compartments) if compartments else tuple(self.compartments)
+            )
             self._evaluation = evaluate_forecast(
-                self.results,
-                self.testing_data,
-                compartment_codes=comp_tuple
+                self.results, self.testing_data, compartment_codes=comp_tuple
             )
 
         return self._evaluation
@@ -133,21 +139,23 @@ class ModelReport:
             DataFrame with evaluation metrics for each compartment
         """
         if self.testing_data is None:
-            return pd.DataFrame({'Note': ['No testing data provided']})
+            return pd.DataFrame({"Note": ["No testing data provided"]})
 
         eval_metrics = self.evaluate()
 
         rows = []
         for comp, methods in eval_metrics.items():
             for method, metrics in methods.items():
-                rows.append({
-                    'Compartment': COMPARTMENT_LABELS.get(comp, comp),
-                    'Method': method.title(),
-                    'MAE': metrics['mae'],
-                    'RMSE': metrics['rmse'],
-                    'MAPE (%)': metrics['mape'],
-                    'SMAPE (%)': metrics['smape']
-                })
+                rows.append(
+                    {
+                        "Compartment": COMPARTMENT_LABELS.get(comp, comp),
+                        "Method": method.title(),
+                        "MAE": metrics["mae"],
+                        "RMSE": metrics["rmse"],
+                        "MAPE (%)": metrics["mape"],
+                        "SMAPE (%)": metrics["smape"],
+                    }
+                )
 
         return pd.DataFrame(rows)
 
@@ -155,10 +163,11 @@ class ModelReport:
         self,
         figsize: Tuple[int, int] = (15, 10),
         save_path: Optional[Union[str, Path]] = None,
-        dpi: int = 300
+        dpi: int = 300,
     ) -> Figure:
         """
         Create a multi-panel figure with forecasts for all compartments.
+            Includes historical training data for context when available.
 
         Args:
             figsize: Figure size (width, height) in inches
@@ -176,29 +185,52 @@ class ModelReport:
         axes = axes.flatten() if n_compartments > 1 else [axes]
 
         for idx, comp in enumerate(self.compartments):
-            plt.sca(axes[idx])
+            ax = axes[idx]
+            plt.sca(ax)
+
+            # Plot historical training data if available
+            if (
+                hasattr(self, "historical_data")
+                and comp in self.historical_data.columns
+            ):
+                ax.plot(
+                    self.historical_data.index,
+                    self.historical_data[comp],
+                    "o-",
+                    color="steelblue",
+                    label="Historical Training Data",
+                    linewidth=2,
+                    markersize=4,
+                )
+
+            # Plot forecast and test data
             visualize_results(
                 self.results,
                 comp,
                 testing_data=self.testing_data,
                 log_response=False,
-                format_axis=True
+                format_axis=True,
             )
-            axes[idx].set_title(
+
+            # Adjust title and legend
+            ax.set_title(
                 f"{COMPARTMENT_LABELS.get(comp, comp)} Forecast",
                 fontsize=12,
-                fontweight='bold'
+                fontweight="bold",
             )
+            ax.legend(loc="best", framealpha=0.9)
 
         # Hide unused subplots
         for idx in range(n_compartments, len(axes)):
             axes[idx].set_visible(False)
 
-        fig.suptitle(f"{self.model_name} - Forecast Results", fontsize=16, fontweight='bold')
+        fig.suptitle(
+            f"{self.model_name} - Forecast Results", fontsize=16, fontweight="bold"
+        )
         plt.tight_layout()
 
         if save_path:
-            fig.savefig(save_path, dpi=dpi, bbox_inches='tight')
+            fig.savefig(save_path, dpi=dpi, bbox_inches="tight")
             print(f"Figure saved to {save_path}")
 
         return fig
@@ -208,7 +240,7 @@ class ModelReport:
         filepath: Union[str, Path],
         include_summary: bool = True,
         include_evaluation: bool = True,
-        include_figure: bool = True
+        include_figure: bool = True,
     ) -> None:
         """
         Export report as a Markdown file.
@@ -224,7 +256,9 @@ class ModelReport:
 
         # Header
         lines.append(f"# {self.model_name} - Forecast Report\n")
-        lines.append(f"**Generated**: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        lines.append(
+            f"**Generated**: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+        )
         lines.append("---\n")
 
         # Summary statistics
@@ -249,13 +283,11 @@ class ModelReport:
             lines.append(f"![Forecast Results]({fig_path.name})\n")
 
         # Write to file
-        filepath.write_text('\n'.join(lines))
+        filepath.write_text("\n".join(lines))
         print(f"Report exported to {filepath}")
 
     def export_latex_table(
-        self,
-        filepath: Union[str, Path],
-        table_type: str = "summary"
+        self, filepath: Union[str, Path], table_type: str = "summary"
     ) -> None:
         """
         Export results as a LaTeX table for publications.
@@ -278,10 +310,7 @@ class ModelReport:
             raise ValueError(f"Unknown table type: {table_type}")
 
         latex_str = df.to_latex(
-            index=False,
-            float_format="%.2f",
-            caption=caption,
-            label=f"tab:{table_type}"
+            index=False, float_format="%.2f", caption=caption, label=f"tab:{table_type}"
         )
 
         filepath.write_text(latex_str)
@@ -292,7 +321,8 @@ def create_comparison_report(
     models: Dict[str, Dict[str, Any]],
     testing_data: Optional[pd.DataFrame] = None,
     compartment: str = "C",
-    save_path: Optional[Union[str, Path]] = None
+    save_path: Optional[Union[str, Path]] = None,
+    historical_data: Optional[pd.DataFrame] = None,
 ) -> Figure:
     """
     Create a comparison report for multiple models.
@@ -302,6 +332,7 @@ def create_comparison_report(
         testing_data: Optional test data for all models
         compartment: Compartment to compare
         save_path: Optional path to save figure
+        historical_data: Optional historical/training data to show context
 
     Returns:
         Matplotlib Figure object
@@ -315,30 +346,39 @@ def create_comparison_report(
     """
     fig, ax = plt.subplots(figsize=(12, 6))
 
+    # Plot historical data if provided
+    if historical_data is not None and compartment in historical_data.columns:
+        ax.plot(
+            historical_data.index,
+            historical_data[compartment],
+            "o-",
+            color="steelblue",
+            label="Historical Training Data",
+            linewidth=2,
+            markersize=5,
+        )
+
     for name, results in models.items():
         comp_data = results[compartment]
-        if 'mean' in comp_data.columns:
-            ax.plot(
-                comp_data.index,
-                comp_data['mean'],
-                label=name,
-                linewidth=2
-            )
+        if "mean" in comp_data.columns:
+            ax.plot(comp_data.index, comp_data["mean"], label=name, linewidth=2)
 
     # Plot actual data if provided
     if testing_data is not None and compartment in testing_data.columns:
         ax.plot(
             testing_data.index,
             testing_data[compartment],
-            'k--',
-            label='Actual',
-            linewidth=2
+            "k--",
+            label="Actual",
+            linewidth=2,
         )
 
-    ax.set_xlabel('Date')
+    ax.set_xlabel("Date")
     ax.set_ylabel(f"{COMPARTMENT_LABELS.get(compartment, compartment)}")
-    ax.set_title(f"Model Comparison - {COMPARTMENT_LABELS.get(compartment, compartment)}")
-    ax.legend()
+    ax.set_title(
+        f"Model Comparison - {COMPARTMENT_LABELS.get(compartment, compartment)}"
+    )
+    ax.legend(loc="best", framealpha=0.9)
     ax.grid(True, alpha=0.3)
 
     # Format time axis
@@ -347,7 +387,7 @@ def create_comparison_report(
     plt.tight_layout()
 
     if save_path:
-        fig.savefig(save_path, dpi=300, bbox_inches='tight')
+        fig.savefig(save_path, dpi=300, bbox_inches="tight")
         print(f"Comparison figure saved to {save_path}")
 
     return fig

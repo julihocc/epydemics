@@ -54,7 +54,16 @@ def visualize_results(
     if compartment_code not in results:
         raise KeyError(f"Compartment '{compartment_code}' not found in results")
 
-    compartment = results[compartment_code]
+    # Work on a local copy and align the forecast index to testing_data when provided
+    compartment = results[compartment_code].copy()
+
+    if testing_data is not None:
+        target_index = testing_data.index
+        # Align forecast to test period if lengths match or test covers forecast
+        if len(target_index) == len(compartment.index):
+            compartment.index = target_index
+        elif len(target_index) >= len(compartment.index):
+            compartment.index = target_index[: len(compartment.index)]
 
     # Plot individual simulation paths with low alpha
     for col in compartment.columns:
@@ -134,7 +143,9 @@ def compare_scenarios(
 
     for name, results_box in scenarios.items():
         if compartment_code not in results_box:
-            print(f"Warning: Compartment {compartment_code} not found in scenario {name}")
+            print(
+                f"Warning: Compartment {compartment_code} not found in scenario {name}"
+            )
             continue
 
         df = results_box[compartment_code]
@@ -143,7 +154,7 @@ def compare_scenarios(
         # The columns are formatted as "alpha|beta|gamma" (or +delta)
         # We'll calculate the MEAN across all combinations for simplicity in this view
         # or use the pre-calculated 'mean' column
-        
+
         if "mean" in df.columns:
             series = df["mean"]
         else:
@@ -154,12 +165,15 @@ def compare_scenarios(
 
     plt.xlabel("Date")
     plt.ylabel(f"{COMPARTMENT_LABELS.get(compartment_code, compartment_code)} (Mean)")
-    plt.title(title or f"Scenario Comparison: {COMPARTMENT_LABELS.get(compartment_code, compartment_code)}")
+    plt.title(
+        title
+        or f"Scenario Comparison: {COMPARTMENT_LABELS.get(compartment_code, compartment_code)}"
+    )
     plt.legend()
     plt.grid(True, alpha=0.3)
 
     ax = plt.gca()
-    format_time_axis(ax, series.index if 'series' in locals() else None)
+    format_time_axis(ax, series.index if "series" in locals() else None)
 
     plt.tight_layout()
     plt.show()
