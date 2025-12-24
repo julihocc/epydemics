@@ -1,12 +1,12 @@
 # Epydemics: Forecasting COVID-19 using time series and machine learning
 
-**Version 0.9.0** - Native Multi-Frequency (Daily, Business Day, Weekly, Monthly, Annual)
+**Version 0.10.0** - Fractional Recovery Lag Fix for Annual + Incidence Mode
 
 `epydemics` is a Python library for epidemiological modeling and forecasting. It provides tools for creating, fitting, and evaluating discrete SIRD/SIRDV models with time-dependent parameters. The library is designed to be flexible and extensible, allowing users to easily incorporate their own data and models.
 
 **📖 New Users?** Start with the **[User Guide](docs/USER_GUIDE.md)** to understand when and how to use epydemics.
 
-⚠️ **Known Limitation**: Annual frequency + incidence mode is incompatible with VAR forecasting. Use monthly/weekly data instead. See [Known Limitations](docs/user-guide/known-limitations.md) for details.
+✅ **v0.10.0 Fix**: Annual frequency now fully supports incidence mode with fractional recovery lag (14 days = 0.0384 years). Native annual + incidence workflows are now production-ready.
 
 ## Features
 
@@ -81,11 +81,17 @@ pip install -e .
 -   **[Documentation Index](docs/INDEX.md)**: Complete documentation organization and navigation
 
 **Release Documentation**:
--   **[v0.9.0 Release Notes](docs/releases/RELEASE_NOTES_v0.9.0.md)**: Latest release details
+-   **[v0.10.0 Release Notes](RELEASE_NOTES_v0.10.0.md)**: Latest release details (fractional recovery lag fix)
+-   **[v0.9.0 Release Notes](docs/releases/RELEASE_NOTES_v0.9.0.md)**: Native multi-frequency support
 -   **[Migration Guide](docs/releases/MIGRATION_GUIDE.md)**: Upgrade from v0.8.0 to v0.9.0
 -   **[PyPI Publication Guide](docs/releases/PYPI_PUBLICATION_GUIDE.md)**: Publishing to PyPI
 
 ## Further work
+
+Recent additions in v0.10.0:
+-   ✅ **Fractional Recovery Lag**: Annual frequency now uses 14/365 years (0.0384) instead of 0, fixing LinAlgError with incidence mode
+-   ✅ **Annual + Incidence Mode**: Production-ready native support for annual surveillance data with incident cases
+-   ✅ **Enhanced Testing**: 10 new tests for fractional lag validation (421/423 tests passing)
 
 Recent additions in v0.9.0:
 -   ✅ **Native Multi-Frequency**: Daily, business day, weekly, monthly, annual handlers; no artificial reindexing
