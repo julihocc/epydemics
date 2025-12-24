@@ -359,7 +359,16 @@ def create_comparison_report(
         )
 
     for name, results in models.items():
-        comp_data = results[compartment]
+        comp_data = results[compartment].copy()
+
+        # Align forecast index to testing data for consistent time axis
+        if testing_data is not None:
+            target_index = testing_data.index
+            if len(target_index) == len(comp_data.index):
+                comp_data.index = target_index
+            elif len(target_index) >= len(comp_data.index):
+                comp_data.index = target_index[: len(comp_data.index)]
+
         if "mean" in comp_data.columns:
             ax.plot(comp_data.index, comp_data["mean"], label=name, linewidth=2)
 
@@ -381,8 +390,9 @@ def create_comparison_report(
     ax.legend(loc="best", framealpha=0.9)
     ax.grid(True, alpha=0.3)
 
-    # Format time axis
-    format_time_axis(ax, comp_data.index, time_range="auto")
+    # Format time axis using aligned index
+    axis_index = testing_data.index if testing_data is not None else comp_data.index
+    format_time_axis(ax, axis_index, time_range="auto")
 
     plt.tight_layout()
 
