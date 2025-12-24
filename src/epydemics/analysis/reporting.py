@@ -346,11 +346,18 @@ def create_comparison_report(
     """
     fig, ax = plt.subplots(figsize=(12, 6))
 
+    # Combine historical and test periods for x-axis using integer positions
+    all_labels = []
+    hist_len = 0
+
     # Plot historical data if provided
     if historical_data is not None and compartment in historical_data.columns:
+        hist_len = len(historical_data)
+        x_pos = np.arange(hist_len)
+        all_labels.extend([str(d.date()) for d in historical_data.index])
         ax.plot(
-            historical_data.index,
-            historical_data[compartment],
+            x_pos,
+            historical_data[compartment].values,
             "o-",
             color="steelblue",
             label="Historical Training Data",
@@ -358,29 +365,51 @@ def create_comparison_report(
             markersize=5,
         )
 
+    # Plot forecasts and actual data
+    test_len = len(testing_data) if testing_data is not None else 0
+
     for name, results in models.items():
         comp_data = results[compartment].copy()
-
-        # Align forecast index to testing data for consistent time axis
-        if testing_data is not None:
-            target_index = testing_data.index
-            if len(target_index) == len(comp_data.index):
-                comp_data.index = target_index
-            elif len(target_index) >= len(comp_data.index):
-                comp_data.index = target_index[: len(comp_data.index)]
-
         if "mean" in comp_data.columns:
-            ax.plot(comp_data.index, comp_data["mean"], label=name, linewidth=2)
+            # Extract mean values (take up to test length)
+            forecast_vals = comp_data["mean"].values[:test_len]
+            x_pos = np.arange(hist_len, hist_len + len(forecast_vals))
+            ax.plot(x_pos, forecast_vals, label=name, linewidth=2)
 
     # Plot actual data if provided
     if testing_data is not None and compartment in testing_data.columns:
+        x_pos = np.arange(hist_len, hist_len + test_len)
+        all_labels.extend([str(d.date()) for d in testing_data.index])
         ax.plot(
-            testing_data.index,
-            testing_data[compartment],
+            x_pos,
+            testing_data[compartment].values,
             "k--",
             label="Actual",
             linewidth=2,
         )
+
+    # Set x-axis labels with reasonable spacing
+    all_periods = hist_len + test_len
+    if all_periods > 0:
+        tick_positions = np.linspace(0, all_periods - 1, min(6, all_periods), dtype=int)
+        tick_labels = []
+
+        # Generate labels from both datasets
+        if historical_data is not None:
+            for i in tick_positions:
+                if i < hist_len:
+                    tick_labels.append(str(historical_data.index[i].date()))
+                elif testing_data is not None:
+                    idx_in_test = i - hist_len
+                    if idx_in_test < len(testing_data):
+                        tick_labels.append(str(testing_data.index[idx_in_test].date()))
+                else:
+                    tick_labels.append(str(int(i)))
+        else:
+            tick_labels = [str(int(p)) for p in tick_positions]
+
+        ax.set_xticks(tick_positions)
+        ax.set_xticklabels(tick_labels, rotation=45, ha="right", fontsize=9)
 
     ax.set_xlabel("Date")
     ax.set_ylabel(f"{COMPARTMENT_LABELS.get(compartment, compartment)}")
@@ -389,10 +418,6 @@ def create_comparison_report(
     )
     ax.legend(loc="best", framealpha=0.9)
     ax.grid(True, alpha=0.3)
-
-    # Format time axis using aligned index
-    axis_index = testing_data.index if testing_data is not None else comp_data.index
-    format_time_axis(ax, axis_index, time_range="auto")
 
     plt.tight_layout()
 
