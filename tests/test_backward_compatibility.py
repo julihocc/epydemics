@@ -26,6 +26,12 @@ from epydemics.models.sird import Model
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "v0_7_0_reference"
 
+# Tolerance constants for backward compatibility checks
+POINT_ATOL = 1e-6
+POINT_RTL = 1e-5
+CI_ATOL = 1e-5
+CI_RTL = 1e-4
+
 
 def _load_pickle(path: Path) -> Dict[str, Any]:
     with path.open("rb") as f:
@@ -147,15 +153,3 @@ def test_forecast_equivalence_annual_current_vs_reference(
     _assert_arrays_close(
         alpha_upper, np.asarray(ref["alpha_upper"]), atol=CI_ATOL, rtol=CI_RTL
     )
-
-
-# Placeholder tolerances – adjust if needed after fixture generation
-POINT_ATOL = 1e-6
-POINT_RTL = 1e-5
-CI_ATOL = 1e-5
-CI_RTL = 1e-4
-
-
-# Future: Add tests that run current Model on identical data and compare
-# against reference fixtures using the helpers above. For now, we validate
-# fixture structure and skip if not present.
