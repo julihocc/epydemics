@@ -92,7 +92,7 @@ def main() -> None:
     with (target / "annual_cumulative_forecast.pkl").open("wb") as f:
         pickle.dump(annual_ref, f)
 
-    print("✅ Generated fixtures in", target)
+    print("Generated fixtures in", target)
 
 
 if __name__ == "__main__":
