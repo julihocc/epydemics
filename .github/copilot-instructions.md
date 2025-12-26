@@ -125,18 +125,18 @@ settings = get_settings()  # Cached singleton
 
 ### Testing Commands
 ```bash
-# Run all tests (uses pytest.ini markers)
+# Run all tests (uses pytest markers configured in pyproject.toml)
 pytest
 
 # Specific test types
 pytest -m unit              # Unit tests only
 pytest -m integration       # Integration tests only
-pytest -m "not slow"        # Skip slow tests
+pytest -m "not slow"        # Skip slow tests (25+ marked)
 
 # With coverage (configured in pyproject.toml)
 pytest --cov=src/epydemics --cov-report=html
 
-# Parallel execution
+# Parallel execution (requires pytest-xdist)
 pytest -n auto
 ```
 
@@ -305,13 +305,84 @@ fig = create_comparison_report(
 
 ## Key Files for Common Tasks
 
-**Reporting**: `src/epydemics/analysis/reporting.py` (ModelReport class + create_comparison_report)  
-**Modify Data Processing**: `src/epydemics/data/features.py` (feature engineering logic)  
-**Modify Modeling API**: `src/epydemics/models/sird.py` (main Model class)  
-**Modify Simulation Logic**: `src/epydemics/models/simulation.py` (parallel/sequential execution)  
-**Add Configuration**: `src/epydemics/core/config.py` (pydantic Settings)  
-**View Examples**: `examples/notebooks/07_reporting_and_publication.ipynb` (comprehensive reporting demo)  
-**Test Patterns**: `tests/conftest.py` (fixtures: `sample_data`, `sample_container`)
+**Reporting**: [src/epydemics/analysis/reporting.py](src/epydemics/analysis/reporting.py) (ModelReport class + create_comparison_report)  
+**Modify Data Processing**: [src/epydemics/data/features.py](src/epydemics/data/features.py) (feature engineering logic)  
+**Modify Modeling API**: [src/epydemics/models/sird.py](src/epydemics/models/sird.py) (main Model class)  
+**Modify Simulation Logic**: [src/epydemics/models/simulation.py](src/epydemics/models/simulation.py) (parallel/sequential execution)  
+**Add Configuration**: [src/epydemics/core/config.py](src/epydemics/core/config.py) (pydantic Settings)  
+**View Examples**: [examples/notebooks/07_reporting_and_publication.ipynb](examples/notebooks/07_reporting_and_publication.ipynb) (comprehensive reporting demo)  
+**Test Patterns**: [tests/conftest.py](tests/conftest.py) (fixtures: `sample_data`, `sample_container`)
+
+## Development Environment Setup
+
+### Initial Setup
+```bash
+# Clone and setup virtual environment
+git clone https://github.com/julihocc/epydemics.git
+cd epydemics
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install in editable mode with dev dependencies
+pip install -e ".[dev,test]"
+
+# Install pre-commit hooks
+pre-commit install
+```
+
+### Git Worktree Workflow (Advanced)
+This project supports parallel development using git worktrees:
+
+```bash
+# List all worktrees
+git worktree list
+
+# Create new worktree for feature branch
+git worktree add ../epydemics-feature-name feature-name
+
+# Remove worktree when done
+git worktree remove ../epydemics-feature-name
+```
+
+**Current workspace**: Branch `improve-report-tools` in worktree (reporting enhancements development)
+
+### CI/CD Workflows
+The project uses GitHub Actions for continuous integration:
+
+- **`.github/workflows/ci.yml`**: Main CI pipeline
+  - Tests on Python 3.9, 3.10, 3.11, 3.12
+  - Runs pytest with coverage reporting
+  - Uploads coverage to Codecov
+  - Code quality checks (black, isort, flake8, mypy)
+
+- **`.github/workflows/release.yml`**: Automated releases and PyPI publishing
+
+Run quality checks locally before pushing:
+```bash
+# Run all pre-commit hooks
+pre-commit run --all-files
+
+# Or manually:
+black src/ tests/
+isort src/ tests/
+flake8 src/ tests/
+mypy src/
+pytest -m "not slow"  # Fast tests only
+```
+
+## Example Notebooks
+
+The [examples/notebooks/](examples/notebooks/) directory contains 7 comprehensive notebooks:
+
+1. **01_sird_basic_workflow.ipynb**: Basic SIRD model workflow
+2. **02_sirdv_vaccination_analysis.ipynb**: SIRDV model with vaccination
+3. **03_global_covid19_forecasting.ipynb**: Multi-country COVID-19 analysis
+4. **04_parallel_simulations.ipynb**: Performance comparison of parallel vs sequential
+5. **05_multi_backend_comparison.ipynb**: Backend comparison (VAR, ARIMA, etc.)
+6. **06_incidence_mode_measles.ipynb**: Measles elimination cycles with annual data
+7. **07_reporting_and_publication.ipynb**: Publication-ready report generation (v0.10.0)
+
+All notebooks are validated and maintained with real-world data examples.
 
 ## Integration Points
 
