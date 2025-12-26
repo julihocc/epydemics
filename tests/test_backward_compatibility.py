@@ -91,13 +91,13 @@ def test_forecast_equivalence_covid_current_vs_reference(sample_data_container) 
     alpha_upper = np.asarray(model.forecasting_box.alpha.upper)
 
     _assert_arrays_close(
-        alpha_point, np.asarray(ref["alpha_point"]), atol=POINT_ATOL, rtol=POINT_RTL
+        alpha_point, np.asarray(ref["alpha_point"]), atol=POINT_ATOL, rtol=POINT_RTOL
     )
     _assert_arrays_close(
-        alpha_lower, np.asarray(ref["alpha_lower"]), atol=CI_ATOL, rtol=CI_RTL
+        alpha_lower, np.asarray(ref["alpha_lower"]), atol=CI_ATOL, rtol=CI_RTOL
     )
     _assert_arrays_close(
-        alpha_upper, np.asarray(ref["alpha_upper"]), atol=CI_ATOL, rtol=CI_RTL
+        alpha_upper, np.asarray(ref["alpha_upper"]), atol=CI_ATOL, rtol=CI_RTOL
     )
 
 
@@ -139,21 +139,21 @@ def test_forecast_equivalence_annual_current_vs_reference(
     alpha_upper = np.asarray(model.forecasting_box.alpha.upper)
 
     _assert_arrays_close(
-        alpha_point, np.asarray(ref["alpha_point"]), atol=POINT_ATOL, rtol=POINT_RTL
+        alpha_point, np.asarray(ref["alpha_point"]), atol=POINT_ATOL, rtol=POINT_RTOL
     )
     _assert_arrays_close(
-        alpha_lower, np.asarray(ref["alpha_lower"]), atol=CI_ATOL, rtol=CI_RTL
+        alpha_lower, np.asarray(ref["alpha_lower"]), atol=CI_ATOL, rtol=CI_RTOL
     )
     _assert_arrays_close(
-        alpha_upper, np.asarray(ref["alpha_upper"]), atol=CI_ATOL, rtol=CI_RTL
+        alpha_upper, np.asarray(ref["alpha_upper"]), atol=CI_ATOL, rtol=CI_RTOL
     )
 
 
 # Placeholder tolerances – adjust if needed after fixture generation
 POINT_ATOL = 1e-6
-POINT_RTL = 1e-5
+POINT_RTOL = 1e-5
 CI_ATOL = 1e-5
-CI_RTL = 1e-4
+CI_RTOL = 1e-4
 
 
 # Future: Add tests that run current Model on identical data and compare
