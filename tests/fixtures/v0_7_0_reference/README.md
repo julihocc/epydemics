@@ -6,7 +6,7 @@ Populate with small, serialized artifacts (pickled `.pkl` files) representing mo
 
 - `covid_cumulative_forecast.pkl` — SIRD cumulative workflow (COVID-19)
 - `measles_incidence_forecast.pkl` — Incidence workflow (measles, annual frequency)
-- Optional: `sirDV_vaccination_forecast.pkl` — SIRDV workflow with vaccination
+- Optional: `sirdv_vaccination_forecast.pkl` — SIRDV workflow with vaccination
 
 Each pickle should contain a dict of arrays/DataFrames for key comparables:
 
