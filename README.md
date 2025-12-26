@@ -48,6 +48,32 @@ The SIRDV model extends the classical SIRD model by incorporating vaccination:
 - Conservation law: N = S + I + R + D + V
 - Parallel execution recommended for performance
 
+## Quick Start: Reporting
+
+Generate publication-ready reports with one API:
+
+```python
+from epydemics import DataContainer, Model
+from epydemics.analysis import ModelReport
+
+# Fit model (see Tutorial for full workflow)
+container = DataContainer(data, mode='incidence')
+model = Model(container)
+model.create_model()
+model.fit_model(max_lag=3)
+model.forecast(steps=10)
+model.run_simulations()
+model.generate_result()
+
+# Generate comprehensive report
+report = ModelReport(model.results, testing_data=test_data)
+report.export_markdown("report.md", include_figure=True)
+report.export_latex_table("table.tex", "summary")
+fig = report.plot_forecast_panel(dpi=600, save_path="forecast.png")
+```
+
+**See:** [Reporting Guide](docs/REPORTING_GUIDE.md) | [Notebook Example](examples/notebooks/07_reporting_and_publication.ipynb) | [Script Example](examples/reporting_example.py)
+
 ## Getting Started
 
 To get started with `epydemics`, we recommend following the tutorial in [TUTORIAL.md](TUTORIAL.md).

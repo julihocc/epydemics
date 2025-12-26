@@ -13,17 +13,32 @@ The reporting module provides high-level tools for generating publication-ready 
 from epydemics import DataContainer, Model
 from epydemics.analysis import ModelReport
 
-# After running your model...
+# 1. Fit your model (see Tutorial for details)
+container = DataContainer(train_data, mode='incidence')
+model = Model(container)
+model.create_model()
+model.fit_model(max_lag=3)
+model.forecast(steps=10)
+model.run_simulations(n_jobs=-1)
+model.generate_result()
+
+# 2. Create report with testing data for evaluation
 report = ModelReport(
     results=model.results,
     testing_data=test_data,
-    compartments=['C', 'D', 'I'],
-    model_name="COVID-19 Forecast - USA"
+    compartments=['I', 'D'],
+    model_name="Measles Forecast - Mexico"
 )
 
-# Generate comprehensive report
-report.export_markdown("results/covid_report.md")
+# 3. Export everything in one line
+report.export_markdown("reports/forecast.md", include_figure=True)
+report.export_latex_table("tables/summary.tex", "summary")
+fig = report.plot_forecast_panel(dpi=600, save_path="figures/forecast.png")
 ```
+
+**Complete working examples:**
+- [07_reporting_and_publication.ipynb](../examples/notebooks/07_reporting_and_publication.ipynb): Comprehensive notebook walkthrough
+- [reporting_example.py](../examples/reporting_example.py): Standalone Python script
 
 ## Features
 
