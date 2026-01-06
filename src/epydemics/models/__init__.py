@@ -7,10 +7,9 @@ This module provides epidemiological modeling implementations including:
 - Simulation engines and forecasting utilities
 """
 
+from . import simulation, var_forecasting
 from .base import BaseModel, SIRDModelMixin
 from .sird import Model
-from . import var_forecasting
-from . import simulation
 
 __all__ = [
     "BaseModel",

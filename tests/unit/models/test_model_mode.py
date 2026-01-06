@@ -5,9 +5,9 @@ Verifies that the Model class correctly inherits and propagates the mode
 from DataContainer through the entire modeling pipeline.
 """
 
+import numpy as np
 import pandas as pd
 import pytest
-import numpy as np
 
 from epydemics import DataContainer, Model
 

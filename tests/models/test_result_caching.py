@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from epydemics import Model, DataContainer
+from epydemics import DataContainer, Model
 from epydemics.core.config import get_settings
 
 

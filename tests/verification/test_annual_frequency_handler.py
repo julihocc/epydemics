@@ -4,9 +4,10 @@ Verification tests for AnnualFrequencyHandler (Issue #127).
 Tests that annual data processing works correctly without reindexing.
 """
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 import pytest
+
 from epydemics import DataContainer, Model
 from epydemics.data.frequency_handlers import FrequencyHandlerRegistry
 
@@ -38,7 +39,7 @@ class TestAnnualFrequencyHandlerVerification:
     def test_handler_selection(self):
         """Verify AnnualFrequencyHandler is selected for 'YE' frequency."""
         registry = FrequencyHandlerRegistry()
-        handler = registry.get_handler("YE")
+        handler = registry.get("YE")
 
         assert handler.__class__.__name__ == "AnnualFrequencyHandler"
         print(f"✓ AnnualFrequencyHandler selected for 'YE' frequency")
@@ -46,18 +47,23 @@ class TestAnnualFrequencyHandlerVerification:
     def test_handler_parameters(self):
         """Verify AnnualFrequencyHandler has correct parameters."""
         registry = FrequencyHandlerRegistry()
-        handler = registry.get_handler("YE")
+        handler = registry.get("YE")
 
-        assert handler.days_per_year == 365
-        assert handler.recovery_lag == 0  # Rounded from 14/365
-        assert handler.default_max_lag == 3
-        assert handler.min_observations == 10
+        assert handler.frequency_code == "YE"
+        assert handler.frequency_name == "annual"
+        assert handler.periods_per_year == 1
+        assert handler.get_recovery_lag() == pytest.approx(
+            14 / 365, rel=1e-3
+        )  # Fractional lag
+        assert handler.get_default_max_lag() == 3
+        assert handler.get_min_observations() == 10
 
         print(f"✓ Handler parameters correct:")
-        print(f"  - days_per_year: {handler.days_per_year}")
-        print(f"  - recovery_lag: {handler.recovery_lag}")
-        print(f"  - default_max_lag: {handler.default_max_lag}")
-        print(f"  - min_observations: {handler.min_observations}")
+        print(f"  - frequency_code: {handler.frequency_code}")
+        print(f"  - frequency_name: {handler.frequency_name}")
+        print(f"  - recovery_lag: {handler.get_recovery_lag():.6f}")
+        print(f"  - default_max_lag: {handler.get_default_max_lag()}")
+        print(f"  - min_observations: {handler.get_min_observations()}")
 
     def test_no_reindexing(self, annual_measles_data):
         """Verify data stays at original size (no artificial reindexing)."""
@@ -85,7 +91,9 @@ class TestAnnualFrequencyHandlerVerification:
         for col in required_columns:
             assert col in container.data.columns
 
-        print(f"✓ Feature engineering complete, columns: {list(container.data.columns)}")
+        print(
+            f"✓ Feature engineering complete, columns: {list(container.data.columns)}"
+        )
 
     def test_rate_calculations(self, annual_measles_data):
         """Verify rate calculations are valid for annual data."""
@@ -109,15 +117,16 @@ class TestAnnualFrequencyHandlerVerification:
             annual_measles_data, window=1, frequency="YE", mode="incidence"
         )
 
-        # Create model (use subset for training)
-        model = Model(container, start="2010", stop="2020")
+        # Create model (use subset for training: 2010-2019 data)
+        # Note: annual data is indexed as year-end dates (2010-12-31)
+        model = Model(container, start="2010-12-31", stop="2019-12-31")
         model.create_model()
 
-        assert model.frequency == "YE"
+        assert model.data_container.frequency == "YE"
         assert model.mode == "incidence"
 
         print(f"✓ Model created successfully with annual data")
-        print(f"  - Frequency: {model.frequency}")
+        print(f"  - Frequency: {model.data_container.frequency}")
         print(f"  - Mode: {model.mode}")
 
     def test_model_fitting(self, annual_measles_data):
@@ -126,7 +135,7 @@ class TestAnnualFrequencyHandlerVerification:
             annual_measles_data, window=1, frequency="YE", mode="incidence"
         )
 
-        model = Model(container, start="2010", stop="2020")
+        model = Model(container, start="2010-12-31", stop="2019-12-31")
         model.create_model()
 
         # Fit with max_lag=3 (default for annual)
@@ -141,7 +150,7 @@ class TestAnnualFrequencyHandlerVerification:
             annual_measles_data, window=1, frequency="YE", mode="incidence"
         )
 
-        model = Model(container, start="2010", stop="2020")
+        model = Model(container, start="2010-12-31", stop="2019-12-31")
         model.create_model()
         model.fit_model(max_lag=3)
 
@@ -152,7 +161,7 @@ class TestAnnualFrequencyHandlerVerification:
         assert model.forecasting_interval is not None
         assert len(model.forecasting_interval) == 5
 
-        print(f"✓ Forecast generated for 5 annual periods")
+        print("✓ Forecast generated for 5 annual periods")
 
     def test_end_to_end_workflow(self, annual_measles_data):
         """Complete end-to-end workflow with annual data."""
@@ -162,7 +171,7 @@ class TestAnnualFrequencyHandlerVerification:
         )
 
         # 2. Create and fit model
-        model = Model(container, start="2010", stop="2020")
+        model = Model(container, start="2010-12-31", stop="2019-12-31")
         model.create_model()
         model.fit_model(max_lag=3)
 
@@ -180,9 +189,9 @@ class TestAnnualFrequencyHandlerVerification:
         assert "C" in model.results
         assert len(model.results["C"]) == 5  # 5 forecast periods
 
-        print(f"✓ Complete end-to-end workflow successful")
-        print(f"  - Training period: 2010-2020 (11 years)")
-        print(f"  - Forecast period: 5 years")
+        print("✓ Complete end-to-end workflow successful")
+        print("  - Training period: 2010-2020 (11 years)")
+        print("  - Forecast period: 5 years")
         print(f"  - Results generated: {list(model.results.keys())}")
 
 
@@ -198,23 +207,35 @@ def run_verification():
 
     # Create test data
     annual_data = test_instance.annual_measles_data(None)
-    print(f"Test data: Mexico measles 2010-2024")
+    print("Test data: Mexico measles 2010-2024")
     print(f"  - Shape: {annual_data.shape}")
     print(f"  - Frequency: {annual_data.index.freq}")
     print()
 
     # Run tests
     tests = [
-        ("Frequency Detection", lambda: test_instance.test_frequency_detection(annual_data)),
+        (
+            "Frequency Detection",
+            lambda: test_instance.test_frequency_detection(annual_data),
+        ),
         ("Handler Selection", lambda: test_instance.test_handler_selection()),
         ("Handler Parameters", lambda: test_instance.test_handler_parameters()),
         ("No Reindexing", lambda: test_instance.test_no_reindexing(annual_data)),
-        ("Feature Engineering", lambda: test_instance.test_feature_engineering(annual_data)),
-        ("Rate Calculations", lambda: test_instance.test_rate_calculations(annual_data)),
+        (
+            "Feature Engineering",
+            lambda: test_instance.test_feature_engineering(annual_data),
+        ),
+        (
+            "Rate Calculations",
+            lambda: test_instance.test_rate_calculations(annual_data),
+        ),
         ("Model Creation", lambda: test_instance.test_model_creation(annual_data)),
         ("Model Fitting", lambda: test_instance.test_model_fitting(annual_data)),
         ("Forecasting", lambda: test_instance.test_forecasting(annual_data)),
-        ("End-to-End Workflow", lambda: test_instance.test_end_to_end_workflow(annual_data)),
+        (
+            "End-to-End Workflow",
+            lambda: test_instance.test_end_to_end_workflow(annual_data),
+        ),
     ]
 
     passed = 0

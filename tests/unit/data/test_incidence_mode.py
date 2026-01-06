@@ -7,9 +7,9 @@ This module tests the new incidence mode where:
 - Suitable for eliminated diseases like measles with sporadic outbreaks
 """
 
+import numpy as np
 import pandas as pd
 import pytest
-import numpy as np
 
 from epydemics.data.features import feature_engineering
 

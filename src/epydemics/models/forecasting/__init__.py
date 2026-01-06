@@ -11,16 +11,16 @@ Available Backends:
     - LSTM: Neural networks (stub - not yet implemented)
 """
 
+from .arima import ARIMAForecaster
 from .base import BaseForecaster
+from .lstm import LSTMForecaster
 from .orchestrator import ForecastingOrchestrator
-from .registry import ForecasterRegistry, register_forecaster
-from .var import VARForecaster
 
 # Import new backends to trigger registration
 # These use lazy imports internally, so no hard dependencies
 from .prophet import ProphetForecaster
-from .arima import ARIMAForecaster
-from .lstm import LSTMForecaster
+from .registry import ForecasterRegistry, register_forecaster
+from .var import VARForecaster
 
 __all__ = [
     "BaseForecaster",

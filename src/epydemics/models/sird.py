@@ -1,26 +1,25 @@
 """SIRD epidemiological model with VAR time series forecasting."""
 
+import hashlib
+import json
 import logging
 import warnings
+from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 import pandas as pd
 from box import Box
-import hashlib
-import json
-from pathlib import Path
+
+from epydemics.core.config import get_settings
 
 from ..analysis.evaluation import evaluate_forecast as _evaluate_forecast
 from ..analysis.visualization import visualize_results as _visualize_results
 from ..core.constants import COMPARTMENTS, FORECASTING_LEVELS, LOGIT_RATIOS
 from ..data.preprocessing import reindex_data
 from .base import BaseModel, SIRDModelMixin
-from .var_forecasting import VARForecasting  # Keep for backward compat
 from .forecasting.orchestrator import ForecastingOrchestrator
 from .simulation import EpidemicSimulation
-
-
-from epydemics.core.config import get_settings
+from .var_forecasting import VARForecasting  # Keep for backward compat
 
 
 # Import __version__ after full module initialization to avoid circular import
@@ -857,8 +856,9 @@ class Model(BaseModel, SIRDModelMixin):
             >>> model.generate_result()
             >>> weekly = model.aggregate_forecast('C', target_frequency='W', aggregate_func='sum')
         """
-        from epydemics.core.constants import CENTRAL_TENDENCY_METHODS
         import numpy as np
+
+        from epydemics.core.constants import CENTRAL_TENDENCY_METHODS
 
         if self.results is None:
             raise ValueError(

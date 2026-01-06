@@ -6,7 +6,8 @@ and types to ensure data integrity before processing.
 """
 
 import pandas as pd
-from ..core.exceptions import NotDataFrameError, DataValidationError
+
+from ..core.exceptions import DataValidationError, NotDataFrameError
 
 
 def validate_data(training_data: pd.DataFrame, mode: str = "cumulative") -> None:

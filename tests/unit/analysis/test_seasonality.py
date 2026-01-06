@@ -4,11 +4,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from epydemics import DataContainer
 from epydemics.analysis.seasonality import (
     SeasonalPatternDetector,
     get_seasonal_parameters,
 )
-from epydemics import DataContainer
 
 
 class TestSeasonalPatternDetector:

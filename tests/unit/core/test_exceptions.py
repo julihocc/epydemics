@@ -9,10 +9,10 @@ of the exceptions module before implementation.
 def test_exceptions_module_imports():
     """Test that all exceptions can be imported from core.exceptions."""
     from epydemics.core.exceptions import (
-        NotDataFrameError,
-        EpydemicsError,
         DataValidationError,
         DateRangeError,
+        EpydemicsError,
+        NotDataFrameError,
     )
 
     # Basic import verification
@@ -25,10 +25,10 @@ def test_exceptions_module_imports():
 def test_base_exception_hierarchy():
     """Test that custom exceptions inherit from proper base classes."""
     from epydemics.core.exceptions import (
-        EpydemicsError,
-        NotDataFrameError,
         DataValidationError,
         DateRangeError,
+        EpydemicsError,
+        NotDataFrameError,
     )
 
     # Test inheritance hierarchy
@@ -74,7 +74,7 @@ def test_date_range_error():
 
 def test_exception_raising():
     """Test that exceptions can be raised properly."""
-    from epydemics.core.exceptions import NotDataFrameError, DataValidationError
+    from epydemics.core.exceptions import DataValidationError, NotDataFrameError
 
     try:
         raise NotDataFrameError("Test raising")
@@ -127,10 +127,10 @@ def test_backward_compatibility():
 def test_exception_documentation():
     """Test that exceptions have proper documentation."""
     from epydemics.core.exceptions import (
-        EpydemicsError,
-        NotDataFrameError,
         DataValidationError,
         DateRangeError,
+        EpydemicsError,
+        NotDataFrameError,
     )
 
     # Check that all exceptions have docstrings
@@ -146,7 +146,7 @@ def test_exception_documentation():
 
 def test_exception_args_handling():
     """Test that exceptions handle arguments properly."""
-    from epydemics.core.exceptions import NotDataFrameError, DataValidationError
+    from epydemics.core.exceptions import DataValidationError, NotDataFrameError
 
     # Test with single argument
     error1 = NotDataFrameError("Single message")

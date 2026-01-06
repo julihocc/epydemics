@@ -13,8 +13,8 @@ import pandas as pd
 from box import Box
 from scipy.stats import gmean, hmean
 
-from ..core.constants import COMPARTMENTS, FORECASTING_LEVELS
 from ..core.config import get_settings
+from ..core.constants import COMPARTMENTS, FORECASTING_LEVELS
 
 
 def _run_single_simulation(

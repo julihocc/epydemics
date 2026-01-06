@@ -3,9 +3,10 @@ Vector Autoregression (VAR) forecasting implementation.
 """
 
 import logging
-import pandas as pd
-import numpy as np
 from typing import Any, Dict, Optional, Tuple
+
+import numpy as np
+import pandas as pd
 
 from ..core.constants import FORECASTING_LEVELS, LOGIT_RATIOS
 from ..utils.transformations import logistic_function

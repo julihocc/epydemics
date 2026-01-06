@@ -10,8 +10,8 @@ import pandas as pd
 import pytest
 
 from epydemics import Model
-from epydemics.data import DataContainer
 from epydemics.core.constants import FORECASTING_LEVELS
+from epydemics.data import DataContainer
 
 
 @pytest.fixture

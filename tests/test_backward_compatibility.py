@@ -14,15 +14,15 @@ Usage:
 
 from __future__ import annotations
 
+import pickle
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
-import pickle
 import pytest
-from epydemics.models.sird import Model
 
+from epydemics.models.sird import Model
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "v0_7_0_reference"
 

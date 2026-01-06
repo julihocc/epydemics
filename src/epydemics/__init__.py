@@ -3,27 +3,29 @@
 This package provides tools for modeling and analyzing epidemic data using
 discrete SIRD/SIRDV models combined with time series analysis.
 
-v0.9.1 Features:
-- Importation modeling for eliminated diseases (importation_rate)
-- Scenario analysis (create_scenario, compare_scenarios)
-- USA measles validation examples and data fetching tools
-- All v0.9.0 features: incidence mode, multi-frequency, dual-mode
+v0.11.0 Features:
+- Publication-ready reporting tools (ModelReport class)
+- Markdown/LaTeX export and 300-600 DPI figures
+- Comprehensive summary statistics and forecast evaluation
+- Model comparison utilities
+- All v0.10.0+ features: reporting, fractional recovery lag fix
 - Full backward compatibility
 
-Version: 0.9.1
+Version: 0.11.0
 """
 
 import logging
 
 # Import main functionality from modular structure
 from .analysis.evaluation import evaluate_forecast, evaluate_model
-from .analysis.visualization import visualize_results
 from .analysis.formatting import (
-    format_time_axis,
-    format_subplot_grid,
     add_forecast_highlight,
+    format_subplot_grid,
+    format_time_axis,
     set_professional_style,
 )
+from .analysis.visualization import visualize_results
+from .core.config import get_settings
 
 # Import specific constants and exceptions to avoid star imports
 from .core.constants import (
@@ -46,9 +48,8 @@ from .data.container import DataContainer, validate_data
 from .epydemics import process_data_from_owid
 from .models.sird import Model
 from .utils.transformations import prepare_for_logit_function
-from .core.config import get_settings
 
-__version__ = "0.9.1"
+__version__ = "0.11.0"
 __author__ = "Juliho David Castillo Colmenares"
 __email__ = "juliho.colmenares@gmail.com"
 

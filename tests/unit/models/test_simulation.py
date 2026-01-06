@@ -3,13 +3,14 @@ Unit tests for the EpidemicSimulation class.
 """
 
 import itertools
+
 import numpy as np
 import pandas as pd
 import pytest
 
 from epydemics.data import DataContainer
-from epydemics.models.var_forecasting import VARForecasting
 from epydemics.models.simulation import EpidemicSimulation
+from epydemics.models.var_forecasting import VARForecasting
 
 
 class TestEpidemicSimulation:

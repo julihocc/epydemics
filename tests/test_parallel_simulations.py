@@ -6,11 +6,12 @@ engine, ensuring that parallel and sequential executions produce identical resul
 while providing performance improvements.
 """
 
-import pytest
-import pandas as pd
-import numpy as np
-from unittest.mock import patch
 import multiprocessing as mp
+from unittest.mock import patch
+
+import numpy as np
+import pandas as pd
+import pytest
 
 from epydemics import DataContainer, Model
 from epydemics.models.simulation import EpidemicSimulation

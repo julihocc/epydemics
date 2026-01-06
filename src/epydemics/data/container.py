@@ -4,17 +4,14 @@ import pandas as pd
 
 from epydemics.core.config import get_settings
 
-from .validation import validate_data
-
-from .preprocessing import preprocess_data
-
 from .features import feature_engineering
-
 from .frequency_handlers import (
+    FrequencyHandler,
     detect_frequency_from_index,
     get_frequency_handler,
-    FrequencyHandler,
 )
+from .preprocessing import preprocess_data
+from .validation import validate_data
 
 
 class DataContainer:

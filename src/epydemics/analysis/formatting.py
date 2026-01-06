@@ -7,10 +7,10 @@ with consistent styling, particularly for time series data visualization.
 
 from datetime import timedelta
 from typing import Literal
+
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import pandas as pd
-
 
 TimeRange = Literal["auto", "short", "medium", "long"]
 
