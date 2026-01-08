@@ -1,12 +1,12 @@
 # Epydemics: Forecasting COVID-19 using time series and machine learning
 
-**Version 0.10.0** - Fractional Recovery Lag Fix for Annual + Incidence Mode
+**Version 0.11.1** - Publication-Ready Reporting Tools
 
 `epydemics` is a Python library for epidemiological modeling and forecasting. It provides tools for creating, fitting, and evaluating discrete SIRD/SIRDV models with time-dependent parameters. The library is designed to be flexible and extensible, allowing users to easily incorporate their own data and models.
 
 **📖 New Users?** Start with the **[User Guide](docs/USER_GUIDE.md)** to understand when and how to use epydemics.
 
-✅ **v0.10.0 Fix**: Annual frequency now fully supports incidence mode with fractional recovery lag (14 days = 0.0384 years). Native annual + incidence workflows are now production-ready.
+✨ **v0.11.1 Features**: Publication-ready reporting tools with ModelReport class for Markdown, LaTeX, and high-DPI figure export. See [Reporting Guide](examples/notebooks/07_reporting_and_publication.ipynb) for complete workflow examples.
 
 ## Features
 
@@ -21,7 +21,7 @@
 -   **Result Caching**: File-based caching to avoid recomputing identical analyses.
 -   **Model Evaluation**: Tools for evaluating model performance with MAE, MSE, RMSE, MAPE, SMAPE metrics.
 -   **Visualization**: Professional plotting functions for results and forecasts.
--   **Reporting Tools** (v0.10.0): Publication-ready report generation with Markdown, LaTeX, and high-DPI figure exports.
+-   **Reporting Tools** (v0.11.1): Publication-ready report generation with Markdown, LaTeX, and high-DPI figure exports. See `ModelReport` class and [examples/notebooks/07_reporting_and_publication.ipynb](examples/notebooks/07_reporting_and_publication.ipynb).
 
 > **✅ Native Multi-Frequency**: v0.9.0 processes annual/monthly/weekly/business-day data without artificial daily reindexing. See [User Guide](docs/USER_GUIDE.md#annual-surveillance-data-workaround) for frequency guidance.
 
