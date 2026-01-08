@@ -1,12 +1,12 @@
 # Epydemics: Forecasting COVID-19 using time series and machine learning
 
-**Version 0.10.0** - Fractional Recovery Lag Fix for Annual + Incidence Mode
+**Version 0.11.1** - Publication-Ready Reporting Tools with ModelReport
 
 `epydemics` is a Python library for epidemiological modeling and forecasting. It provides tools for creating, fitting, and evaluating discrete SIRD/SIRDV models with time-dependent parameters. The library is designed to be flexible and extensible, allowing users to easily incorporate their own data and models.
 
 **📖 New Users?** Start with the **[User Guide](docs/USER_GUIDE.md)** to understand when and how to use epydemics.
 
-✅ **v0.10.0 Fix**: Annual frequency now fully supports incidence mode with fractional recovery lag (14 days = 0.0384 years). Native annual + incidence workflows are now production-ready.
+✅ **v0.11.1 New**: `ModelReport` class for one-line exports to Markdown, LaTeX tables, and publication-ready 300-600 DPI figures. Automated summary statistics, forecast accuracy evaluation, and model comparison utilities.
 
 ## Features
 
@@ -21,9 +21,11 @@
 -   **Result Caching**: File-based caching to avoid recomputing identical analyses.
 -   **Model Evaluation**: Tools for evaluating model performance with MAE, MSE, RMSE, MAPE, SMAPE metrics.
 -   **Visualization**: Professional plotting functions for results and forecasts.
--   **Reporting Tools** (v0.10.0): Publication-ready report generation with Markdown, LaTeX, and high-DPI figure exports.
+-   **Publication Tools** (v0.11.1): `ModelReport` class for Markdown, LaTeX, and high-DPI figure generation in one call. Model comparison utilities and automated summary statistics.
 
-> **✅ Native Multi-Frequency**: v0.9.0 processes annual/monthly/weekly/business-day data without artificial daily reindexing. See [User Guide](docs/USER_GUIDE.md#annual-surveillance-data-workaround) for frequency guidance.
+> **✅ Native Multi-Frequency**: v0.9.0+ processes annual/monthly/weekly/business-day data without artificial daily reindexing. See [User Guide](docs/USER_GUIDE.md#annual-surveillance-data-workaround) for frequency guidance.
+
+> **✅ Publication-Ready Reports**: v0.11.1 includes `ModelReport` for generating Markdown reports, LaTeX tables, and multi-panel figures. See [examples/notebooks/07_reporting_and_publication.ipynb](examples/notebooks/07_reporting_and_publication.ipynb).
 
 ## SIRDV Model (New in v0.7.0)
 
@@ -47,32 +49,6 @@ The SIRDV model extends the classical SIRD model by incorporating vaccination:
 - 81 simulation scenarios (3⁴ confidence levels)
 - Conservation law: N = S + I + R + D + V
 - Parallel execution recommended for performance
-
-## Quick Start: Reporting
-
-Generate publication-ready reports with one API:
-
-```python
-from epydemics import DataContainer, Model
-from epydemics.analysis import ModelReport
-
-# Fit model (see Tutorial for full workflow)
-container = DataContainer(data, mode='incidence')
-model = Model(container)
-model.create_model()
-model.fit_model(max_lag=3)
-model.forecast(steps=10)
-model.run_simulations()
-model.generate_result()
-
-# Generate comprehensive report
-report = ModelReport(model.results, testing_data=test_data)
-report.export_markdown("report.md", include_figure=True)
-report.export_latex_table("table.tex", "summary")
-fig = report.plot_forecast_panel(dpi=600, save_path="forecast.png")
-```
-
-**See:** [Reporting Guide](docs/REPORTING_GUIDE.md) | [Notebook Example](examples/notebooks/07_reporting_and_publication.ipynb) | [Script Example](examples/reporting_example.py)
 
 ## Getting Started
 
