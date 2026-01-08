@@ -69,11 +69,11 @@ jobs:
         
     - name: Run flake8 linting
       run: |
-        flake8 epydemics/ tests/ --max-line-length=88 --extend-ignore=E203,W503
+        flake8 src/epydemics tests/ --max-line-length=88 --extend-ignore=E203,W503
         
     - name: Run mypy type checking
       run: |
-        mypy epydemics/ --ignore-missing-imports
+        mypy src/epydemics --ignore-missing-imports
         
   security:
     runs-on: ubuntu-latest
