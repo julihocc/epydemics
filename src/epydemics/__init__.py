@@ -3,7 +3,7 @@
 This package provides tools for modeling and analyzing epidemic data using
 discrete SIRD/SIRDV models combined with time series analysis.
 
-v0.11.0 Features:
+v0.11.2 Features:
 - Publication-ready reporting tools (ModelReport class)
 - Markdown/LaTeX export and 300-600 DPI figures
 - Comprehensive summary statistics and forecast evaluation
@@ -11,7 +11,7 @@ v0.11.0 Features:
 - All v0.10.0+ features: reporting, fractional recovery lag fix
 - Full backward compatibility
 
-Version: 0.11.0
+Version: 0.11.2
 """
 
 import logging
