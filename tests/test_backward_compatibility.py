@@ -92,9 +92,9 @@ def test_forecast_equivalence_covid_current_vs_reference(sample_data_container) 
     model.fit_model(max_lag=3)
     model.forecast(steps=steps)
 
-    alpha_point = np.asarray(model.forecasting_box['alpha']['point'])
-    alpha_lower = np.asarray(model.forecasting_box['alpha']['lower'])
-    alpha_upper = np.asarray(model.forecasting_box['alpha']['upper'])
+    alpha_point = np.asarray(model.forecasting_box["alpha"]["point"])
+    alpha_lower = np.asarray(model.forecasting_box["alpha"]["lower"])
+    alpha_upper = np.asarray(model.forecasting_box["alpha"]["upper"])
 
     _assert_arrays_close(
         alpha_point, ref["alpha_point"], atol=POINT_ATOL, rtol=POINT_RTOL
@@ -140,9 +140,9 @@ def test_forecast_equivalence_annual_current_vs_reference(
     model.fit_model(max_lag=3)
     model.forecast(steps=steps)
 
-    alpha_point = np.asarray(model.forecasting_box['alpha']['point'])
-    alpha_lower = np.asarray(model.forecasting_box['alpha']['lower'])
-    alpha_upper = np.asarray(model.forecasting_box['alpha']['upper'])
+    alpha_point = np.asarray(model.forecasting_box["alpha"]["point"])
+    alpha_lower = np.asarray(model.forecasting_box["alpha"]["lower"])
+    alpha_upper = np.asarray(model.forecasting_box["alpha"]["upper"])
 
     _assert_arrays_close(
         alpha_point, np.asarray(ref["alpha_point"]), atol=POINT_ATOL, rtol=POINT_RTOL
