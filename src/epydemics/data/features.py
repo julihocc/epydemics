@@ -99,9 +99,7 @@ def add_logit_ratios(data: pd.DataFrame) -> pd.DataFrame:
 
 
 def feature_engineering(
-    data: pd.DataFrame, 
-    mode: str = "cumulative",
-    handler=None
+    data: pd.DataFrame, mode: str = "cumulative", handler=None
 ) -> pd.DataFrame:
     """
     Perform feature engineering to create SIRD/SIRDV compartments and rate calculations.
@@ -145,11 +143,13 @@ def feature_engineering(
 
     # Mode-specific compartment calculations
     settings = get_settings()
-    
+
     # Get recovery lag from handler or use settings default
     if handler is not None:
         recovery_lag = handler.get_recovery_lag()
-        logging.debug(f"Using frequency-specific recovery lag: {recovery_lag} ({handler.frequency_name})")
+        logging.debug(
+            f"Using frequency-specific recovery lag: {recovery_lag} ({handler.frequency_name})"
+        )
     else:
         recovery_lag = settings.RECOVERY_LAG
         logging.debug(f"Using default recovery lag: {recovery_lag}")

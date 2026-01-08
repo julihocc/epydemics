@@ -153,9 +153,9 @@ class TestFrequencyDetectionIntegration:
             # Should emit warning
             assert len(w) >= 1
             warning_messages = [str(warning.message) for warning in w]
-            assert any("FREQUENCY MISMATCH" in msg for msg in warning_messages), (
-                f"Expected frequency mismatch warning. Got: {warning_messages}"
-            )
+            assert any(
+                "FREQUENCY MISMATCH" in msg for msg in warning_messages
+            ), f"Expected frequency mismatch warning. Got: {warning_messages}"
 
     def test_reindex_data_no_warning_when_freq_matches(
         self, sample_annual_processed_data
@@ -171,9 +171,9 @@ class TestFrequencyDetectionIntegration:
 
             # Should NOT emit frequency mismatch warning
             warning_messages = [str(warning.message) for warning in w]
-            assert not any("FREQUENCY MISMATCH" in msg for msg in warning_messages), (
-                f"Unexpected warning: {warning_messages}"
-            )
+            assert not any(
+                "FREQUENCY MISMATCH" in msg for msg in warning_messages
+            ), f"Unexpected warning: {warning_messages}"
 
     def test_reindex_data_warning_can_be_suppressed(self, sample_annual_processed_data):
         """Test that frequency mismatch warning can be suppressed."""

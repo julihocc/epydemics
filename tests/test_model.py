@@ -427,9 +427,9 @@ class TestModelIntegration:
 
         # Assert - Should complete within reasonable time (30 seconds max)
         execution_time = end_time - start_time
-        assert execution_time < 30.0, (
-            f"Model workflow took {execution_time:.2f}s, expected <30s"
-        )
+        assert (
+            execution_time < 30.0
+        ), f"Model workflow took {execution_time:.2f}s, expected <30s"
 
     def test_model_backward_compatibility(self, sample_data_container):
         """Test that Model maintains backward compatibility with existing usage."""
@@ -635,9 +635,9 @@ class TestModelR0Calculations:
         for col in scenario_cols:
             parts = col.split("|")
             assert len(parts) == 3, f"Scenario name {col} should have 3 parts"
-            assert all(part in ["lower", "point", "upper"] for part in parts), (
-                f"Invalid scenario level in {col}"
-            )
+            assert all(
+                part in ["lower", "point", "upper"] for part in parts
+            ), f"Invalid scenario level in {col}"
 
     def test_R0_interpretation_threshold(self, sample_data_container):
         """Test R₀ interpretation around critical threshold of 1."""

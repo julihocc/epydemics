@@ -29,11 +29,25 @@ class TestAnnualIncidenceNativeSupport:
         dates = pd.date_range("2010", periods=15, freq="YE")
 
         # Incident cases per year (realistic pattern)
-        incident_cases = np.array([
-            220, 55, 667, 164, 81,   # 2010-2014: sporadic
-            34, 12, 0, 0, 4,         # 2015-2019: near elimination
-            18, 45, 103, 67, 89      # 2020-2024: reintroduction
-        ])
+        incident_cases = np.array(
+            [
+                220,
+                55,
+                667,
+                164,
+                81,  # 2010-2014: sporadic
+                34,
+                12,
+                0,
+                0,
+                4,  # 2015-2019: near elimination
+                18,
+                45,
+                103,
+                67,
+                89,  # 2020-2024: reintroduction
+            ]
+        )
 
         # Deaths (CFR ~0.1-0.2% for measles)
         incident_deaths = np.array([1, 0, 2, 1, 0, 0, 0, 0, 0, 0, 0, 1, 2, 1, 1])
@@ -42,11 +56,9 @@ class TestAnnualIncidenceNativeSupport:
         # Population (Mexico ~130M, growing)
         population = [120_000_000 + i * 2_000_000 for i in range(15)]
 
-        data = pd.DataFrame({
-            "I": incident_cases,
-            "D": cumulative_deaths,
-            "N": population
-        }, index=dates)
+        data = pd.DataFrame(
+            {"I": incident_cases, "D": cumulative_deaths, "N": population}, index=dates
+        )
 
         return data
 
@@ -58,10 +70,7 @@ class TestAnnualIncidenceNativeSupport:
         (14/365 = 0.0384 years) instead of integer lag (0 or 1 years).
         """
         container = DataContainer(
-            measles_annual_data,
-            mode="incidence",
-            frequency="YE",
-            window=1
+            measles_annual_data, mode="incidence", frequency="YE", window=1
         )
 
         # Verify frequency handler uses fractional lag
@@ -77,7 +86,9 @@ class TestAnnualIncidenceNativeSupport:
 
         # Beta should range from ~0.038 to 1.0
         assert beta_values.min() > 0.01, "Beta minimum should be > 0 (fractional lag)"
-        assert beta_values.min() < 0.5, "Beta minimum should be < 0.5 (showing variation)"
+        assert (
+            beta_values.min() < 0.5
+        ), "Beta minimum should be < 0.5 (showing variation)"
         assert beta_values.max() <= 1.0, "Beta maximum should be <= 1.0"
 
     def test_var_model_fits_with_annual_incidence(self, measles_annual_data):
@@ -90,10 +101,7 @@ class TestAnnualIncidenceNativeSupport:
         After the fix, VAR should fit with trend='n' due to constant alpha.
         """
         container = DataContainer(
-            measles_annual_data,
-            mode="incidence",
-            frequency="YE",
-            window=1
+            measles_annual_data, mode="incidence", frequency="YE", window=1
         )
 
         model = Model(container)
@@ -114,10 +122,7 @@ class TestAnnualIncidenceNativeSupport:
         """
         # Step 1: Create DataContainer in incidence mode
         container = DataContainer(
-            measles_annual_data,
-            mode="incidence",
-            frequency="YE",
-            window=1
+            measles_annual_data, mode="incidence", frequency="YE", window=1
         )
 
         assert container.mode == "incidence"
@@ -161,10 +166,7 @@ class TestAnnualIncidenceNativeSupport:
         fractional recovery lag. VAR should automatically use trend='n'.
         """
         container = DataContainer(
-            measles_annual_data,
-            mode="incidence",
-            frequency="YE",
-            window=1
+            measles_annual_data, mode="incidence", frequency="YE", window=1
         )
 
         # Check alpha is constant
@@ -190,10 +192,7 @@ class TestAnnualIncidenceNativeSupport:
         Key property: I can vary up/down, but C = cumsum(I) is monotonic.
         """
         container = DataContainer(
-            measles_annual_data,
-            mode="incidence",
-            frequency="YE",
-            window=1
+            measles_annual_data, mode="incidence", frequency="YE", window=1
         )
 
         # I should vary (can decrease)
@@ -214,10 +213,7 @@ class TestAnnualIncidenceNativeSupport:
         v0.9.0 native support: 15 annual rows stay 15 rows (not 5475 daily rows).
         """
         container = DataContainer(
-            measles_annual_data,
-            mode="incidence",
-            frequency="YE",
-            window=1
+            measles_annual_data, mode="incidence", frequency="YE", window=1
         )
 
         # Input: 15 annual observations
@@ -230,10 +226,7 @@ class TestAnnualIncidenceNativeSupport:
     def test_model_mode_propagation(self, measles_annual_data):
         """Test that mode propagates from DataContainer to Model."""
         container = DataContainer(
-            measles_annual_data,
-            mode="incidence",
-            frequency="YE",
-            window=1
+            measles_annual_data, mode="incidence", frequency="YE", window=1
         )
 
         model = Model(container)
@@ -262,18 +255,11 @@ class TestFractionalLagInterpolation:
         # Simple linear increasing pattern
         incident_cases = np.arange(100, 1100, 100)  # 100, 200, ..., 1000
 
-        data = pd.DataFrame({
-            "I": incident_cases,
-            "D": [0] * 10,
-            "N": [1_000_000] * 10
-        }, index=dates)
-
-        container = DataContainer(
-            data,
-            mode="incidence",
-            frequency="YE",
-            window=1
+        data = pd.DataFrame(
+            {"I": incident_cases, "D": [0] * 10, "N": [1_000_000] * 10}, index=dates
         )
+
+        container = DataContainer(data, mode="incidence", frequency="YE", window=1)
 
         # With fractional lag, R should be interpolated between shifts
         R_values = container.data["R"].dropna()
@@ -281,10 +267,9 @@ class TestFractionalLagInterpolation:
         # R should not equal I (would happen with lag=0)
         I_values = container.data["I"].dropna()
         # Allow for some equality due to cumsum, but not all
-        assert not np.allclose(R_values.values[:len(I_values)],
-                              np.cumsum(I_values.values)), (
-            "R should differ from cumsum(I) due to fractional lag interpolation"
-        )
+        assert not np.allclose(
+            R_values.values[: len(I_values)], np.cumsum(I_values.values)
+        ), "R should differ from cumsum(I) due to fractional lag interpolation"
 
 
 class TestBackwardCompatibilityV090:

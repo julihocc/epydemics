@@ -81,19 +81,16 @@ class VARForecaster(BaseForecaster):
         ic = kwargs.pop("ic", None)
 
         # If constant columns detected, use trend='n' to avoid conflicts
-        if hasattr(self, '_constant_columns') and self._constant_columns is not None:
-            if 'trend' not in kwargs:
-                kwargs['trend'] = 'n'
-                logging.info(
-                    "Using trend='n' (no trend) due to constant columns"
-                )
+        if hasattr(self, "_constant_columns") and self._constant_columns is not None:
+            if "trend" not in kwargs:
+                kwargs["trend"] = "n"
+                logging.info("Using trend='n' (no trend) due to constant columns")
 
         if max_lag is not None and ic is not None:
             # Select optimal lag order
             # Pass trend parameter to select_order as well
             selector = self.model.select_order(
-                maxlags=max_lag,
-                trend=kwargs.get('trend', 'c')
+                maxlags=max_lag, trend=kwargs.get("trend", "c")
             )
             # The chosen lag is stored in different attributes depending on IC
             # selector.aic, selector.bic, selector.hqic, selector.fpe

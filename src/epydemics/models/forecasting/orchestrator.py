@@ -118,7 +118,9 @@ class ForecastingOrchestrator:
 
         # Use provided active ratios or default to all LOGIT_RATIOS
         self.active_logit_ratios = (
-            active_logit_ratios if active_logit_ratios is not None else list(LOGIT_RATIOS)
+            active_logit_ratios
+            if active_logit_ratios is not None
+            else list(LOGIT_RATIOS)
         )
 
         # Log initialization with model type detection
@@ -296,8 +298,8 @@ class ForecastingOrchestrator:
 
         # Generate forecasts from backend
         try:
-            self.forecasted_logit_ratios_tuple_arrays = self.forecaster.forecast_interval(
-                self.days_to_forecast, **kwargs
+            self.forecasted_logit_ratios_tuple_arrays = (
+                self.forecaster.forecast_interval(self.days_to_forecast, **kwargs)
             )
         except Exception as e:
             raise Exception(
@@ -306,7 +308,9 @@ class ForecastingOrchestrator:
 
         # Extract (lower, point, upper) arrays from backend
         # Each array has shape (steps, n_variables)
-        lower_bounds, point_forecasts, upper_bounds = self.forecasted_logit_ratios_tuple_arrays
+        lower_bounds, point_forecasts, upper_bounds = (
+            self.forecasted_logit_ratios_tuple_arrays
+        )
 
         # Build forecasting_box: create DataFrames for each logit ratio
         self.forecasting_box = {}

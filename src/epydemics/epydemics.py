@@ -63,7 +63,7 @@ def process_data_from_owid(
     url="https://catalog.ourworldindata.org/garden/covid/latest/compact/compact.csv",
     iso_code="OWID_WRL",
     country=None,
-    include_vaccination=None
+    include_vaccination=None,
 ):
     """
     Load and process COVID-19 data from Our World in Data.
@@ -152,6 +152,7 @@ def process_data_from_owid(
 
     # Determine vaccination column name from config
     from epydemics.core.config import get_settings
+
     settings = get_settings()
 
     # Use config setting if include_vaccination not explicitly provided
@@ -165,14 +166,28 @@ def process_data_from_owid(
     if include_vaccination:
         if vaccination_column in data.columns:
             try:
-                data = data[["date", "total_cases", "total_deaths", "population", vaccination_column]]
+                data = data[
+                    [
+                        "date",
+                        "total_cases",
+                        "total_deaths",
+                        "population",
+                        vaccination_column,
+                    ]
+                ]
                 has_vaccination = True
-                logging.info(f"Including vaccination data from column '{vaccination_column}'")
+                logging.info(
+                    f"Including vaccination data from column '{vaccination_column}'"
+                )
             except KeyError:
-                logging.warning(f"Vaccination column '{vaccination_column}' not found. Falling back to SIRD model.")
+                logging.warning(
+                    f"Vaccination column '{vaccination_column}' not found. Falling back to SIRD model."
+                )
                 data = data[["date", "total_cases", "total_deaths", "population"]]
         else:
-            logging.warning(f"Vaccination column '{vaccination_column}' not available in dataset. Falling back to SIRD model.")
+            logging.warning(
+                f"Vaccination column '{vaccination_column}' not available in dataset. Falling back to SIRD model."
+            )
             data = data[["date", "total_cases", "total_deaths", "population"]]
     else:
         # SIRD model (no vaccination)
@@ -436,9 +451,9 @@ class Model:
         ):
             logit_alpha_level, logit_beta_level, logit_gamma_level = current_levels
             current_simulation = self.simulate_for_given_levels(current_levels)
-            self.simulation[logit_alpha_level][logit_beta_level][logit_gamma_level] = (
-                current_simulation
-            )
+            self.simulation[logit_alpha_level][logit_beta_level][
+                logit_gamma_level
+            ] = current_simulation
 
     def create_results_dataframe(self, compartment):
         results_dataframe = pd.DataFrame()

@@ -177,11 +177,11 @@ class TestDataContainerProcessing:
         # Act
         container = DataContainer(sample_owid_data, window=7)
         initial_data = container.data.copy()
-        
+
         # Change window and re-process
         container.window = 14
         container.process()
-        
+
         # Assert
         assert container.data is not None
         # Data should be different due to different smoothing window

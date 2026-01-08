@@ -589,9 +589,11 @@ class Model(BaseModel, SIRDModelMixin):
                 "start": str(self.start) if self.start else None,
                 "stop": str(self.stop) if self.stop else None,
                 "window": int(self.window) if self.window is not None else None,
-                "days_to_forecast": int(self.days_to_forecast)
-                if self.days_to_forecast is not None
-                else None,
+                "days_to_forecast": (
+                    int(self.days_to_forecast)
+                    if self.days_to_forecast is not None
+                    else None
+                ),
             }
             (dir_path / "meta.json").write_text(
                 json.dumps(meta, indent=2, sort_keys=True), encoding="utf-8"
@@ -680,9 +682,7 @@ class Model(BaseModel, SIRDModelMixin):
 
         return R0
 
-    def create_scenario(
-        self, name: str, parameter_modifiers: Dict[str, float]
-    ) -> Box:
+    def create_scenario(self, name: str, parameter_modifiers: Dict[str, float]) -> Box:
         """
         Run a simulation scenario with modified parameters.
 
@@ -721,7 +721,7 @@ class Model(BaseModel, SIRDModelMixin):
         for rate in self.forecasting_box.keys():
             scenario_forecasting_box[rate] = Box()
             multiplier = parameter_modifiers.get(rate, 1.0)
-            
+
             for level in self.forecasting_box[rate].keys():
                 original_series = self.forecasting_box[rate][level]
                 # Apply multiplier
@@ -741,11 +741,11 @@ class Model(BaseModel, SIRDModelMixin):
             self.forecasting_interval,
             importation_rate=scenario_importation,
         )
-        
+
         # Run simulation (using default/auto n_jobs)
         temp_simulation.run_simulations(n_jobs=None)
         temp_simulation.generate_result()
-        
+
         return temp_simulation.results
 
     def forecast_R0(self) -> pd.DataFrame:

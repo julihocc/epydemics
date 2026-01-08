@@ -15,14 +15,14 @@ import pandas as pd
 def _get_effective_window(window: int, frequency: str) -> int:
     """
     Calculate effective rolling window size adapted to data frequency.
-    
+
     Sparse frequencies (monthly, annual) should use smaller windows to avoid
     excessive smoothing with limited data points.
-    
+
     Args:
         window: Requested window size
         frequency: Data frequency ('D', 'W', 'ME', 'YE')
-        
+
     Returns:
         Effective window size capped for frequency
     """
@@ -37,9 +37,7 @@ def _get_effective_window(window: int, frequency: str) -> int:
 
 
 def preprocess_data(
-    data: pd.DataFrame, 
-    window: int = 7,
-    frequency: str = None
+    data: pd.DataFrame, window: int = 7, frequency: str = None
 ) -> pd.DataFrame:
     """
     Preprocess raw data by applying rolling window smoothing and conditional reindexing.
@@ -77,16 +75,16 @@ def preprocess_data(
         except ValueError:
             logging.warning("Could not auto-detect frequency; defaulting to daily")
             frequency = "D"
-    
+
     # Adapt window size for sparse frequencies
     effective_window = _get_effective_window(window, frequency)
-    
+
     # Apply rolling window smoothing
     if effective_window > 1:
         smoothed_data = data.rolling(window=effective_window).mean()[effective_window:]
     else:
         smoothed_data = data.copy()
-    
+
     # Conditional reindexing based on frequency
     if frequency in ("D", "W"):
         # Daily/Weekly: Reindex to daily (backward compatible)
@@ -95,8 +93,10 @@ def preprocess_data(
         # Monthly/Annual: Skip reindexing, keep native frequency
         logging.info(f"Preserving native {frequency} frequency (skipping reindexing)")
         reindexed_data = smoothed_data.ffill()
-    
-    logging.debug(f"Preprocessing complete: frequency={frequency}, window={effective_window}, shape={reindexed_data.shape}")
+
+    logging.debug(
+        f"Preprocessing complete: frequency={frequency}, window={effective_window}, shape={reindexed_data.shape}"
+    )
     return reindexed_data
 
 

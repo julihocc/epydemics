@@ -160,7 +160,7 @@ class EpidemicSimulation:
             # New Infections = FoI * S
             force_of_infection = (alpha * I / A) + self.importation_rate
             infection = force_of_infection * S
-            
+
             recovery = beta * I
             death = gamma * I
 
