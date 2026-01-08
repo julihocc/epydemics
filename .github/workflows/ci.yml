@@ -65,7 +65,7 @@ jobs:
         
     - name: Run Black formatting check
       run: |
-        black --check --diff epydemics/ tests/
+        black --check --diff src/epydemics tests/
         
     - name: Run flake8 linting
       run: |
