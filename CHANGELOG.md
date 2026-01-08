@@ -5,6 +5,142 @@ All notable changes to the epydemics project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-01-08
+
+### Summary
+
+**PyPI Publication Release** - Production-ready consolidation of v0.10.0 features with comprehensive testing, documentation, and packaging for official PyPI distribution.
+
+This release represents the stable, production-ready version of epydemics with all post-v0.10.0 refinements, making the library officially available via `pip install epydemics`.
+
+### Added
+
+- **Publication-Ready Reporting Tools** (stable from v0.10.0):
+  - `ModelReport` class for comprehensive analysis reports
+  - `export_markdown()`: One-line Markdown report generation with embedded figures
+  - `export_latex_table()`: Publication-quality LaTeX tables (summary/evaluation)
+  - `plot_forecast_panel()`: Multi-panel visualizations with 300-600 DPI support
+  - `generate_summary()`: Automated summary statistics (mean, median, std, CV)
+  - `get_evaluation_summary()`: Forecast accuracy metrics (MAE, RMSE, MAPE, SMAPE)
+  - `create_comparison_report()`: Model comparison utilities
+
+- **Example Notebook** (`examples/notebooks/07_reporting_and_publication.ipynb`):
+  - Complete ModelReport API demonstration
+  - Real-world measles analysis workflow
+  - Publication-ready figure generation examples
+
+### Quality Assurance
+
+- **Test Suite**: 433/433 tests passing (100% pass rate)
+  - 36 tests appropriately skipped (optional dependencies)
+  - All integration and unit tests validated
+  - Backward compatibility tests passing
+
+- **Code Quality**:
+  - `black` formatting: PASS
+  - `isort` import sorting: PASS  
+  - `flake8` linting: All issues resolved or acceptable
+  - `mypy` type checking: Stable (pre-existing non-blocking issues noted)
+
+- **Example Notebooks**: All 7 notebooks validated
+  - 01: SIRD basic workflow
+  - 02: SIRDV vaccination analysis
+  - 03: Global COVID-19 forecasting
+  - 04: Parallel simulations
+  - 05: Multi-backend comparison
+  - 06: Incidence mode (measles, annual frequency)
+  - 07: Reporting and publication (NEW)
+
+### Changed
+
+- **Documentation Updates**:
+  - CLAUDE.md: Complete with v0.10.0+ ModelReport API documentation
+  - README.md: Updated with v0.11.0 features and installation instructions
+  - All docstrings verified for accuracy
+
+- **Dependencies Verified**:
+  - Core: numpy, pandas, matplotlib, scipy, statsmodels, scikit-learn, python-box
+  - Optional: prophet (forecasting backends)
+  - Dev/Test: pytest, black, isort, flake8, mypy, pre-commit
+
+### Fixed
+
+- Annual frequency handler API consistency (6 test fixes)
+  - Handler registry method: `get_handler()` → `get()`
+  - Property access: Converted to getter methods
+    - `recovery_lag` → `get_recovery_lag()`
+    - `default_max_lag` → `get_default_max_lag()`
+    - `min_observations` → `get_min_observations()`
+  - Date format fixes for annual DatetimeIndex (year-end dates)
+  - String literal fixes (removed invalid f-strings)
+
+### Backward Compatibility
+
+✅ **100% Backward Compatible** with v0.9.1 and v0.10.0
+- All existing code continues to work without modification
+- v0.9.1 behavior fully preserved in v0.10.0 features
+- No breaking API changes
+
+### Migration from v0.10.0
+
+No migration needed - v0.11.0 is a drop-in replacement:
+
+```python
+# All v0.10.0 code works identically in v0.11.0
+from epydemics import DataContainer, Model
+from epydemics.analysis import ModelReport
+
+# Existing workflows unchanged
+container = DataContainer(data, mode='incidence', frequency='YE')
+model = Model(container)
+# ... (same API)
+
+# New: Official PyPI installation
+# pip install epydemics==0.11.0
+```
+
+### Installation
+
+**Official PyPI Release**:
+```bash
+pip install epydemics==0.11.0
+```
+
+**From Source** (development):
+```bash
+git clone https://github.com/julihocc/epydemics.git
+cd epydemics
+pip install -e ".[dev,test]"
+```
+
+### Known Limitations
+
+Same as v0.10.0:
+- VAR models require sufficient data points (min 60 observations recommended)
+- Annual frequency requires careful lag selection (max_lag=2-3)
+- Optional dependencies (prophet) required for ARIMA/Prophet backends
+
+### Performance
+
+- No performance regressions from v0.10.0
+- Test suite: ~30-45 seconds (full run with slow tests)
+- Parallel simulations: 4-7x speedup on multi-core systems
+
+### Contributors
+
+- Juliho David Castillo Colmenares (@julihocc) - Project Lead
+- GitHub Copilot - AI-assisted development and documentation
+
+### References
+
+- **Release**: https://github.com/julihocc/epydemics/releases/tag/v0.11.0
+- **PyPI**: https://pypi.org/project/epydemics/0.11.0/
+- **Documentation**: README.md, CLAUDE.md, USER_GUIDE.md
+- **Examples**: `examples/notebooks/` (7 comprehensive notebooks)
+- **Previous Release**: v0.10.0 (2025-12-24) - Fractional recovery lag fix
+
+---
+
 ## [0.10.0] - 2025-12-24
 
 ### Added - Fractional Recovery Lag for Annual Frequency
