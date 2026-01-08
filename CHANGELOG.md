@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.11.2] - 2026-01-08
+
+### Fixed
+- Updated PyPI package description with v0.11.1 ModelReport features
+- README.md now reflects Publication Tools and reporting capabilities
+
+### Note
+- Version bump to refresh PyPI metadata
+- No code changes from v0.11.1
+
+
 All notable changes to the epydemics project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),

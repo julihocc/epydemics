@@ -49,7 +49,7 @@ from .epydemics import process_data_from_owid
 from .models.sird import Model
 from .utils.transformations import prepare_for_logit_function
 
-__version__ = "0.11.1"
+__version__ = "0.11.2"
 __author__ = "Juliho David Castillo Colmenares"
 __email__ = "juliho.colmenares@gmail.com"
 
