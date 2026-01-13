@@ -10,7 +10,7 @@ from typing import Any, Dict, Optional, Tuple
 import pandas as pd
 from box import Box
 
-from epydemics.core.config import get_settings
+from dynasir.core.config import get_settings
 
 from ..analysis.evaluation import evaluate_forecast as _evaluate_forecast
 from ..analysis.visualization import visualize_results as _visualize_results
@@ -24,7 +24,7 @@ from .var_forecasting import VARForecasting  # Keep for backward compat
 
 # Import __version__ after full module initialization to avoid circular import
 def _get_pkg_version() -> str:
-    from epydemics import __version__
+    from dynasir import __version__
 
     return __version__
 
@@ -266,7 +266,7 @@ class Model(BaseModel, SIRDModelMixin):
             **kwargs: Backend-specific creation parameters (forwarded to backend)
 
         Examples:
-            >>> from epydemics import Model, process_data_from_owid
+            >>> from dynasir import Model, process_data_from_owid
             >>> raw = process_data_from_owid("OWID_WRL")
             >>> container = DataContainer(raw, window=7)
             >>>
@@ -376,6 +376,42 @@ class Model(BaseModel, SIRDModelMixin):
                 )
 
             merged_kwargs.setdefault("ic", settings.VAR_CRITERION)
+
+        # Auto-create model if not yet created, passing through creation-specific kwargs
+        # This handles cases where create_model() is not explicitly called
+        if self.var_forecasting.forecaster.model is None:
+            # For Prophet, separate creation-specific kwargs from fit kwargs
+            if self.forecaster_name == "prophet":
+                prophet_creation_params = {
+                    "yearly_seasonality",
+                    "weekly_seasonality",
+                    "daily_seasonality",
+                    "changepoint_prior_scale",
+                    "seasonality_prior_scale",
+                    "seasonality_mode",
+                    "interval_width",
+                    "growth",
+                    "capacity",
+                    "floor",
+                    "uncertainty_samples",
+                    "holidays_prior_scale",
+                }
+                creation_kwargs = {
+                    k: v
+                    for k, v in merged_kwargs.items()
+                    if k in prophet_creation_params
+                }
+                fit_kwargs = {
+                    k: v
+                    for k, v in merged_kwargs.items()
+                    if k not in prophet_creation_params
+                }
+
+                self.var_forecasting.create_logit_ratios_model(**creation_kwargs)
+                merged_kwargs = fit_kwargs
+            else:
+                # For other backends, just create with no special kwargs
+                self.var_forecasting.create_logit_ratios_model()
 
         self.var_forecasting.fit_logit_ratios_model(*args, **merged_kwargs)
         self.days_to_forecast = self.var_forecasting.days_to_forecast
@@ -858,7 +894,7 @@ class Model(BaseModel, SIRDModelMixin):
         """
         import numpy as np
 
-        from epydemics.core.constants import CENTRAL_TENDENCY_METHODS
+        from dynasir.core.constants import CENTRAL_TENDENCY_METHODS
 
         if self.results is None:
             raise ValueError(
@@ -883,7 +919,7 @@ class Model(BaseModel, SIRDModelMixin):
         daily_results = self.results[compartment_code]
 
         # Convert to modern frequency aliases to avoid FutureWarnings
-        from epydemics.core.constants import MODERN_FREQUENCY_ALIASES
+        from dynasir.core.constants import MODERN_FREQUENCY_ALIASES
 
         modern_target_freq = MODERN_FREQUENCY_ALIASES.get(
             target_frequency, target_frequency
