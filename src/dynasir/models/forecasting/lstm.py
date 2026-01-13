@@ -57,7 +57,7 @@ class LSTMForecaster(BaseForecaster):
         NotImplementedError: LSTM backend is not yet implemented...
 
     Tracking:
-        - GitHub Issue: https://github.com/julihocc/epydemics/issues/90
+        - GitHub Issue: https://github.com/julihocc/dynasir/issues/90
         - Target Release: v0.9.0 or later
         - Planned Dependencies: tensorflow or pytorch, keras (optional)
 
@@ -83,7 +83,7 @@ class LSTMForecaster(BaseForecaster):
 
         logging.warning(
             "LSTMForecaster is a stub and not yet implemented. "
-            "See https://github.com/julihocc/epydemics/issues/90 for status."
+            "See https://github.com/julihocc/dynasir/issues/90 for status."
         )
 
     @property
@@ -105,7 +105,7 @@ class LSTMForecaster(BaseForecaster):
             "  - Multivariate LSTM with attention mechanisms\n"
             "  - Bootstrap confidence intervals\n"
             "  - GPU acceleration (TensorFlow/PyTorch)\n\n"
-            "Track progress at: https://github.com/julihocc/epydemics/issues/90\n\n"
+            "Track progress at: https://github.com/julihocc/dynasir/issues/90\n\n"
             "For now, please use one of the available backends:\n"
             "  - 'var' (Vector Autoregression - default)\n"
             "  - 'prophet' (Facebook Prophet)\n"
