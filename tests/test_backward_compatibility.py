@@ -2,7 +2,7 @@
 Backward compatibility tests: Ensure v0.8.0+ behavior matches v0.7.0 defaults.
 
 These tests are structured to compare current outputs against reference
-fixtures generated from epydemics v0.7.0. When fixtures are missing, tests
+fixtures generated from dynasir v0.7.0. When fixtures are missing, tests
 will be skipped to keep CI passing until fixtures are populated.
 
 Usage:
@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from epydemics.models.sird import Model
+from dynasir.models.sird import Model
 
 # Tolerances for backward compatibility tests – adjust if needed after fixture generation
 POINT_ATOL = 1e-6

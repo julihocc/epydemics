@@ -1,6 +1,6 @@
 # v0.7.0 Reference Fixtures
 
-This folder stores reference outputs produced by epydemics v0.7.0 for backward compatibility testing.
+This folder stores reference outputs produced by dynasir v0.7.0 for backward compatibility testing.
 
 Populate with small, serialized artifacts (pickled `.pkl` files) representing model results for representative datasets:
 

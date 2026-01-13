@@ -1,17 +1,17 @@
-"""Epydemics: Advanced epidemiological modeling and forecasting.
+"""DynaSIR: Hybrid epidemic intelligence for SIRD/SIRDV inverse modeling.
 
 This package provides tools for modeling and analyzing epidemic data using
 discrete SIRD/SIRDV models combined with time series analysis.
 
-v0.11.2 Features:
+v1.0.0 Highlights (rename from epydemics):
+- Official package name is dynasir on PyPI
 - Publication-ready reporting tools (ModelReport class)
 - Markdown/LaTeX export and 300-600 DPI figures
 - Comprehensive summary statistics and forecast evaluation
 - Model comparison utilities
-- All v0.10.0+ features: reporting, fractional recovery lag fix
-- Full backward compatibility
+- Fractional recovery lag fix and native multi-frequency support
 
-Version: 0.11.2
+Version: 1.0.0
 """
 
 import logging
@@ -41,7 +41,7 @@ from .core.constants import (
 from .core.exceptions import (
     DataValidationError,
     DateRangeError,
-    EpydemicsError,
+    DynaSIRError,
     NotDataFrameError,
 )
 from .data.container import DataContainer, validate_data
@@ -49,7 +49,7 @@ from .epydemics import process_data_from_owid
 from .models.sird import Model
 from .utils.transformations import prepare_for_logit_function
 
-__version__ = "0.11.2"
+__version__ = "1.0.0"
 __author__ = "Juliho David Castillo Colmenares"
 __email__ = "juliho.colmenares@gmail.com"
 
@@ -73,7 +73,7 @@ __all__ = [
     "METHOD_NAMES",
     "METHOD_COLORS",
     # Exceptions
-    "EpydemicsError",
+    "DynaSIRError",
     "NotDataFrameError",
     "DataValidationError",
     "DateRangeError",

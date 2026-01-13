@@ -1,4 +1,4 @@
-# Epydemics v0.11.1 Release Summary
+# DynaSIR v0.11.1 Release Summary
 
 **Released**: January 8, 2026  
 **Status**: ✅ Successfully published to PyPI and GitHub  
@@ -50,13 +50,13 @@
 
 Install the latest:
 ```bash
-pip install epydemics==0.11.1
-python -c "import epydemics; print(epydemics.__version__)"  # prints: 0.11.1
+pip install dynasir==0.11.1
+python -c "import dynasir; print(dynasir.__version__)"  # prints: 0.11.1
 ```
 
 Links:
-- **GitHub Release**: https://github.com/julihocc/epydemics/releases/tag/v0.11.1
-- **PyPI Package**: https://pypi.org/project/epydemics/0.11.1/
+- **GitHub Release**: https://github.com/julihocc/dynasir/releases/tag/v0.11.1
+- **PyPI Package**: https://pypi.org/project/dynasir/0.11.1/
 - **Reporting Demo**: [examples/notebooks/07_reporting_and_publication.ipynb](examples/notebooks/07_reporting_and_publication.ipynb)
 
 ---
@@ -65,7 +65,7 @@ Links:
 
 ### Version & Metadata
 - `pyproject.toml`: bumped 0.11.0 → 0.11.1, fixed license format
-- `src/epydemics/__init__.py`: updated `__version__`
+- `src/dynasir/__init__.py`: updated `__version__`
 
 ### CI/CD & Workflows
 - `.github/workflows/ci.yml`: added `workflow_call` trigger, upgraded artifact actions, fixed paths
@@ -102,7 +102,7 @@ For maintainers:
 - Track any security advisories via Dependabot
 
 For users:
-- Upgrade with `pip install --upgrade epydemics`
+- Upgrade with `pip install --upgrade dynasir`
 - Review `ANNOUNCEMENT_v0.11.1.md` for new capabilities
 - Check [examples/notebooks/07_reporting_and_publication.ipynb](examples/notebooks/07_reporting_and_publication.ipynb) for usage examples
 

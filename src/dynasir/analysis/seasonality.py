@@ -76,7 +76,7 @@ class SeasonalPatternDetector:
             return {}
 
         # Auto-detect frequency if needed
-        from epydemics.data.preprocessing import detect_frequency
+        from dynasir.data.preprocessing import detect_frequency
 
         if frequency is None:
             try:

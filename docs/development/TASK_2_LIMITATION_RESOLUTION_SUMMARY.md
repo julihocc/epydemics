@@ -47,7 +47,7 @@ numpy.linalg.LinAlgError: N-th leading minor of the array is not positive defini
 
 ### 2. Code-Level Warning
 
-**File**: [`src/epydemics/data/frequency_handlers.py`](../../src/epydemics/data/frequency_handlers.py)
+**File**: [`src/dynasir/data/frequency_handlers.py`](../../src/dynasir/data/frequency_handlers.py)
 
 **Changes**: Updated `AnnualFrequencyHandler` docstring with:
 - Clear warning about incidence mode limitation
@@ -126,7 +126,7 @@ for details.
 
 ```
 docs/user-guide/known-limitations.md          (NEW - 260 lines)
-src/epydemics/data/frequency_handlers.py      (MODIFIED - docstring warning)
+src/dynasir/data/frequency_handlers.py      (MODIFIED - docstring warning)
 CLAUDE.md                                      (MODIFIED - new limitations section)
 README.md                                      (MODIFIED - warning banner)
 ```

@@ -16,7 +16,7 @@ Data Source: Our World in Data - Measles reported cases
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from epydemics import DataContainer, Model
+from dynasir import DataContainer, Model
 
 def load_usa_measles_data():
     """Load and prepare USA measles data from OWID."""

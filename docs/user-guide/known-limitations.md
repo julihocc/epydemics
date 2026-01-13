@@ -1,6 +1,6 @@
 # Known Limitations
 
-This document describes known limitations in the epydemics library and provides recommended workarounds.
+This document describes known limitations in the dynasir library and provides recommended workarounds.
 
 ## Annual Incidence Data with VAR Forecasting
 
@@ -28,7 +28,7 @@ numpy.linalg.LinAlgError: N-th leading minor of the array is not positive defini
 
 ```python
 import pandas as pd
-from epydemics import DataContainer, Model
+from dynasir import DataContainer, Model
 
 # Annual measles incident data (WILL FAIL)
 data = pd.DataFrame({
@@ -131,7 +131,7 @@ model.fit_model(backend='arima', max_lag=3)  # Not yet available
 ### How to Check if Your Data Will Work
 
 ```python
-from epydemics import DataContainer
+from dynasir import DataContainer
 
 # Create container
 container = DataContainer(data, mode='incidence', frequency='YE')
@@ -153,7 +153,7 @@ The library will attempt to detect this situation and provide helpful warnings:
 
 ```python
 # Planned for future versions
-2025-12-21 - WARNING - epydemics.data.frequency_handlers
+2025-12-21 - WARNING - dynasir.data.frequency_handlers
   AnnualFrequencyHandler with incidence mode may produce constant rates.
   Consider using monthly (ME) or weekly (W) frequency for better VAR performance.
 ```

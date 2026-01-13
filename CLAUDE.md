@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Epydemics is a Python library for epidemiological modeling and forecasting that combines discrete SIRD/SIRDV (Susceptible-Infected-Recovered-Deaths-Vaccinated) mathematical models with VAR (Vector Autoregression) time series analysis. Unlike classical epidemiological models with constant parameters, this project models time-varying infection, recovery, mortality, and vaccination rates using logit-transformed rates.
+DynaSIR is a Python library for epidemiological modeling and forecasting that combines discrete SIRD/SIRDV (Susceptible-Infected-Recovered-Deaths-Vaccinated) mathematical models with VAR (Vector Autoregression) time series analysis. Unlike classical epidemiological models with constant parameters, this project models time-varying infection, recovery, mortality, and vaccination rates using logit-transformed rates.
 
 **Key Innovation**: Rates (α, β, γ, δ) are logit-transformed before VAR modeling to ensure they stay within (0,1) bounds, then inverse-transformed back for epidemic simulations.
 
@@ -27,7 +27,7 @@ Epydemics is a Python library for epidemiological modeling and forecasting that 
 
 **Example Usage**:
 ```python
-from epydemics.analysis import ModelReport
+from dynasir.analysis import ModelReport
 
 # Create comprehensive report from model results
 report = ModelReport(model.results, testing_data)
@@ -99,18 +99,18 @@ This project uses git worktrees for parallel development:
 git worktree list
 
 # Create new worktree for a branch
-git worktree add ../epydemics.worktrees/feature-name feature-branch-name
+git worktree add ../dynasir.worktrees/feature-name feature-branch-name
 
 # Remove worktree when done
-git worktree remove ../epydemics.worktrees/feature-name
+git worktree remove ../dynasir.worktrees/feature-name
 ```
 
 ### Version Management
 
-- Current version: 0.9.1 (defined in both `pyproject.toml` and `src/epydemics/__init__.py`)
+- Current version: 0.9.1 (defined in both `pyproject.toml` and `src/dynasir/__init__.py`)
 - README.md references v0.10.0 features (fractional recovery lag fix)
 - Main branch: `main`
-- **IMPORTANT**: When bumping versions, update BOTH `pyproject.toml` and `src/epydemics/__init__.py` - they must stay in sync
+- **IMPORTANT**: When bumping versions, update BOTH `pyproject.toml` and `src/dynasir/__init__.py` - they must stay in sync
 - Version inconsistencies across docs indicate v0.10.0 release is imminent
 
 ### Development Commands
@@ -144,7 +144,7 @@ pytest tests/test_model.py
 pytest tests/test_model.py::test_function_name
 
 # Run with coverage
-pytest --cov=src/epydemics --cov-report=html
+pytest --cov=src/dynasir --cov-report=html
 
 # Run in parallel
 pytest -n auto
@@ -199,26 +199,26 @@ Raw OWID Data → DataContainer → Feature Engineering → Model → Forecast �
 
 ### Module Structure
 
-**`src/epydemics/core/`** - Core configuration and constants
+**`src/dynasir/core/`** - Core configuration and constants
 - `config.py`: Settings management using pydantic-settings
 - `constants.py`: RATIOS, LOGIT_RATIOS, COMPARTMENTS, FORECASTING_LEVELS, frequency mappings
 - `exceptions.py`: Custom exceptions (NotDataFrameError, DataValidationError, DateRangeError)
 
-**`src/epydemics/data/`** - Data pipeline
+**`src/dynasir/data/`** - Data pipeline
 - `container.py`: DataContainer class - main entry point (mode-aware, frequency-aware)
 - `preprocessing.py`: Rolling window smoothing, frequency detection
 - `features.py`: SIRD compartment calculations, rate calculations, logit transforms (dual-mode)
 - `validation.py`: Data validation (cumulative and incidence validators)
 - `frequency_handlers.py`: Pluggable handlers (Daily, Business Day, Weekly, Monthly, Annual)
 
-**`src/epydemics/models/`** - Modeling components
+**`src/dynasir/models/`** - Modeling components
 - `base.py`: BaseModel and SIRDModelMixin abstract classes
 - `sird.py`: Model class - main API (mode-aware, frequency-aware)
 - `var_forecasting.py`: VARForecasting - VAR time series modeling (frequency-aware defaults)
 - `simulation.py`: EpidemicSimulation - Monte Carlo simulations (parallel/sequential)
 - `forecasting/var.py`: Additional VAR utilities
 
-**`src/epydemics/analysis/`** - Post-processing and visualization
+**`src/dynasir/analysis/`** - Post-processing and visualization
 - `evaluation.py`: Model evaluation metrics (MAE, MSE, RMSE, MAPE, SMAPE)
 - `visualization.py`: Plotting functions for results
 - `formatting.py`: Professional plot formatting utilities
@@ -228,7 +228,7 @@ Raw OWID Data → DataContainer → Feature Engineering → Model → Forecast �
   - Markdown/LaTeX export, high-DPI figures
   - Model comparison utilities
 
-**`src/epydemics/utils/`** - Utilities
+**`src/dynasir/utils/`** - Utilities
 - `transformations.py`: Logit/inverse logit transforms, rate bound handling
 
 ### Key Classes and Their Roles
@@ -349,8 +349,8 @@ Must follow this exact sequence in `features.py`:
 ### Publication-Ready Reporting Workflow (v0.10.0)
 
 ```python
-from epydemics import DataContainer, Model
-from epydemics.analysis import ModelReport
+from dynasir import DataContainer, Model
+from dynasir.analysis import ModelReport
 
 # 1. Create and fit model (standard workflow)
 container = DataContainer(data, window=7, frequency="ME", mode="incidence")
@@ -375,7 +375,7 @@ fig = report.plot_forecast_panel(compartments=["C", "I"], dpi=600)
 fig.savefig("figures/forecast_panel.png", dpi=600, bbox_inches='tight')
 
 # 5. Compare multiple models
-from epydemics.analysis.reporting import create_comparison_report
+from dynasir.analysis.reporting import create_comparison_report
 
 comparison_df = create_comparison_report([
     (model1.results, testing_data1, "Annual VAR"),
@@ -396,7 +396,7 @@ print(comparison_df)  # Side-by-side metrics comparison
 ### Typical Analysis Workflow
 
 ```python
-from epydemics import DataContainer, Model, process_data_from_owid
+from dynasir import DataContainer, Model, process_data_from_owid
 
 # 1. Load and prepare data
 raw_data = process_data_from_owid(iso_code="OWID_WRL")  # Global data
@@ -421,7 +421,7 @@ evaluation = model.evaluate_forecast(testing_data)
 ### Annual Measles Surveillance Workflow (v0.9.0)
 
 ```python
-from epydemics import DataContainer, Model
+from dynasir import DataContainer, Model
 import pandas as pd
 
 # Load annual incident cases (incidence mode)
@@ -449,7 +449,7 @@ print(model.results.C)  # Annual case forecasts
 ### Working with Frequency Handlers
 
 ```python
-from epydemics.data.frequency_handlers import FrequencyHandlerRegistry
+from dynasir.data.frequency_handlers import FrequencyHandlerRegistry
 
 # Automatic handler selection
 registry = FrequencyHandlerRegistry()
@@ -469,10 +469,10 @@ print(bday_handler.default_max_lag)  # 10 (conservative for VAR)
 
 ### Using Constants
 
-Always import from `epydemics.core.constants`:
+Always import from `dynasir.core.constants`:
 
 ```python
-from epydemics.core.constants import (
+from dynasir.core.constants import (
     RATIOS,                      # ["alpha", "beta", "gamma", "delta"]
     LOGIT_RATIOS,                # ["logit_alpha", "logit_beta", "logit_gamma", "logit_delta"]
     COMPARTMENTS,                # ["A", "C", "S", "I", "R", "D", "V"]
@@ -497,7 +497,7 @@ CACHE_STRICT_VERSION=False  # True = invalidate cache on version change
 
 **Usage**:
 ```python
-from epydemics.core.config import get_settings
+from dynasir.core.config import get_settings
 import os
 
 # Enable caching via environment variable
@@ -574,7 +574,7 @@ fitted = var_model.fit(optimal_lag_aic)
 ### Seasonal Pattern Detection (v0.9.0)
 
 ```python
-from epydemics.analysis.seasonality import SeasonalPatternDetector
+from dynasir.analysis.seasonality import SeasonalPatternDetector
 
 detector = SeasonalPatternDetector()
 
@@ -710,26 +710,26 @@ assert rate_variance.max() > 1e-10, "Rates should vary"
 ## Important Files to Review
 
 **Data Processing**:
-- `src/epydemics/data/features.py` - Feature engineering (cumulative and incidence modes)
-- `src/epydemics/data/validation.py` - Data validation (dual-mode support)
-- `src/epydemics/data/frequency_handlers.py` - Frequency handler implementations
-- `src/epydemics/data/preprocessing.py` - Frequency detection and smoothing
+- `src/dynasir/data/features.py` - Feature engineering (cumulative and incidence modes)
+- `src/dynasir/data/validation.py` - Data validation (dual-mode support)
+- `src/dynasir/data/frequency_handlers.py` - Frequency handler implementations
+- `src/dynasir/data/preprocessing.py` - Frequency detection and smoothing
 
 **Modeling**:
-- `src/epydemics/models/sird.py` - Main model API (mode-aware, frequency-aware)
-- `src/epydemics/models/var_forecasting.py` - VAR forecasting (frequency-aware defaults)
-- `src/epydemics/models/simulation.py` - Simulation engine (parallel/sequential)
+- `src/dynasir/models/sird.py` - Main model API (mode-aware, frequency-aware)
+- `src/dynasir/models/var_forecasting.py` - VAR forecasting (frequency-aware defaults)
+- `src/dynasir/models/simulation.py` - Simulation engine (parallel/sequential)
 
 **Analysis**:
-- `src/epydemics/analysis/seasonality.py` - Seasonal pattern detection
-- `src/epydemics/analysis/evaluation.py` - Model evaluation metrics
-- `src/epydemics/analysis/visualization.py` - Plotting functions
-- `src/epydemics/analysis/reporting.py` - Publication-ready reports (v0.10.0)
+- `src/dynasir/analysis/seasonality.py` - Seasonal pattern detection
+- `src/dynasir/analysis/evaluation.py` - Model evaluation metrics
+- `src/dynasir/analysis/visualization.py` - Plotting functions
+- `src/dynasir/analysis/reporting.py` - Publication-ready reports (v0.10.0)
 
 **Configuration**:
 - `pyproject.toml` - Project metadata, dependencies, tool configs
-- `src/epydemics/core/config.py` - Runtime settings (caching, parallel simulations)
-- `src/epydemics/core/constants.py` - Frequency aliases, recovery lags, compartments, rates
+- `src/dynasir/core/config.py` - Runtime settings (caching, parallel simulations)
+- `src/dynasir/core/constants.py` - Frequency aliases, recovery lags, compartments, rates
 - `.env` - Environment configuration (optional)
 
 **Examples**:
@@ -753,7 +753,7 @@ assert rate_variance.max() > 1e-10, "Rates should vary"
 - Required columns (cumulative mode): `date`, `total_cases`, `total_deaths`, `population`
 - Required columns (incidence mode): `date`, `incident_cases`, `deaths`, `population`
 - ISO codes: `OWID_WRL` (global), country codes like `MEX`, `USA`
-- Helper function: `process_data_from_owid()` in `epydemics.py`
+- Helper function: `process_data_from_owid()` in `dynasir.py`
 
 ## Testing Conventions
 

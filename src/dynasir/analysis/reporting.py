@@ -21,7 +21,7 @@ from .visualization import visualize_results
 
 class ModelReport:
     """
-    Generate comprehensive reports from epydemics model results.
+    Generate comprehensive reports from dynasir model results.
 
     This class provides methods to create publication-ready reports including:
     - Summary statistics

@@ -8,8 +8,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from epydemics import DataContainer, Model
-from epydemics.data.frequency_handlers import FrequencyHandlerRegistry
+from dynasir import DataContainer, Model
+from dynasir.data.frequency_handlers import FrequencyHandlerRegistry
 
 
 class TestAnnualFrequencyHandlerVerification:

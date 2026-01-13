@@ -27,8 +27,8 @@ class ForecasterRegistry:
     Examples:
         Register a new backend:
 
-        >>> from epydemics.models.forecasting.base import BaseForecaster
-        >>> from epydemics.models.forecasting.registry import register_forecaster
+        >>> from dynasir.models.forecasting.base import BaseForecaster
+        >>> from dynasir.models.forecasting.registry import register_forecaster
         >>>
         >>> @register_forecaster("my_backend", aliases=["mb"])
         >>> class MyForecaster(BaseForecaster):
@@ -36,17 +36,17 @@ class ForecasterRegistry:
         ...     pass
         >>>
         >>> # Now users can use it
-        >>> from epydemics import Model
+        >>> from dynasir import Model
         >>> model = Model(container, forecaster="my_backend")
         >>> # Or using the alias
         >>> model = Model(container, forecaster="mb")
 
         Retrieve a registered backend:
 
-        >>> from epydemics.models.forecasting.registry import ForecasterRegistry
+        >>> from dynasir.models.forecasting.registry import ForecasterRegistry
         >>> forecaster_class = ForecasterRegistry.get("var")
         >>> print(forecaster_class)
-        <class 'epydemics.models.forecasting.var.VARForecaster'>
+        <class 'dynasir.models.forecasting.var.VARForecaster'>
 
         List all available backends:
 
@@ -80,7 +80,7 @@ class ForecasterRegistry:
             ValueError: If name is empty or already registered
 
         Examples:
-            >>> from epydemics.models.forecasting.var import VARForecaster
+            >>> from dynasir.models.forecasting.var import VARForecaster
             >>> ForecasterRegistry.register(
             ...     "var",
             ...     VARForecaster,
@@ -257,8 +257,8 @@ def register_forecaster(
         Decorator function that registers the class and returns it unchanged
 
     Examples:
-        >>> from epydemics.models.forecasting.base import BaseForecaster
-        >>> from epydemics.models.forecasting.registry import register_forecaster
+        >>> from dynasir.models.forecasting.base import BaseForecaster
+        >>> from dynasir.models.forecasting.registry import register_forecaster
         >>>
         >>> @register_forecaster("var", aliases=["vector_ar", "vector_autoregression"])
         >>> class VARForecaster(BaseForecaster):
@@ -279,7 +279,7 @@ def register_forecaster(
         ...         pass
         >>>
         >>> # Now the forecaster is automatically registered
-        >>> from epydemics.models.forecasting.registry import ForecasterRegistry
+        >>> from dynasir.models.forecasting.registry import ForecasterRegistry
         >>> forecaster_class = ForecasterRegistry.get("var")
         >>> print(forecaster_class)
         <class '__main__.VARForecaster'>

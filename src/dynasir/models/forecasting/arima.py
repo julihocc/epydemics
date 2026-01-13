@@ -34,7 +34,7 @@ def _lazy_import_pmdarima():
         raise ImportError(
             "ARIMA backend requires the 'pmdarima' package. "
             "Install it with: pip install pmdarima\n"
-            "Or install epydemics with ARIMA support: pip install epydemics[arima]\n"
+            "Or install dynasir with ARIMA support: pip install 'dynasir[arima]'\n"
             f"Original error: {e}"
         )
 
@@ -67,7 +67,7 @@ class ARIMAForecaster(BaseForecaster):
     Examples:
         Basic usage:
 
-        >>> from epydemics.models.forecasting.arima import ARIMAForecaster
+        >>> from dynasir.models.forecasting.arima import ARIMAForecaster
         >>> import numpy as np
         >>>
         >>> # SIRD data (3 rates)

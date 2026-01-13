@@ -102,7 +102,7 @@ def validate_notebook(notebook_path: Path) -> Dict:
 
         # 4. Check for basic imports
         all_code = "\n".join(code_cells)
-        if "from epydemics import" in all_code or "import epydemics" in all_code:
+        if "from dynasir import" in all_code or "import dynasir" in all_code:
             result["warnings"].append("Uses epydemics library (good)")
 
     except Exception as e:

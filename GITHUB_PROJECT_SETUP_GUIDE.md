@@ -8,13 +8,13 @@
 ## Quick Setup (5-10 minutes)
 
 ### Step 1: Navigate to Projects
-1. Go to https://github.com/julihocc/epydemics
+1. Go to https://github.com/julihocc/dynasir
 2. Click the **"Projects"** tab at the top
 3. Click **"New project"** button
 
 ### Step 2: Create Board
-1. **Project name**: `Epydemics Development Roadmap`
-2. **Description**: `Centralized tracking for epydemics library development across releases v0.10.0 through v1.0.0, including feature development, bug fixes, documentation, and performance optimization.`
+1. **Project name**: `DynaSIR Development Roadmap`
+2. **Description**: `Centralized tracking for dynasir library development across releases v0.10.0 through v1.0.0, including feature development, bug fixes, documentation, and performance optimization.`
 3. **Template**: Select **"Table"** or **"Board"** (Board recommended)
 4. Click **"Create project"**
 
@@ -129,7 +129,7 @@ GitHub Projects allows multiple views of the same board:
    - #147, #146, #93, #94, #96, #109
 2. On the issue page, scroll to "Projects" section
 3. Click **"Add to project"**
-4. Select **"Epydemics Development Roadmap"**
+4. Select **"DynaSIR Development Roadmap"**
 5. Set column to **"Next Release (v0.11.0)"**
 
 ### Batch 2: Backlog - High Priority
@@ -168,7 +168,7 @@ Add custom fields for better tracking:
 ## Step 8: Share & Maintain
 
 ### Share with Team
-- Copy project link: https://github.com/julihocc/epydemics/projects/[project-number]
+- Copy project link: https://github.com/julihocc/dynasir/projects/[project-number]
 - Add to repository README
 - Include in development documentation
 
@@ -189,7 +189,7 @@ Add custom fields for better tracking:
 
 ### Issue: Can't find Projects tab
 - **Solution**: Make sure you're on the repository page, not your profile
-- URL should be: https://github.com/julihocc/epydemics
+- URL should be: https://github.com/julihocc/dynasir
 
 ### Issue: Automation not working
 - **Solution**: Ensure you have admin/maintain permissions on the repository
@@ -240,17 +240,17 @@ Phases 1-2 Measles Integration
 ## Links
 
 - **GitHub Projects Docs**: https://docs.github.com/en/issues/planning-and-tracking-with-projects
-- **Repository**: https://github.com/julihocc/epydemics
-- **Issues**: https://github.com/julihocc/epydemics/issues
-- **New Issue #147**: https://github.com/julihocc/epydemics/issues/147
-- **New Issue #145**: https://github.com/julihocc/epydemics/issues/145
-- **New Issue #146**: https://github.com/julihocc/epydemics/issues/146
+- **Repository**: https://github.com/julihocc/dynasir
+- **Issues**: https://github.com/julihocc/dynasir/issues
+- **New Issue #147**: https://github.com/julihocc/dynasir/issues/147
+- **New Issue #145**: https://github.com/julihocc/dynasir/issues/145
+- **New Issue #146**: https://github.com/julihocc/dynasir/issues/146
 
 ---
 
 ## Completion Checklist
 
-- [ ] Project created with name "Epydemics Development Roadmap"
+- [ ] Project created with name "DynaSIR Development Roadmap"
 - [ ] 6 columns configured (Current Sprint, Next Release, Backlog High, Backlog Research, Documentation, Completed)
 - [ ] Automation rules configured (v0.11.0 milestone, auto-move closed)
 - [ ] 24+ issues added to appropriate columns

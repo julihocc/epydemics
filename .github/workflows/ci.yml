@@ -39,7 +39,7 @@ jobs:
         
     - name: Run tests with pytest
       run: |
-        pytest tests/ -v --cov=epydemics --cov-report=xml --cov-report=term
+        pytest tests/ -v --cov=dynasir --cov-report=xml --cov-report=term
         
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
@@ -66,15 +66,15 @@ jobs:
         
     - name: Run Black formatting check
       run: |
-        black --check --diff src/epydemics tests/
+        black --check --diff src/dynasir tests/
         
     - name: Run flake8 linting
       run: |
-        flake8 src/epydemics tests/ --max-line-length=120 --extend-ignore=E203,W503,E501,F401,F841,F541,E741,E721
+        flake8 src/dynasir tests/ --max-line-length=120 --extend-ignore=E203,W503,E501,F401,F841,F541,E741,E721
         
     - name: Run mypy type checking
       run: |
-        mypy src/epydemics --ignore-missing-imports || true
+        mypy src/dynasir --ignore-missing-imports || true
         
   security:
     runs-on: ubuntu-latest
@@ -94,8 +94,8 @@ jobs:
         
     - name: Run security analysis with bandit
       run: |
-        bandit -r epydemics/ -f json -o bandit-report.json || true
-        bandit -r epydemics/ --exclude tests/
+        bandit -r src/dynasir/ -f json -o bandit-report.json || true
+        bandit -r src/dynasir/ --exclude tests/
         
   build:
     needs: [test, quality]
@@ -153,6 +153,6 @@ jobs:
     - name: Test installation from wheel
       run: |
         pip install dist/*.whl
-        python -c "import epydemics; print(f'Installed epydemics v{epydemics.__version__}')"
-        python -c "from epydemics import DataContainer, Model; print('Core classes importable')"
-        python -c "from epydemics import RATIOS, COMPARTMENTS; print('Constants importable')"
+        python -c "import dynasir; print(f'Installed dynasir v{dynasir.__version__}')"
+        python -c "from dynasir import DataContainer, Model; print('Core classes importable')"
+        python -c "from dynasir import RATIOS, COMPARTMENTS; print('Constants importable')"

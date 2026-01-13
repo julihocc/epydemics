@@ -35,7 +35,7 @@ def _lazy_import_prophet():
         raise ImportError(
             "Prophet backend requires the 'prophet' package. "
             "Install it with: pip install prophet\n"
-            "Or install epydemics with Prophet support: pip install epydemics[prophet]\n"
+            "Or install dynasir with Prophet support: pip install 'dynasir[prophet]'\n"
             f"Original error: {e}"
         )
 
@@ -65,7 +65,7 @@ class ProphetForecaster(BaseForecaster):
     Examples:
         Basic usage:
 
-        >>> from epydemics.models.forecasting.prophet import ProphetForecaster
+        >>> from dynasir.models.forecasting.prophet import ProphetForecaster
         >>> import numpy as np
         >>>
         >>> # SIRD data (3 rates)
@@ -122,6 +122,9 @@ class ProphetForecaster(BaseForecaster):
         # Verify prophet is available (lazy import on first use)
         self._prophet_class = None
 
+        # Store Prophet-specific creation parameters
+        self._prophet_creation_kwargs: dict = {}
+
         logging.info(f"ProphetForecaster initialized with {self.n_rates} rates")
 
     @property
@@ -153,6 +156,9 @@ class ProphetForecaster(BaseForecaster):
         if self._prophet_class is None:
             self._prophet_class = _lazy_import_prophet()
 
+        # Store creation parameters for later use (in case fit is called with kwargs)
+        self._prophet_creation_kwargs = kwargs.copy()
+
         # Create one Prophet model per rate
         self.models = []
         for i in range(self.n_rates):
@@ -172,7 +178,9 @@ class ProphetForecaster(BaseForecaster):
         This method prepares the data and fits each model independently.
 
         Args:
-            **kwargs: Additional fitting parameters (Prophet has minimal fit params)
+            **kwargs: Additional fitting parameters (Prophet's fit() has minimal parameters).
+                     Prophet model creation parameters (yearly_seasonality, etc.)
+                     are automatically filtered out and ignored.
 
         Raises:
             ValueError: If create_model() hasn't been called
@@ -186,6 +194,25 @@ class ProphetForecaster(BaseForecaster):
             raise ValueError(
                 "Models must be created before fitting. Call create_model() first."
             )
+
+        # Filter out Prophet creation-specific parameters that shouldn't be passed to fit()
+        prophet_creation_params = {
+            "yearly_seasonality",
+            "weekly_seasonality",
+            "daily_seasonality",
+            "changepoint_prior_scale",
+            "seasonality_prior_scale",
+            "holidays_prior_scale",
+            "seasonality_mode",
+            "interval_width",
+            "growth",
+            "capacity",
+            "floor",
+            "uncertainty_samples",
+        }
+        fit_kwargs = {
+            k: v for k, v in kwargs.items() if k not in prophet_creation_params
+        }
 
         self.fitted_models = []
 
@@ -203,7 +230,7 @@ class ProphetForecaster(BaseForecaster):
 
             # Fit the model (suppress Prophet's verbose output)
             with pd.option_context("mode.chained_assignment", None):
-                fitted_model = model.fit(df, **kwargs)
+                fitted_model = model.fit(df, **fit_kwargs)
 
             self.fitted_models.append(fitted_model)
 

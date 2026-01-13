@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from epydemics.analysis.evaluation import evaluate_forecast, evaluate_model
+from dynasir.analysis.evaluation import evaluate_forecast, evaluate_model
 
 
 @pytest.fixture
@@ -58,7 +58,7 @@ def sample_testing_data():
 
 def test_evaluate_forecast_imports():
     """Test that evaluation functions can be imported."""
-    from epydemics.analysis.evaluation import evaluate_forecast, evaluate_model
+    from dynasir.analysis.evaluation import evaluate_forecast, evaluate_model
 
     assert callable(evaluate_forecast)
     assert callable(evaluate_model)
@@ -287,7 +287,7 @@ def test_numpy_array_conversion():
 def test_backward_compatibility_imports():
     """Test that analysis functions maintain backward compatibility."""
     # Should be able to import from analysis module
-    from epydemics.analysis import evaluate_forecast, evaluate_model
+    from dynasir.analysis import evaluate_forecast, evaluate_model
 
     assert callable(evaluate_forecast)
     assert callable(evaluate_model)

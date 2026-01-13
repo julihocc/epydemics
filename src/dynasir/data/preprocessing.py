@@ -131,7 +131,7 @@ def reindex_data(
         >>> # Explicit annual frequency (no reindexing warning)
         >>> reindexed = reindex_data(data, freq='YE')
     """
-    from epydemics.core.constants import DEFAULT_FREQUENCY
+    from dynasir.core.constants import DEFAULT_FREQUENCY
 
     # Handle case where data has no rows
     if len(data) == 0:
@@ -274,7 +274,7 @@ def warn_frequency_mismatch(
         >>> warn_frequency_mismatch('Y', 'D', 13516)
         # Emits warning about frequency mismatch
     """
-    from epydemics.core.constants import FREQUENCY_ALIASES
+    from dynasir.core.constants import FREQUENCY_ALIASES
 
     source_name = FREQUENCY_ALIASES.get(detected_freq, detected_freq)
     target_name = FREQUENCY_ALIASES.get(target_freq, target_freq)

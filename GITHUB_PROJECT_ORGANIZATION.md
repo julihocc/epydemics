@@ -1,4 +1,4 @@
-# Epydemics Development Roadmap - Project Organization
+# DynaSIR Development Roadmap - Project Organization
 
 **Status**: ✅ ORGANIZED VIA LABELS  
 **Date**: December 26, 2025  
@@ -69,7 +69,7 @@ Issues labeled with `project-v0.11.0`:
    - Tags: project-v0.11.0, documentation
    - Dependency review
 
-**View all**: https://github.com/julihocc/epydemics/issues?q=label:project-v0.11.0
+**View all**: https://github.com/julihocc/dynasir/issues?q=label:project-v0.11.0
 
 ---
 
@@ -104,7 +104,7 @@ Issues labeled with `project-backlog-high`:
    - Tags: project-backlog-high, component-analysis
    - From epic #108
 
-**View all**: https://github.com/julihocc/epydemics/issues?q=label:project-backlog-high
+**View all**: https://github.com/julihocc/dynasir/issues?q=label:project-backlog-high
 
 ---
 
@@ -112,24 +112,24 @@ Issues labeled with `project-backlog-high`:
 
 ### By Project Phase
 
-- **Next Release (v0.11.0)**: https://github.com/julihocc/epydemics/issues?q=label:project-v0.11.0
-- **Backlog - High Priority**: https://github.com/julihocc/epydemics/issues?q=label:project-backlog-high
-- **Backlog - Research**: https://github.com/julihocc/epydemics/issues?q=label:project-backlog-research
-- **In Progress**: https://github.com/julihocc/epydemics/issues?q=label:project-in-progress
-- **Blocked**: https://github.com/julihocc/epydemics/issues?q=label:project-blocked
+- **Next Release (v0.11.0)**: https://github.com/julihocc/dynasir/issues?q=label:project-v0.11.0
+- **Backlog - High Priority**: https://github.com/julihocc/dynasir/issues?q=label:project-backlog-high
+- **Backlog - Research**: https://github.com/julihocc/dynasir/issues?q=label:project-backlog-research
+- **In Progress**: https://github.com/julihocc/dynasir/issues?q=label:project-in-progress
+- **Blocked**: https://github.com/julihocc/dynasir/issues?q=label:project-blocked
 
 ### By Component
 
-- **Data Issues**: https://github.com/julihocc/epydemics/issues?q=label:component-data
-- **Models Issues**: https://github.com/julihocc/epydemics/issues?q=label:component-models
-- **Analysis Issues**: https://github.com/julihocc/epydemics/issues?q=label:component-analysis
+- **Data Issues**: https://github.com/julihocc/dynasir/issues?q=label:component-data
+- **Models Issues**: https://github.com/julihocc/dynasir/issues?q=label:component-models
+- **Analysis Issues**: https://github.com/julihocc/dynasir/issues?q=label:component-analysis
 
 ### By Type
 
-- **Performance**: https://github.com/julihocc/epydemics/issues?q=label:performance
-- **Testing**: https://github.com/julihocc/epydemics/issues?q=label:testing
-- **Documentation**: https://github.com/julihocc/epydemics/issues?q=label:documentation
-- **Enhancement**: https://github.com/julihocc/epydemics/issues?q=label:enhancement
+- **Performance**: https://github.com/julihocc/dynasir/issues?q=label:performance
+- **Testing**: https://github.com/julihocc/dynasir/issues?q=label:testing
+- **Documentation**: https://github.com/julihocc/dynasir/issues?q=label:documentation
+- **Enhancement**: https://github.com/julihocc/dynasir/issues?q=label:enhancement
 
 ---
 
@@ -138,10 +138,10 @@ Issues labeled with `project-backlog-high`:
 ### To View All Next Release Issues
 ```bash
 # Command line
-gh issue list --repo julihocc/epydemics --label project-v0.11.0
+gh issue list --repo julihocc/dynasir --label project-v0.11.0
 
 # Or use the web link
-https://github.com/julihocc/epydemics/issues?q=label:project-v0.11.0
+https://github.com/julihocc/dynasir/issues?q=label:project-v0.11.0
 ```
 
 ### To Add an Issue to the Project
@@ -233,7 +233,7 @@ Follow the guide in `GITHUB_PROJECT_SETUP_GUIDE.md` to:
 ### Weekly Check-In
 ```bash
 # See all v0.11.0 issues and their current status
-gh issue list --repo julihocc/epydemics --label project-v0.11.0 -L 20
+gh issue list --repo julihocc/dynasir --label project-v0.11.0 -L 20
 ```
 
 ### When Starting Work

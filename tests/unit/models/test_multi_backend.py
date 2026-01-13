@@ -9,9 +9,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from epydemics import Model
-from epydemics.core.constants import FORECASTING_LEVELS
-from epydemics.data import DataContainer
+from dynasir import Model
+from dynasir.core.constants import FORECASTING_LEVELS
+from dynasir.data import DataContainer
 
 
 @pytest.fixture

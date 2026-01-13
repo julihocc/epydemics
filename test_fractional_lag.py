@@ -33,14 +33,14 @@ print("\nTest Data:")
 print(data.head())
 
 try:
-    from epydemics import DataContainer, Model
+    from dynasir import DataContainer, Model
 
     print("\n1. Creating DataContainer (annual + incidence)...")
     container = DataContainer(data, mode='incidence', frequency='YE', window=1)
     print("   ✅ DataContainer created successfully")
 
     print(f"\n2. Checking recovery lag...")
-    from epydemics.data.frequency_handlers import FrequencyHandlerRegistry
+    from dynasir.data.frequency_handlers import FrequencyHandlerRegistry
     handler = FrequencyHandlerRegistry.get('YE')
     recovery_lag = handler.get_recovery_lag()
     print(f"   Recovery lag: {recovery_lag:.4f} years ({recovery_lag*365:.1f} days)")

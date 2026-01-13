@@ -1,17 +1,17 @@
 # Reporting Tools Guide
 
 **Version**: 0.10.0
-**Module**: `epydemics.analysis.reporting`
+**Module**: `dynasir.analysis.reporting`
 
 ## Overview
 
-The reporting module provides high-level tools for generating publication-ready analysis reports from epydemics model results. It simplifies the process of creating comprehensive reports with summary statistics, evaluation metrics, and professional visualizations.
+The reporting module provides high-level tools for generating publication-ready analysis reports from dynasir model results. It simplifies the process of creating comprehensive reports with summary statistics, evaluation metrics, and professional visualizations.
 
 ## Quick Start
 
 ```python
-from epydemics import DataContainer, Model
-from epydemics.analysis import ModelReport
+from dynasir import DataContainer, Model
+from dynasir.analysis import ModelReport
 
 # 1. Fit your model (see Tutorial for details)
 container = DataContainer(train_data, mode='incidence')
@@ -49,7 +49,7 @@ The `ModelReport` class provides a convenient interface for analyzing and report
 #### Create a Report
 
 ```python
-from epydemics.analysis import ModelReport
+from dynasir.analysis import ModelReport
 
 report = ModelReport(
     results=model.results,          # Model results dictionary
@@ -130,7 +130,7 @@ report.export_latex_table(
 Compare multiple models or scenarios side-by-side:
 
 ```python
-from epydemics.analysis import create_comparison_report
+from dynasir.analysis import create_comparison_report
 
 models = {
     "Baseline": baseline_model.results,
@@ -150,8 +150,8 @@ fig = create_comparison_report(
 
 ```python
 import pandas as pd
-from epydemics import DataContainer, Model
-from epydemics.analysis import ModelReport
+from dynasir import DataContainer, Model
+from dynasir.analysis import ModelReport
 
 # 1. Prepare data
 data = pd.read_csv("measles_data.csv", index_col=0, parse_dates=True)
@@ -314,7 +314,7 @@ The reporting module requires:
 - `numpy` (computations)
 - `tabulate` (Markdown table formatting)
 
-All dependencies are automatically installed with epydemics.
+All dependencies are automatically installed with dynasir.
 
 ## Tips
 

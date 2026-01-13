@@ -33,8 +33,8 @@ class BaseForecaster(ABC):
     Examples:
         Implementing a new forecaster backend:
 
-        >>> from epydemics.models.forecasting.base import BaseForecaster
-        >>> from epydemics.models.forecasting.registry import register_forecaster
+        >>> from dynasir.models.forecasting.base import BaseForecaster
+        >>> from dynasir.models.forecasting.registry import register_forecaster
         >>>
         >>> @register_forecaster("my_method")
         >>> class MyForecaster(BaseForecaster):

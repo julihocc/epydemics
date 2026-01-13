@@ -10,7 +10,7 @@ Tests end-to-end workflow with real measles data including:
 """
 
 import pandas as pd
-from epydemics import DataContainer, Model
+from dynasir import DataContainer, Model
 
 
 def create_measles_test_data():

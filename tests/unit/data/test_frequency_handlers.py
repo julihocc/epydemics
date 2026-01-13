@@ -8,7 +8,7 @@ native multi-frequency support (annual, monthly, weekly, daily).
 import pandas as pd
 import pytest
 
-from epydemics.data.frequency_handlers import (
+from dynasir.data.frequency_handlers import (
     AnnualFrequencyHandler,
     DailyFrequencyHandler,
     FrequencyHandler,

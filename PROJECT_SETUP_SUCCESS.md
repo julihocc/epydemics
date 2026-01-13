@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-**Project**: [Epydemics Development Roadmap](https://github.com/users/julihocc/projects/15)  
+**Project**: [DynaSIR Development Roadmap](https://github.com/users/julihocc/projects/15)  
 **Status**: ✅ **COMPLETE** - All core setup finished  
 **Date**: 2024-01-XX
 
@@ -68,7 +68,7 @@ gh project view 15 --owner @me
 ### Add New Issues to Project
 ```bash
 # Add issue by number
-gh project item-add 15 --owner @me --url https://github.com/julihocc/epydemics/issues/<NUMBER>
+gh project item-add 15 --owner @me --url https://github.com/julihocc/dynasir/issues/<NUMBER>
 ```
 
 ### Update Issue Fields
@@ -109,9 +109,9 @@ Add rules:
 - **Auto-archive**: 90 days in "Completed" → archive
 
 ### Step 4: Link to Repository (2 minutes)
-Navigate to: https://github.com/julihocc/epydemics → Projects tab
+Navigate to: https://github.com/julihocc/dynasir → Projects tab
 
-Click "Link a project" → Select "Epydemics Development Roadmap"
+Click "Link a project" → Select "DynaSIR Development Roadmap"
 
 ---
 
@@ -194,7 +194,7 @@ gh auth login --scopes project
 
 ## 🎉 Outcome
 
-You now have a **fully functional GitHub Projects V2 board** tracking Epydemics development from v0.10.0 → v1.0.0.
+You now have a **fully functional GitHub Projects V2 board** tracking DynaSIR development from v0.10.0 → v1.0.0.
 
 ### Immediate Benefits
 1. **Visual kanban board** for tracking all development work
@@ -223,7 +223,7 @@ Why?
 Next command:
 ```bash
 # Self-assign the blocker issue
-gh issue edit 146 --add-assignee @me --repo julihocc/epydemics
+gh issue edit 146 --add-assignee @me --repo julihocc/dynasir
 
 # Create feature branch
 git checkout -b feature/backward-compat-tests
@@ -235,7 +235,7 @@ code tests/verification/
 ---
 
 **Project Board**: https://github.com/users/julihocc/projects/15  
-**Repository**: https://github.com/julihocc/epydemics  
+**Repository**: https://github.com/julihocc/dynasir  
 **Status**: ✅ **READY FOR DEVELOPMENT**
 
 ---

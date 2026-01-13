@@ -1,31 +1,31 @@
 # Architecture
 
-This document provides a high-level overview of the `epydemics` project's architecture.
+This document provides a high-level overview of the `dynasir` project's architecture.
 
 ## Project Structure
 
 The project is organized into the following main directories:
 
-*   `epydemics`: The main source code for the `epydemics` library.
+*   `dynasir`: The main source code for the `dynasir` library.
 *   `tests`: Contains all the tests for the project.
 *   `.github`: Contains GitHub-specific files, such as workflows and issue templates.
 *   `scripts`: Contains various scripts for managing the project.
 
 ## Core Components
 
-The `epydemics` library is built around a few core components:
+The `dynasir` library is built around a few core components:
 
-*   **`DataContainer`**: This class is responsible for loading, preprocessing, and storing the data used for the epidemiological models. It is located in `epydemics/data/container.py`.
+*   **`DataContainer`**: This class is responsible for loading, preprocessing, and storing the data used for the epidemiological models. It is located in `dynasir/data/container.py`.
 
-*   **`Model`**: This is the main class for creating and managing the epidemiological models. It takes a `DataContainer` object as input and provides methods for creating, fitting, and forecasting the models. It is located in `epydemics/models/base.py`.
+*   **`Model`**: This is the main class for creating and managing the epidemiological models. It takes a `DataContainer` object as input and provides methods for creating, fitting, and forecasting the models. It is located in `dynasir/models/base.py`.
 
-*   **SIRD Model**: The `epydemics` library includes a discrete Susceptible-Infected-Recovered-Deceased (SIRD) model. The core logic for this model is implemented in `epydemics/models/sird.py`.
+*   **SIRD Model**: The `dynasir` library includes a discrete Susceptible-Infected-Recovered-Deceased (SIRD) model. The core logic for this model is implemented in `dynasir/models/sird.py`.
 
-*   **Analysis and Visualization**: The `epydemics/analysis` directory contains modules for evaluating and visualizing the results of the models.
+*   **Analysis and Visualization**: The `dynasir/analysis` directory contains modules for evaluating and visualizing the results of the models.
 
 ## Data Pipeline
 
-The data pipeline in `epydemics` is designed to be flexible and extensible. It consists of the following steps:
+The data pipeline in `dynasir` is designed to be flexible and extensible. It consists of the following steps:
 
 1.  **Data Loading**: Data is loaded from a source, such as a CSV file, into a pandas DataFrame.
 2.  **Preprocessing**: The raw data is preprocessed to prepare it for the models. This includes cleaning the data, handling missing values, and engineering new features.
@@ -34,7 +34,7 @@ The data pipeline in `epydemics` is designed to be flexible and extensible. It c
 
 ## Modeling Workflow
 
-The modeling workflow in `epydemics` is as follows:
+The modeling workflow in `dynasir` is as follows:
 
 1.  **Model Creation**: A `Model` object is created with a `DataContainer` object and other parameters, such as the start and end dates for the model.
 2.  **Model Fitting**: The `Model` object is used to fit a time series model to the epidemiological data.

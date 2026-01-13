@@ -16,7 +16,7 @@ def test_basic_workflow():
     print("\n=== Testing Basic SIRD Workflow ===")
 
     try:
-        from epydemics import DataContainer, Model
+        from dynasir import DataContainer, Model
 
         # Create simple cumulative data (daily frequency)
         dates = pd.date_range("2020-01-01", periods=60, freq="D")
@@ -66,7 +66,7 @@ def test_incidence_mode_monthly():
     print("\n=== Testing Incidence Mode (Monthly) ===")
 
     try:
-        from epydemics import DataContainer, Model
+        from dynasir import DataContainer, Model
 
         # Create incidence data (monthly frequency) with realistic pattern
         # Pattern: outbreak followed by decline
@@ -124,7 +124,7 @@ def test_annual_incidence_known_failure():
     print("\n=== Testing Annual + Incidence (Expected Failure) ===")
 
     try:
-        from epydemics import DataContainer, Model
+        from dynasir import DataContainer, Model
 
         # Create annual incidence data
         dates = pd.date_range("2010", periods=15, freq="YE")

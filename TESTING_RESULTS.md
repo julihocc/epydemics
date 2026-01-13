@@ -98,7 +98,7 @@ All changes were documentation-only. No code changes to core functionality.
    - Provides 3 recommended solutions
    - Includes compatibility table and code examples
 
-2. **`src/epydemics/data/frequency_handlers.py`** (MODIFIED)
+2. **`src/dynasir/data/frequency_handlers.py`** (MODIFIED)
    - Added warning to `AnnualFrequencyHandler` docstring
    - No code logic changed
 

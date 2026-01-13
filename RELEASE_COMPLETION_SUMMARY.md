@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-All v0.11.0 release preparation tasks have been **successfully completed**. The epydemics library is production-ready for immediate PyPI publication. All 433 tests pass, code quality checks complete, documentation verified, and backward compatibility confirmed.
+All v0.11.0 release preparation tasks have been **successfully completed**. The dynasir library is production-ready for immediate PyPI publication. All 433 tests pass, code quality checks complete, documentation verified, and backward compatibility confirmed.
 
 ---
 
@@ -30,7 +30,7 @@ All v0.11.0 release preparation tasks have been **successfully completed**. The 
 
 ### Version Management ✅
 - [x] `pyproject.toml`: 0.9.1 → 0.11.0
-- [x] `src/epydemics/__init__.py`: 0.9.1 → 0.11.0 with updated docstring
+- [x] `src/dynasir/__init__.py`: 0.9.1 → 0.11.0 with updated docstring
 - [x] `tests/integration/test_backward_compatibility.py`: Version assertion updated
 - [x] Package installation verification: 0.11.0 confirmed
 
@@ -120,14 +120,14 @@ Once tag is pushed, `.github/workflows/release.yml` will automatically:
 ### Post-Release Verification
 ```bash
 # Verify PyPI upload
-# https://pypi.org/project/epydemics/
+# https://pypi.org/project/dynasir/
 
 # Test clean installation
 pip install --upgrade pip setuptools wheel
-pip install epydemics==0.11.0
+pip install dynasir==0.11.0
 
 # Verify version
-python -c "import epydemics; print(epydemics.__version__)"
+python -c "import dynasir; print(dynasir.__version__)"
 ```
 
 ---

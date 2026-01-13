@@ -1,5 +1,5 @@
 """
-Analysis module for epydemics package.
+Analysis module for DynaSIR package.
 
 This module provides visualization and evaluation functionality
 for epidemiological models and forecasts.

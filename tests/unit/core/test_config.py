@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from epydemics.core.config import Settings, get_settings
+from dynasir.core.config import Settings, get_settings
 
 
 @pytest.fixture(autouse=True)

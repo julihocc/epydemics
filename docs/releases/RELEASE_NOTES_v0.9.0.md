@@ -6,7 +6,7 @@
 
 ## Overview
 
-Version 0.9.0 completes the Measles Integration project by introducing **incidence mode** support, enabling Epydemics to model diseases with sporadic case patterns (measles, eliminated diseases) where incident cases can vary up/down rather than monotonically increase.
+Version 0.9.0 completes the Measles Integration project by introducing **incidence mode** support, enabling DynaSIR to model diseases with sporadic case patterns (measles, eliminated diseases) where incident cases can vary up/down rather than monotonically increase.
 
 ### Key Innovation
 
@@ -117,9 +117,9 @@ except ValueError as e:
 ### Files Modified (5)
 
 **Core Implementation (3 files):**
-1. `src/epydemics/data/validation.py` - Added incidence validation
-2. `src/epydemics/data/features.py` - Dual-mode feature engineering
-3. `src/epydemics/data/container.py` - Mode parameter support
+1. `src/dynasir/data/validation.py` - Added incidence validation
+2. `src/dynasir/data/features.py` - Dual-mode feature engineering
+3. `src/dynasir/data/container.py` - Mode parameter support
 
 **Test Coverage (2 files):**
 1. `tests/unit/data/test_incidence_mode.py` - 21 unit tests (NEW)
@@ -128,9 +128,9 @@ except ValueError as e:
 ### Files NOT Changed (Architectural Elegance)
 
 The following files required **no modifications** due to rate-based architecture:
-- `src/epydemics/models/forecasting/` - Forecasts rates, not compartments
-- `src/epydemics/models/simulation.py` - Uses C = I + R + D identity
-- `src/epydemics/models/sird.py` - Mode inheritance already implemented
+- `src/dynasir/models/forecasting/` - Forecasts rates, not compartments
+- `src/dynasir/models/simulation.py` - Uses C = I + R + D identity
+- `src/dynasir/models/sird.py` - Mode inheritance already implemented
 
 ### Test Results
 
@@ -192,7 +192,7 @@ Time: ~28 seconds (unchanged)
 
 ### Updated Documentation
 - `CHANGELOG.md` - Comprehensive v0.9.0 entry
-- `src/epydemics/models/sird.py` - Docstrings with incidence mode examples
+- `src/dynasir/models/sird.py` - Docstrings with incidence mode examples
 - Example notebook 07 - Incidence mode measles workflow
 
 ### Recommended Reading
@@ -234,10 +234,10 @@ Or directly update to v0.9.0 - includes all v0.8.0 features.
 
 ```bash
 # From PyPI (when published)
-pip install --upgrade epydemics==0.9.0
+pip install --upgrade dynasir==0.9.0
 
 # From GitHub
-pip install git+https://github.com/julihocc/epydemics.git@v0.9.0
+pip install git+https://github.com/julihocc/dynasir.git@v0.9.0
 ```
 
 ## What's Next (v0.10.0 Roadmap)
@@ -257,8 +257,8 @@ pip install git+https://github.com/julihocc/epydemics.git@v0.9.0
 
 ## Links
 
-- **GitHub**: https://github.com/julihocc/epydemics
-- **Issues**: https://github.com/julihocc/epydemics/issues
+- **GitHub**: https://github.com/julihocc/dynasir
+- **Issues**: https://github.com/julihocc/dynasir/issues
 - **Project Board**: https://github.com/users/julihocc/projects/5
 - **Documentation**: See repository docs/ folder
 
@@ -266,8 +266,8 @@ pip install git+https://github.com/julihocc/epydemics.git@v0.9.0
 
 - Source code (zip)
 - Source code (tar.gz)
-- `epydemics-0.9.0-py3-none-any.whl` (wheel package)
-- `epydemics-0.9.0.tar.gz` (source distribution)
+- `dynasir-0.9.0-py3-none-any.whl` (wheel package)
+- `dynasir-0.9.0.tar.gz` (source distribution)
 
 ---
 

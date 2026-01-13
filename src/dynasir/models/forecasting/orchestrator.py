@@ -44,7 +44,7 @@ class ForecastingOrchestrator:
     Examples:
         Using with VAR backend (default):
 
-        >>> from epydemics.models.forecasting.orchestrator import ForecastingOrchestrator
+        >>> from dynasir.models.forecasting.orchestrator import ForecastingOrchestrator
         >>> orchestrator = ForecastingOrchestrator(
         ...     data=data,
         ...     logit_ratios_values=logit_vals,

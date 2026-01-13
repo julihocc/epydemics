@@ -9,8 +9,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from epydemics.core.constants import LOGIT_RATIOS, RATIOS
-from epydemics.data.features import feature_engineering
+from dynasir.core.constants import LOGIT_RATIOS, RATIOS
+from dynasir.data.features import feature_engineering
 
 
 @pytest.fixture

@@ -3,9 +3,9 @@
 We use the data from the [Our World in Data](https://ourworldindata.org/coronavirus-source-data) project. The data is available in the `data_sample` folder. The data is processed using the `process_data_from_owid` function. The function returns a `DataContainer` object. The `DataContainer` object contains the data and the information about the data. The `DataContainer` object is used to create a `Model` object. The `Model` object is used to create a model, fit the model, forecast the model, run simulations, and generate results. The `Model` object is also used to evaluate the forecast. The `Model` object is used to visualize the results.
 
 ```python
-# !pip install epydemics
+# !pip install dynasir
 import matplotlib.pyplot as plt
-from epydemics import process_data_from_owid, DataContainer, Model
+from dynasir import process_data_from_owid, DataContainer, Model
 ```
 
 To make the exposition clearer, `warnings` is used to suppress warnings.
@@ -120,7 +120,7 @@ plt.show()
 The dictionary containing the meaning of every label could be retrieved from the `COMPARTMENT_LABELS` attribute from the module itself.
 
 ```python
-from epydemics import COMPARTMENT_LABELS
+from dynasir import COMPARTMENT_LABELS
 COMPARTMENT_LABELS
 ```
 

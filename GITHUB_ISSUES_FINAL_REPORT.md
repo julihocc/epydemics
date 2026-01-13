@@ -12,19 +12,19 @@
 All three v0.11.0 planning issues have been created on GitHub:
 
 1. **Issue #147**: v0.11.0 PyPI Release Preparation ✅
-   - URL: https://github.com/julihocc/epydemics/issues/147
+   - URL: https://github.com/julihocc/dynasir/issues/147
    - Labels: enhancement, documentation, release
    - Status: OPEN
    - Priority: HIGH
 
 2. **Issue #145**: Performance Benchmarking & Profiling Suite ✅
-   - URL: https://github.com/julihocc/epydemics/issues/145
+   - URL: https://github.com/julihocc/dynasir/issues/145
    - Labels: enhancement, performance
    - Status: OPEN
    - Priority: MEDIUM
 
 3. **Issue #146**: Implement Backward Compatibility Test Suite ✅
-   - URL: https://github.com/julihocc/epydemics/issues/146
+   - URL: https://github.com/julihocc/dynasir/issues/146
    - Labels: testing, high-priority
    - Status: OPEN
    - Priority: HIGH (BLOCKER for v0.11.0)
@@ -65,7 +65,7 @@ Both major epics have been updated with comments linking to new issues:
 ## 📋 New Issues Overview
 
 ### Issue #147: v0.11.0 PyPI Release Preparation
-**Link**: https://github.com/julihocc/epydemics/issues/147
+**Link**: https://github.com/julihocc/dynasir/issues/147
 
 **Key Sections**:
 - ✅ Prerequisites (v0.10.0 released)
@@ -82,7 +82,7 @@ Both major epics have been updated with comments linking to new issues:
 ---
 
 ### Issue #145: Performance Benchmarking & Profiling Suite
-**Link**: https://github.com/julihocc/epydemics/issues/145
+**Link**: https://github.com/julihocc/dynasir/issues/145
 
 **Key Sections**:
 - Problem: Need systematic performance validation across frequencies/backends
@@ -98,7 +98,7 @@ Both major epics have been updated with comments linking to new issues:
 ---
 
 ### Issue #146: Implement Backward Compatibility Test Suite
-**Link**: https://github.com/julihocc/epydemics/issues/146
+**Link**: https://github.com/julihocc/dynasir/issues/146
 
 **Key Sections**:
 - Problem: No dedicated backward compatibility tests for v0.8.0+
@@ -178,9 +178,9 @@ Performance Benchmarking (#145)
 ## 📚 Documentation Reference
 
 ### GitHub Issues
-- **#147**: https://github.com/julihocc/epydemics/issues/147 (Release prep)
-- **#145**: https://github.com/julihocc/epydemics/issues/145 (Performance)
-- **#146**: https://github.com/julihocc/epydemics/issues/146 (Backward compat)
+- **#147**: https://github.com/julihocc/dynasir/issues/147 (Release prep)
+- **#145**: https://github.com/julihocc/dynasir/issues/145 (Performance)
+- **#146**: https://github.com/julihocc/dynasir/issues/146 (Backward compat)
 
 ### Related Epics
 - **#97**: Multi-Backend Refactoring (95% complete)
@@ -253,7 +253,7 @@ Performance Benchmarking (#145)
 
 ## 🎉 Conclusion
 
-The GitHub issue organization for epydemics v0.11.0 planning is now **complete**:
+The GitHub issue organization for dynasir v0.11.0 planning is now **complete**:
 
 1. ✅ **3 critical issues created** - #147 (release), #145 (performance), #146 (testing)
 2. ✅ **Epics updated** - #108 and #97 now have v0.11.0 context

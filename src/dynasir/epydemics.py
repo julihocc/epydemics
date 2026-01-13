@@ -10,7 +10,7 @@ from scipy.stats import gmean, hmean
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from statsmodels.tsa.api import VAR
 
-from epydemics.core.constants import (
+from dynasir.core.constants import (
     CENTRAL_TENDENCY_METHODS,
     COMPARTMENT_LABELS,
     COMPARTMENTS,
@@ -19,7 +19,7 @@ from epydemics.core.constants import (
     METHOD_COLORS,
     METHOD_NAMES,
 )
-from epydemics.core.exceptions import NotDataFrameError
+from dynasir.core.exceptions import NotDataFrameError
 
 
 def prepare_for_logit_function(data):
@@ -151,7 +151,7 @@ def process_data_from_owid(
         raise Exception(f"Could not filter data for {country or iso_code}: {e}")
 
     # Determine vaccination column name from config
-    from epydemics.core.config import get_settings
+    from dynasir.core.config import get_settings
 
     settings = get_settings()
 

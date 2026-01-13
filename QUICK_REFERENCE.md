@@ -18,7 +18,7 @@
 
 ### Step 1: Create 3 New Issues (30 min)
 
-Go to https://github.com/julihocc/epydemics/issues/new
+Go to https://github.com/julihocc/dynasir/issues/new
 
 **Issue #144** - v0.11.0 PyPI Release Preparation
 - Copy from: `PROPOSED_ISSUES_v0.11.0.md` (Issue 1)
@@ -42,11 +42,11 @@ Go to https://github.com/julihocc/epydemics/issues/new
 
 ### Step 2: Create GitHub Project Board (1 hour)
 
-Go to https://github.com/julihocc/epydemics/projects
+Go to https://github.com/julihocc/dynasir/projects
 
 1. Click "New project"
 2. Select "Board" template
-3. Name: "Epydemics Development Roadmap"
+3. Name: "DynaSIR Development Roadmap"
 4. Create 6 columns:
    - Current Sprint (v0.10.0)
    - Next Release (v0.11.0)
@@ -142,11 +142,11 @@ Individually assess each of the 11 priority issues from November 2025:
 
 ## 🔗 Quick Links
 
-- **GitHub Repo**: https://github.com/julihocc/epydemics
-- **Issues**: https://github.com/julihocc/epydemics/issues
-- **Projects**: https://github.com/julihocc/epydemics/projects (create here)
-- **Epic #108**: https://github.com/julihocc/epydemics/issues/108 (updated)
-- **Epic #97**: https://github.com/julihocc/epydemics/issues/97 (updated)
+- **GitHub Repo**: https://github.com/julihocc/dynasir
+- **Issues**: https://github.com/julihocc/dynasir/issues
+- **Projects**: https://github.com/julihocc/dynasir/projects (create here)
+- **Epic #108**: https://github.com/julihocc/dynasir/issues/108 (updated)
+- **Epic #97**: https://github.com/julihocc/dynasir/issues/97 (updated)
 
 ---
 
