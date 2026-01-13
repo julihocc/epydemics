@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from epydemics.models.forecasting.base import BaseForecaster
-from epydemics.models.forecasting.registry import (
+from dynasir.models.forecasting.base import BaseForecaster
+from dynasir.models.forecasting.registry import (
     ForecasterRegistry,
     register_forecaster,
 )

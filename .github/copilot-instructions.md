@@ -1,9 +1,9 @@
-# GitHub Copilot Instructions for Epydemics
+# GitHub Copilot Instructions for DynaSIR
 
 **Version 0.10.0** - Fractional Recovery Lag Fix & Comprehensive Reporting
 
 ## Project Overview
-Epydemics is a Python epidemiological forecasting library combining discrete **SIRD/SIRDV models** with **VAR time series** on logit-transformed rates. It handles multiple disease patterns (pandemics like COVID-19, elimination cycles like measles) across **native frequencies** (daily, weekly, monthly, annual).
+DynaSIR is a Python epidemiological forecasting library combining discrete **SIRD/SIRDV models** with **VAR time series** on logit-transformed rates. It handles multiple disease patterns (pandemics like COVID-19, elimination cycles like measles) across **native frequencies** (daily, weekly, monthly, annual).
 
 **Key Innovations**:
 1. **Logit-Transformed Rates**: Time-varying infection (α), recovery (β), mortality (γ), vaccination (δ) rates stay (0,1) bounded
@@ -29,15 +29,15 @@ Frequencies: Daily, Business, Weekly, Monthly, Annual (native, no reindexing)
 ```
 
 ### Critical Module Structure
-- **`src/epydemics/core/`**: Constants (`RATIOS`, `COMPARTMENTS`), pydantic config, exceptions
-- **`src/epydemics/data/container.py`**: `DataContainer` - mode/frequency detection, validation, smoothing
-- **`src/epydemics/data/frequency_handlers.py`**: Frequency-specific handling (fractional lags, VAR defaults)
-- **`src/epydemics/data/features.py`**: Feature engineering (SIRD compartments, rate calculation, logit transform)
-- **`src/epydemics/models/sird.py`**: `Model` - main API, orchestrates forecasting/simulation
-- **`src/epydemics/models/forecasting/var.py`**: `VARForecaster` - statsmodels VAR wrapper with constant detection
-- **`src/epydemics/models/simulation.py`**: `EpidemicSimulation` - parallel/sequential (ProcessPoolExecutor)
-- **`src/epydemics/analysis/reporting.py`**: `ModelReport` - publication-ready Markdown, LaTeX, figures
-- **`src/epydemics/analysis/evaluation.py`**: Metrics (MAE, RMSE, MAPE, SMAPE) per compartment/method
+- **`src/dynasir/core/`**: Constants (`RATIOS`, `COMPARTMENTS`), pydantic config, exceptions
+- **`src/dynasir/data/container.py`**: `DataContainer` - mode/frequency detection, validation, smoothing
+- **`src/dynasir/data/frequency_handlers.py`**: Frequency-specific handling (fractional lags, VAR defaults)
+- **`src/dynasir/data/features.py`**: Feature engineering (SIRD compartments, rate calculation, logit transform)
+- **`src/dynasir/models/sird.py`**: `Model` - main API, orchestrates forecasting/simulation
+- **`src/dynasir/models/forecasting/var.py`**: `VARForecaster` - statsmodels VAR wrapper with constant detection
+- **`src/dynasir/models/simulation.py`**: `EpidemicSimulation` - parallel/sequential (ProcessPoolExecutor)
+- **`src/dynasir/analysis/reporting.py`**: `ModelReport` - publication-ready Markdown, LaTeX, figures
+- **`src/dynasir/analysis/evaluation.py`**: Metrics (MAE, RMSE, MAPE, SMAPE) per compartment/method
 
 ## Mathematical Foundation
 
@@ -64,8 +64,8 @@ A = S + I            # 4. Active (for rate calculations)
 
 ### Standard Analysis Workflow (v0.10.0)
 ```python
-from epydemics import DataContainer, Model
-from epydemics.analysis import ModelReport
+from dynasir import DataContainer, Model
+from dynasir.analysis import ModelReport
 
 # 1. Prepare data (auto-detects mode & frequency)
 data = pd.DataFrame({'I': [...], 'D': [...], 'N': [...]}, index=dates)
@@ -91,9 +91,9 @@ fig = report.plot_forecast_panel(dpi=600, save_path="forecast.png")
 - **Incidence mode**: Input `I` (incident cases), auto-derives `C = cumsum(I)` - USE FOR MEASLES/POLIO
 - **Frequency handling**: Annual stays annual, fractional lags handled automatically (14/365 for annual)
 
-### Always Use Constants from `epydemics.core.constants`
+### Always Use Constants from `dynasir.core.constants`
 ```python
-from epydemics.core.constants import (
+from dynasir.core.constants import (
     RATIOS,              # ["alpha", "beta", "gamma"]
     LOGIT_RATIOS,        # ["logit_alpha", "logit_beta", "logit_gamma"]
     COMPARTMENTS,        # ["A", "C", "S", "I", "R", "D"]
@@ -104,7 +104,7 @@ from epydemics.core.constants import (
 
 ### Configuration via Pydantic Settings
 ```python
-from epydemics.core.config import get_settings
+from dynasir.core.config import get_settings
 
 settings = get_settings()  # Cached singleton
 # Configure via environment variables or .env:
@@ -134,7 +134,7 @@ pytest -m integration       # Integration tests only
 pytest -m "not slow"        # Skip slow tests (25+ marked)
 
 # With coverage (configured in pyproject.toml)
-pytest --cov=src/epydemics --cov-report=html
+pytest --cov=src/dynasir --cov-report=html
 
 # Parallel execution (requires pytest-xdist)
 pytest -n auto
@@ -261,7 +261,7 @@ def forecast(self, steps: int) -> None:
 
 ### ModelReport API
 ```python
-from epydemics.analysis import ModelReport
+from dynasir.analysis import ModelReport
 
 # Create comprehensive report from model results
 report = ModelReport(
@@ -287,7 +287,7 @@ report.export_latex_table("table1.tex", table_type="summary")  # or "evaluation"
 
 ### Model Comparison
 ```python
-from epydemics.analysis import create_comparison_report
+from dynasir.analysis import create_comparison_report
 
 models = {
     "Model A": results_a,
@@ -305,11 +305,11 @@ fig = create_comparison_report(
 
 ## Key Files for Common Tasks
 
-**Reporting**: [src/epydemics/analysis/reporting.py](src/epydemics/analysis/reporting.py) (ModelReport class + create_comparison_report)  
-**Modify Data Processing**: [src/epydemics/data/features.py](src/epydemics/data/features.py) (feature engineering logic)  
-**Modify Modeling API**: [src/epydemics/models/sird.py](src/epydemics/models/sird.py) (main Model class)  
-**Modify Simulation Logic**: [src/epydemics/models/simulation.py](src/epydemics/models/simulation.py) (parallel/sequential execution)  
-**Add Configuration**: [src/epydemics/core/config.py](src/epydemics/core/config.py) (pydantic Settings)  
+**Reporting**: [src/dynasir/analysis/reporting.py](src/dynasir/analysis/reporting.py) (ModelReport class + create_comparison_report)  
+**Modify Data Processing**: [src/dynasir/data/features.py](src/dynasir/data/features.py) (feature engineering logic)  
+**Modify Modeling API**: [src/dynasir/models/sird.py](src/dynasir/models/sird.py) (main Model class)  
+**Modify Simulation Logic**: [src/dynasir/models/simulation.py](src/dynasir/models/simulation.py) (parallel/sequential execution)  
+**Add Configuration**: [src/dynasir/core/config.py](src/dynasir/core/config.py) (pydantic Settings)  
 **View Examples**: [examples/notebooks/07_reporting_and_publication.ipynb](examples/notebooks/07_reporting_and_publication.ipynb) (comprehensive reporting demo)  
 **Test Patterns**: [tests/conftest.py](tests/conftest.py) (fixtures: `sample_data`, `sample_container`)
 
@@ -318,8 +318,8 @@ fig = create_comparison_report(
 ### Initial Setup
 ```bash
 # Clone and setup virtual environment
-git clone https://github.com/julihocc/epydemics.git
-cd epydemics
+git clone https://github.com/julihocc/dynasir.git
+cd dynasir
 python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
@@ -338,10 +338,10 @@ This project supports parallel development using git worktrees:
 git worktree list
 
 # Create new worktree for feature branch
-git worktree add ../epydemics-feature-name feature-name
+git worktree add ../dynasir-feature-name feature-name
 
 # Remove worktree when done
-git worktree remove ../epydemics-feature-name
+git worktree remove ../dynasir-feature-name
 ```
 
 **Current workspace**: Branch `improve-report-tools` in worktree (reporting enhancements development)

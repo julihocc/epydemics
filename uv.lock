@@ -1117,8 +1117,8 @@ wheels = [
 ]
 
 [[package]]
-name = "epydemics"
-version = "0.9.1"
+name = "dynasir"
+version = "1.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "factor-analyzer" },

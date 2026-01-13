@@ -13,8 +13,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from epydemics import DataContainer, Model
-from epydemics.models.simulation import EpidemicSimulation
+from dynasir import DataContainer, Model
+from dynasir.models.simulation import EpidemicSimulation
 
 
 class TestParallelSimulations:

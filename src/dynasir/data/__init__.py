@@ -1,5 +1,5 @@
 """
-Data processing and container modules for epydemics.
+Data processing and container modules for DynaSIR.
 
 This module provides data handling functionality including:
 - DataContainer: Main data preprocessing and feature engineering class

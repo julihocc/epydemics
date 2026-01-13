@@ -39,7 +39,7 @@ LinAlgError: 1-th leading minor of the array is not positive definite
 ```python
 import pandas as pd
 import numpy as np
-from epydemics import DataContainer, Model
+from dynasir import DataContainer, Model
 
 # Annual measles incident cases (Mexico 2010-2024)
 dates = pd.date_range("2010", periods=15, freq="YE")
@@ -65,17 +65,17 @@ print(model.results.C)  # Annual forecasts
 
 ### Core Implementation
 
-**`src/epydemics/data/frequency_handlers.py`**
+**`src/dynasir/data/frequency_handlers.py`**
 - Changed `get_recovery_lag()` return type: `int` → `float`
 - `AnnualFrequencyHandler.get_recovery_lag()`: returns `14/365` (0.0384)
 - `MonthlyFrequencyHandler.get_recovery_lag()`: returns `14/30` (0.47)
 
-**`src/epydemics/data/features.py`**
+**`src/dynasir/data/features.py`**
 - Implemented fractional lag interpolation
 - Formula: `(1-weight) * shift(floor) + weight * shift(ceil)`
 - Applied to both cumulative and incidence modes
 
-**`src/epydemics/models/forecasting/var.py`**
+**`src/dynasir/models/forecasting/var.py`**
 - Added automatic constant column detection
 - Uses `trend='n'` when constants present
 - Logs warnings for better debugging
@@ -150,29 +150,29 @@ This release addresses a critical limitation for modeling eliminated diseases wi
 ## 📦 Installation
 
 ```bash
-pip install epydemics==0.9.1
+pip install dynasir==0.9.1
 ```
 
 Or upgrade from previous version:
 
 ```bash
-pip install --upgrade epydemics
+pip install --upgrade dynasir
 ```
 
 ## 🔗 Links
 
-- **Full Changelog**: [v0.8.0...v0.9.1](https://github.com/julihocc/epydemics/compare/v0.8.0...v0.9.1)
-- **Pull Request**: [#138](https://github.com/julihocc/epydemics/pull/138)
+- **Full Changelog**: [v0.8.0...v0.9.1](https://github.com/julihocc/dynasir/compare/v0.8.0...v0.9.1)
+- **Pull Request**: [#138](https://github.com/julihocc/dynasir/pull/138)
 - **Documentation**: [USER_GUIDE.md](docs/USER_GUIDE.md)
 - **Examples**: [examples/notebooks/](examples/notebooks/)
 
 ## 🎉 What's Next
 
-See our [roadmap](https://github.com/julihocc/epydemics/issues) for upcoming features:
+See our [roadmap](https://github.com/julihocc/dynasir/issues) for upcoming features:
 - Real-world measles data validation (#142)
 - Outbreak detection module (#124-126)
 - Additional frequency support
 
 ---
 
-**Questions or Issues?** Please report at https://github.com/julihocc/epydemics/issues
+**Questions or Issues?** Please report at https://github.com/julihocc/dynasir/issues

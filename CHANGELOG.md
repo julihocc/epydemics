@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the epydemics project will be documented in this file.
+All notable changes to the dynasir project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **PyPI Publication Release** - Production-ready consolidation of v0.10.0 features with comprehensive testing, documentation, and packaging for official PyPI distribution.
 
-This release represents the stable, production-ready version of epydemics with all post-v0.10.0 refinements, making the library officially available via `pip install epydemics`.
+This release represents the stable, production-ready version of dynasir with all post-v0.10.0 refinements, making the library officially available via `pip install dynasir`.
 
 ### Added
 
@@ -93,8 +93,8 @@ No migration needed - v0.11.0 is a drop-in replacement:
 
 ```python
 # All v0.10.0 code works identically in v0.11.0
-from epydemics import DataContainer, Model
-from epydemics.analysis import ModelReport
+from dynasir import DataContainer, Model
+from dynasir.analysis import ModelReport
 
 # Existing workflows unchanged
 container = DataContainer(data, mode='incidence', frequency='YE')
@@ -102,20 +102,20 @@ model = Model(container)
 # ... (same API)
 
 # New: Official PyPI installation
-# pip install epydemics==0.11.0
+# pip install dynasir==0.11.0
 ```
 
 ### Installation
 
 **Official PyPI Release**:
 ```bash
-pip install epydemics==0.11.0
+pip install dynasir==0.11.0
 ```
 
 **From Source** (development):
 ```bash
-git clone https://github.com/julihocc/epydemics.git
-cd epydemics
+git clone https://github.com/julihocc/dynasir.git
+cd dynasir
 pip install -e ".[dev,test]"
 ```
 
@@ -139,8 +139,8 @@ Same as v0.10.0:
 
 ### References
 
-- **Release**: https://github.com/julihocc/epydemics/releases/tag/v0.11.0
-- **PyPI**: https://pypi.org/project/epydemics/0.11.0/
+- **Release**: https://github.com/julihocc/dynasir/releases/tag/v0.11.0
+- **PyPI**: https://pypi.org/project/dynasir/0.11.0/
 - **Documentation**: README.md, CLAUDE.md, USER_GUIDE.md
 - **Examples**: `examples/notebooks/` (7 comprehensive notebooks)
 - **Previous Release**: v0.10.0 (2025-12-24) - Fractional recovery lag fix
@@ -172,9 +172,9 @@ This release resolves the `LinAlgError` when using annual frequency with inciden
 - After: Beta varies (0.038 to 1.0) → VAR fits successfully → Forecasts work
 
 **Files Changed:**
-- `src/epydemics/data/frequency_handlers.py`: Changed `get_recovery_lag()` return type to `float`
-- `src/epydemics/data/features.py`: Implemented fractional lag interpolation
-- `src/epydemics/models/forecasting/var.py`: Added constant column detection
+- `src/dynasir/data/frequency_handlers.py`: Changed `get_recovery_lag()` return type to `float`
+- `src/dynasir/data/features.py`: Implemented fractional lag interpolation
+- `src/dynasir/models/forecasting/var.py`: Added constant column detection
 
 **Testing:**
 - Added 10 comprehensive integration tests in `tests/integration/test_annual_incidence_native.py`
@@ -217,7 +217,7 @@ container = DataContainer(annual_data, mode="incidence", frequency="YE")
 **References:**
 - PR #138: Implementation
 - Issue #139: Release tracking
-- Release: https://github.com/julihocc/epydemics/releases/tag/v0.10.0
+- Release: https://github.com/julihocc/dynasir/releases/tag/v0.10.0
 
 ## [0.9.1] - 2025-12-13
 
@@ -270,7 +270,7 @@ The system now processes epidemiological data in its native frequency without ar
 - Maps deprecated aliases automatically (M→ME, Y→YE)
 
 **Phase 6: Frequency-Aware Seasonal Pattern Detection**
-- New `SeasonalPatternDetector` class in `src/epydemics/analysis/seasonality.py`
+- New `SeasonalPatternDetector` class in `src/dynasir/analysis/seasonality.py`
 - Adaptive threshold for periodicity detection (0.3 for frequent, 0.2 for long periods)
 - Frequency-specific candidate periods:
   - Daily: 7, 14, 30, 91, 365 days (weekly, biweekly, monthly, quarterly, annual)
@@ -431,7 +431,7 @@ container = DataContainer(data, mode='incidence')  # NEW
 ### Added - Phase 1: Multi-Frequency Support & Annual Data Workarounds
 
 **Core Features:**
-- **Frequency Detection System** (`src/epydemics/data/preprocessing.py`)
+- **Frequency Detection System** (`src/dynasir/data/preprocessing.py`)
   - `detect_frequency()`: Automatic detection of D/W/M/Y frequencies from date index
   - Robust handling of different date ranges (minimum 2 points)
   - Tolerance-based frequency classification
@@ -457,7 +457,7 @@ container = DataContainer(data, mode='incidence')  # NEW
   - Eliminates FutureWarnings from pandas 2.2+
   - Applied throughout codebase (tests, fixtures, examples)
 
-**New Constants** (`src/epydemics/core/constants.py`):
+**New Constants** (`src/dynasir/core/constants.py`):
 - `SUPPORTED_FREQUENCIES = ["D", "W", "M", "Y", "A"]`
 - `DEFAULT_FREQUENCY = "D"`
 - `FREQUENCY_ALIASES` - user-friendly names mapping
@@ -474,7 +474,7 @@ container = DataContainer(data, mode='incidence')  # NEW
 
 **Documentation:**
 - **NEW: `docs/USER_GUIDE.md`** (407 lines)
-  - When to use/not use epydemics
+  - When to use/not use dynasir
   - Data preparation guide (cumulative vs incidence)
   - Multi-frequency support documentation
   - Annual surveillance data workaround (Phase 1)
@@ -692,6 +692,6 @@ model.forecast(steps=10)  # 10 years natively - no reindexing!
 - Enhanced type safety and improved interfaces
 - Comprehensive test coverage for analysis functionality
 
-[0.7.0]: https://github.com/julihocc/epydemics/releases/tag/v0.7.0
-[0.6.1-dev]: https://github.com/julihocc/epydemics/compare/v0.6.0...HEAD
-[0.6.0]: https://github.com/julihocc/epydemics/releases/tag/v0.6.0
+[0.7.0]: https://github.com/julihocc/dynasir/releases/tag/v0.7.0
+[0.6.1-dev]: https://github.com/julihocc/dynasir/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/julihocc/dynasir/releases/tag/v0.6.0

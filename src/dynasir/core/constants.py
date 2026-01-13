@@ -1,5 +1,5 @@
 """
-Core constants for the epydemics library.
+Core constants for the DynaSIR library.
 """
 
 RATIOS = ["alpha", "beta", "gamma", "delta"]

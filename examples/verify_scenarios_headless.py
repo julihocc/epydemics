@@ -5,8 +5,8 @@ Mimics the logic in examples/scenario_analysis_measles.ipynb.
 import pandas as pd
 import numpy as np
 import logging
-from epydemics import DataContainer, Model
-from epydemics.analysis.visualization import compare_scenarios
+from dynasir import DataContainer, Model
+from dynasir.analysis.visualization import compare_scenarios
 import matplotlib.pyplot as plt
 
 # Disable showing plots

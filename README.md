@@ -1,10 +1,12 @@
-# Epydemics: Forecasting COVID-19 using time series and machine learning
+# DynaSIR: Forecasting COVID-19 using time series and machine learning
+
+Note: DynaSIR is the evolution of the epydemics package, featuring enhanced algorithms for time-varying parameter estimation.
 
 **Version 0.11.1** - Publication-Ready Reporting Tools
 
-`epydemics` is a Python library for epidemiological modeling and forecasting. It provides tools for creating, fitting, and evaluating discrete SIRD/SIRDV models with time-dependent parameters. The library is designed to be flexible and extensible, allowing users to easily incorporate their own data and models.
+`dynasir` is a Python library for epidemiological modeling and forecasting. It provides tools for creating, fitting, and evaluating discrete SIRD/SIRDV models with time-dependent parameters. The library is designed to be flexible and extensible, allowing users to easily incorporate their own data and models.
 
-**📖 New Users?** Start with the **[User Guide](docs/USER_GUIDE.md)** to understand when and how to use epydemics.
+**📖 New Users?** Start with the **[User Guide](docs/USER_GUIDE.md)** to understand when and how to use dynasir.
 
 ✨ **v0.11.1 Features**: Publication-ready reporting tools with ModelReport class for Markdown, LaTeX, and high-DPI figure export. See [Reporting Guide](examples/notebooks/07_reporting_and_publication.ipynb) for complete workflow examples.
 
@@ -53,8 +55,8 @@ The SIRDV model extends the classical SIRD model by incorporating vaccination:
 Generate publication-ready reports with one API:
 
 ```python
-from epydemics import DataContainer, Model
-from epydemics.analysis import ModelReport
+from dynasir import DataContainer, Model
+from dynasir.analysis import ModelReport
 
 # Fit model (see Tutorial for full workflow)
 container = DataContainer(data, mode='incidence')
@@ -76,28 +78,28 @@ fig = report.plot_forecast_panel(dpi=600, save_path="forecast.png")
 
 ## Getting Started
 
-To get started with `epydemics`, we recommend following the tutorial in [TUTORIAL.md](TUTORIAL.md).
+To get started with `dynasir`, we recommend following the tutorial in [TUTORIAL.md](TUTORIAL.md).
 
 ## Installation
 
-You can install `epydemics` from PyPI:
+You can install `dynasir` from PyPI:
 
 ```bash
-pip install epydemics
+pip install dynasir
 ```
 
 To install the latest development version, you can clone this repository and install it in editable mode:
 
 ```bash
-git clone https://github.com/julihocc/epydemics.git
-cd epydemics
+git clone https://github.com/julihocc/dynasir.git
+cd dynasir
 pip install -e .
 ```
 
 ## Documentation
 
 **User Documentation**:
--   **[User Guide](docs/USER_GUIDE.md)**: Complete guide on when to use epydemics, data preparation, and frequency handling
+-   **[User Guide](docs/USER_GUIDE.md)**: Complete guide on when to use dynasir, data preparation, and frequency handling
 -   **[Tutorial](TUTORIAL.md)**: Step-by-step guide for COVID-19 forecasting
 -   **[CHANGELOG.md](CHANGELOG.md)**: Version history and detailed changes
 

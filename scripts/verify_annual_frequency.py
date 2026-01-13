@@ -6,8 +6,8 @@ Tests that annual data processing works correctly without reindexing.
 
 import pandas as pd
 import numpy as np
-from epydemics import DataContainer, Model
-from epydemics.data.frequency_handlers import FrequencyHandlerRegistry
+from dynasir import DataContainer, Model
+from dynasir.data.frequency_handlers import FrequencyHandlerRegistry
 
 
 def create_annual_measles_data():

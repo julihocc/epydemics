@@ -1,4 +1,4 @@
-# Contributing to Epydemics
+# Contributing to DynaSIR
 
 We welcome contributions from the community! Whether you're a developer, a data scientist, or just someone with a good idea, we encourage you to get involved.
 
@@ -8,7 +8,7 @@ We welcome contributions from the community! Whether you're a developer, a data 
 2.  Clone your fork locally:
 
     ```bash
-    git clone https://github.com/your-username/epydemics.git
+    git clone https://github.com/your-username/dynasir.git
     ```
 
 3.  Create a new branch for your changes:

@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from epydemics.analysis.visualization import visualize_results
+from dynasir.analysis.visualization import visualize_results
 
 
 @pytest.fixture
@@ -63,7 +63,7 @@ def sample_testing_data():
 
 def test_visualize_results_imports():
     """Test that visualization functions can be imported."""
-    from epydemics.analysis.visualization import visualize_results
+    from dynasir.analysis.visualization import visualize_results
 
     assert callable(visualize_results)
 
@@ -204,7 +204,7 @@ def test_visualize_results_alpha_parameter(mock_plot, mock_show, sample_results)
 def test_visualize_results_constants_usage():
     """Test that visualization uses the correct constants."""
     # This test ensures that constants are properly imported and used
-    from epydemics.core.constants import (
+    from dynasir.core.constants import (
         CENTRAL_TENDENCY_METHODS,
         COMPARTMENT_LABELS,
         METHOD_COLORS,
@@ -267,7 +267,7 @@ def test_visualize_results_testing_data_missing_column(sample_results):
 def test_backward_compatibility_imports():
     """Test that visualization functions maintain backward compatibility."""
     # Should be able to import from analysis module
-    from epydemics.analysis import visualize_results
+    from dynasir.analysis import visualize_results
 
     assert callable(visualize_results)
 

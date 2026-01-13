@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from epydemics import DataContainer, Model
+from dynasir import DataContainer, Model
 
 
 class TestAnnualDataWorkflow:
@@ -229,7 +229,7 @@ class TestBackwardCompatibilityV080:
 
     def test_reindex_data_default_freq(self, sample_processed_data):
         """Test that reindex_data defaults to daily frequency."""
-        from epydemics.data.preprocessing import reindex_data
+        from dynasir.data.preprocessing import reindex_data
 
         # Call without freq parameter (v0.7.0 style)
         reindexed = reindex_data(sample_processed_data)
@@ -240,7 +240,7 @@ class TestBackwardCompatibilityV080:
 
     def test_new_constants_available(self):
         """Test that new v0.8.0 constants are available."""
-        from epydemics.core.constants import (
+        from dynasir.core.constants import (
             DEFAULT_FREQUENCY,
             FREQUENCY_ALIASES,
             RECOVERY_LAG_BY_FREQUENCY,
@@ -255,7 +255,7 @@ class TestBackwardCompatibilityV080:
 
     def test_frequency_detection_function_exists(self):
         """Test that frequency detection function is available."""
-        from epydemics.data.preprocessing import detect_frequency
+        from dynasir.data.preprocessing import detect_frequency
 
         # Should be callable
         assert callable(detect_frequency)

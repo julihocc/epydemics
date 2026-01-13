@@ -51,7 +51,7 @@ class LSTMForecaster(BaseForecaster):
     Examples:
         This backend is registered but will raise NotImplementedError:
 
-        >>> from epydemics import Model, DataContainer
+        >>> from dynasir import Model, DataContainer
         >>> model = Model(container, forecaster="lstm")  # Will fail
         Traceback (most recent call last):
         NotImplementedError: LSTM backend is not yet implemented...

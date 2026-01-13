@@ -9,8 +9,8 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
-from epydemics import DataContainer, Model
-from epydemics.analysis import ModelReport, create_comparison_report
+from dynasir import DataContainer, Model
+from dynasir.analysis import ModelReport, create_comparison_report
 
 
 def create_sample_measles_data():

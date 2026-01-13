@@ -1,4 +1,4 @@
-"""Core module for epydemics package."""
+"""Core module for DynaSIR package."""
 
 from . import config
 

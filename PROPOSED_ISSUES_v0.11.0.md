@@ -17,7 +17,7 @@ These 3 issues should be created to support the v0.11.0 release cycle and ongoin
 
 ### Overview
 
-Prepare epydemics library for PyPI publication as v0.11.0, completing all post-v0.10.0 documentation, testing, and packaging requirements.
+Prepare dynasir library for PyPI publication as v0.11.0, completing all post-v0.10.0 documentation, testing, and packaging requirements.
 
 ### Prerequisites
 
@@ -52,8 +52,8 @@ Prepare epydemics library for PyPI publication as v0.11.0, completing all post-v
 - [ ] Tag release commit: `git tag v0.11.0`
 - [ ] Push tag to trigger release workflow: `git push origin v0.11.0`
 - [ ] Monitor GitHub Actions for successful build
-- [ ] Verify PyPI upload completes (check https://pypi.org/project/epydemics/)
-- [ ] Test installation: `pip install epydemics==0.11.0` in clean virtualenv
+- [ ] Verify PyPI upload completes (check https://pypi.org/project/dynasir/)
+- [ ] Test installation: `pip install dynasir==0.11.0` in clean virtualenv
 
 #### 5. Post-Release
 - [ ] Create GitHub Release with release notes
@@ -63,7 +63,7 @@ Prepare epydemics library for PyPI publication as v0.11.0, completing all post-v
 
 ### Success Criteria
 
-- [ ] Package successfully installs via `pip install epydemics`
+- [ ] Package successfully installs via `pip install dynasir`
 - [ ] All 7 example notebooks execute without errors
 - [ ] Test coverage >85%
 - [ ] No breaking changes from v0.10.0
@@ -84,7 +84,7 @@ Prepare epydemics library for PyPI publication as v0.11.0, completing all post-v
 
 - PyPI Publication Guide: `docs/releases/PYPI_PUBLICATION_GUIDE.md`
 - Release Workflow: `.github/workflows/release.yml`
-- Version Management: `src/epydemics/__init__.py`
+- Version Management: `src/dynasir/__init__.py`
 
 ---
 
@@ -257,7 +257,7 @@ Define acceptable numerical differences:
 import pytest
 import pickle
 import numpy as np
-from epydemics import Model, DataContainer
+from dynasir import Model, DataContainer
 
 class TestBackwardCompatibility:
     """Ensure v0.8.0+ maintains v0.7.0 behavior."""
@@ -326,7 +326,7 @@ class TestBackwardCompatibility:
 
 Since the GitHub issue write tool is currently disabled, please create these 3 issues manually:
 
-1. Go to https://github.com/julihocc/epydemics/issues/new
+1. Go to https://github.com/julihocc/dynasir/issues/new
 2. Copy the title and body content from each issue above
 3. Apply the suggested labels
 4. Set the appropriate milestone (v0.11.0 for issues 1 and 3)

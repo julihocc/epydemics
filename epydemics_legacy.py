@@ -11,9 +11,9 @@ For backward compatibility, the main functionality remains available through:
 - Model: SIRD model with VAR forecasting
 
 New modular imports:
-- from epydemics.data import DataContainer
-- from epydemics.models import Model
-- from epydemics.core.constants import *
+- from dynasir.data import DataContainer
+- from dynasir.models import Model
+- from dynasir.core.constants import *
 """
 
 import logging

@@ -45,7 +45,7 @@ For measles elimination data, the infection rate alpha can be constant (always 1
 **Changed frequency handlers to return float**:
 
 ```python
-# NEW: src/epydemics/data/frequency_handlers.py
+# NEW: src/dynasir/data/frequency_handlers.py
 @abstractmethod
 def get_recovery_lag(self) -> float:  # Changed from int
     """
@@ -69,7 +69,7 @@ class MonthlyFrequencyHandler(FrequencyHandler):
 **Updated compartment calculations to handle fractional shifts**:
 
 ```python
-# NEW: src/epydemics/data/features.py
+# NEW: src/dynasir/data/features.py
 def _calculate_compartments_incidence(
     data: pd.DataFrame, has_vaccination: bool, settings, recovery_lag: float = None
 ) -> pd.DataFrame:
@@ -103,7 +103,7 @@ def _calculate_compartments_incidence(
 **Added automatic handling of constant rates**:
 
 ```python
-# NEW: src/epydemics/models/forecasting/var.py
+# NEW: src/dynasir/models/forecasting/var.py
 def create_model(self) -> None:
     import numpy as np
 
@@ -191,18 +191,18 @@ Forecast example (5 years):
 
 ### Core Changes
 
-1. **`src/epydemics/data/frequency_handlers.py`**
+1. **`src/dynasir/data/frequency_handlers.py`**
    - Changed `get_recovery_lag()` return type: `int` → `float`
    - Updated `AnnualFrequencyHandler.get_recovery_lag()`: `return 14/365`
    - Updated `MonthlyFrequencyHandler.get_recovery_lag()`: `return 14/30`
 
-2. **`src/epydemics/data/features.py`**
+2. **`src/dynasir/data/features.py`**
    - Updated `_calculate_compartments_incidence()` signature: `recovery_lag: int` → `float`
    - Added fractional lag interpolation logic
    - Updated `_calculate_compartments_cumulative()` signature: `recovery_lag: int` → `float`
    - Added fractional lag interpolation logic
 
-3. **`src/epydemics/models/forecasting/var.py`**
+3. **`src/dynasir/models/forecasting/var.py`**
    - Added `import logging`
    - Updated `create_model()`: Added constant column detection
    - Updated `fit()`: Added automatic `trend='n'` for constant columns
@@ -247,7 +247,7 @@ Forecast example (5 years):
 
 ```python
 import pandas as pd
-from epydemics import DataContainer, Model
+from dynasir import DataContainer, Model
 
 # Annual incident measles cases
 dates = pd.date_range('2010', periods=15, freq='YE')

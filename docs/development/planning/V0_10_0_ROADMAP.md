@@ -16,8 +16,8 @@
 - ✅ Complete documentation reorganization
 - ✅ 100% backward compatible
 
-**PyPI**: https://pypi.org/project/epydemics/0.9.0/
-**GitHub Release**: https://github.com/julihocc/epydemics/releases/tag/v0.9.0
+**PyPI**: https://pypi.org/project/dynasir/0.9.0/
+**GitHub Release**: https://github.com/julihocc/dynasir/releases/tag/v0.9.0
 
 ### What Was Added AFTER v0.9.0 Release (PR #123)
 - ✅ **Importation Modeling** (importation_rate parameter)
@@ -91,7 +91,7 @@
 
 ### Pre-Release Tasks
 - [ ] Update version in pyproject.toml (0.9.0 → 0.9.1)
-- [ ] Update version in src/epydemics/__init__.py
+- [ ] Update version in src/dynasir/__init__.py
 - [ ] Update test expectations for version
 - [ ] Run full test suite (pytest)
 - [ ] Verify all notebooks execute (#133-135)
@@ -103,7 +103,7 @@
 - [ ] Tag release: `git tag -a v0.9.1 -m "..."`
 - [ ] Push tags: `git push origin v0.9.1`
 - [ ] Build package: `python -m build`
-- [ ] Upload to PyPI: `twine upload dist/epydemics-0.9.1*`
+- [ ] Upload to PyPI: `twine upload dist/dynasir-0.9.1*`
 - [ ] Create GitHub release with notes
 
 ### Post-Release Tasks

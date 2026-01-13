@@ -30,7 +30,7 @@ The library currently supports only VAR (Vector Autoregression) for forecasting 
 - Users with only annual data are blocked from using the library
 - Current workaround (use monthly data) is not always feasible
 
-**Documentation**: See [known-limitations.md](https://github.com/julihocc/epydemics/blob/main/docs/user-guide/known-limitations.md)
+**Documentation**: See [known-limitations.md](https://github.com/julihocc/dynasir/blob/main/docs/user-guide/known-limitations.md)
 
 ### Proposed Solution
 
@@ -52,7 +52,7 @@ Implement **ARIMA (AutoRegressive Integrated Moving Average)** backend as an alt
 Create abstract `ForecastingBackend` interface:
 
 ```python
-# src/epydemics/models/forecasting/backend.py
+# src/dynasir/models/forecasting/backend.py
 from abc import ABC, abstractmethod
 
 class ForecastingBackend(ABC):
@@ -77,7 +77,7 @@ class ForecastingBackend(ABC):
 #### Phase 2: ARIMA Backend Implementation
 
 ```python
-# src/epydemics/models/forecasting/arima_backend.py
+# src/dynasir/models/forecasting/arima_backend.py
 from statsmodels.tsa.arima.model import ARIMA
 from .backend import ForecastingBackend
 
@@ -109,7 +109,7 @@ class ARIMAForecastingBackend(ForecastingBackend):
         """
         forecast = self.fitted.get_forecast(steps=steps)
         forecast_df = forecast.summary_frame(alpha=alpha)
-        # Map to epydemics format (lower, point, upper)
+        # Map to dynasir format (lower, point, upper)
         return forecast_df
 
     def supports_mode(self, mode: str) -> bool:
@@ -122,7 +122,7 @@ class ARIMAForecastingBackend(ForecastingBackend):
 Update `Model.fit_model()` to support backend selection:
 
 ```python
-# src/epydemics/models/sird.py
+# src/dynasir/models/sird.py
 def fit_model(self, backend='var', **kwargs):
     """
     Fit forecasting model.
@@ -213,15 +213,15 @@ def test_arima_backend_annual_incidence():
 **Phase 2**: Prophet backend for seasonal patterns
 **Phase 3**: Auto-selection (detect constant rates → use ARIMA)
 
-See [OPTION_D_IMPLEMENTATION.md](https://github.com/julihocc/epydemics/blob/main/docs/development/OPTION_D_IMPLEMENTATION.md) for complete roadmap.
+See [OPTION_D_IMPLEMENTATION.md](https://github.com/julihocc/dynasir/blob/main/docs/development/OPTION_D_IMPLEMENTATION.md) for complete roadmap.
 
 ### Related Issues & Documentation
 
 - **Issue #127**: AnnualFrequencyHandler Verification
 - **Issue #128**: Complete Measles Workflow (identified limitation)
-- **Task 2**: [Verification Results](https://github.com/julihocc/epydemics/blob/main/docs/development/VERIFICATION_RESULTS.md#task-2-complete-measles-workflow-128)
-- **Option D Plan**: [OPTION_D_IMPLEMENTATION.md](https://github.com/julihocc/epydemics/blob/main/docs/development/OPTION_D_IMPLEMENTATION.md)
-- **Limitation Docs**: [known-limitations.md](https://github.com/julihocc/epydemics/blob/main/docs/user-guide/known-limitations.md)
+- **Task 2**: [Verification Results](https://github.com/julihocc/dynasir/blob/main/docs/development/VERIFICATION_RESULTS.md#task-2-complete-measles-workflow-128)
+- **Option D Plan**: [OPTION_D_IMPLEMENTATION.md](https://github.com/julihocc/dynasir/blob/main/docs/development/OPTION_D_IMPLEMENTATION.md)
+- **Limitation Docs**: [known-limitations.md](https://github.com/julihocc/dynasir/blob/main/docs/user-guide/known-limitations.md)
 - **Branch**: `feature/document-annual-incidence-limitation`
 
 ### Implementation Notes

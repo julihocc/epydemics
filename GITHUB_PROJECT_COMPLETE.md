@@ -1,7 +1,7 @@
 # GitHub Project Setup - Complete Summary
 
 **Date**: 2024-01-XX  
-**Project**: [Epydemics Development Roadmap](https://github.com/users/julihocc/projects/15)  
+**Project**: [DynaSIR Development Roadmap](https://github.com/users/julihocc/projects/15)  
 **Project ID**: PVT_kwHOAE_T3s4BLYfU  
 **Status**: ✅ COMPLETE - All issues organized, custom fields added
 
@@ -9,10 +9,10 @@
 
 ## 🎯 Project Overview
 
-Successfully created GitHub Projects V2 board to organize Epydemics development work across v0.10.0 → v1.0.0 roadmap.
+Successfully created GitHub Projects V2 board to organize DynaSIR development work across v0.10.0 → v1.0.0 roadmap.
 
 ### Key Achievements
-- ✅ Created Project #15: [Epydemics Development Roadmap](https://github.com/users/julihocc/projects/15)
+- ✅ Created Project #15: [DynaSIR Development Roadmap](https://github.com/users/julihocc/projects/15)
 - ✅ Added 12 issues across v0.11.0 and backlog
 - ✅ Created 3 custom fields (Priority, Component, Target Version)
 - ✅ Resolved authentication scope issues (gh auth login --scopes project)
@@ -179,7 +179,7 @@ gh auth login --scopes project
 # Result: ✓ Logged in as julihocc
 
 # 3. Create project
-gh project create --owner @me --title "Epydemics Development Roadmap"
+gh project create --owner @me --title "DynaSIR Development Roadmap"
 # Result: https://github.com/users/julihocc/projects/15
 ```
 
@@ -194,12 +194,12 @@ gh project create --owner @me --title "Epydemics Development Roadmap"
 ## 🔗 Quick Links
 
 - **Project Board**: https://github.com/users/julihocc/projects/15
-- **Repository**: https://github.com/julihocc/epydemics
-- **Epic #108** (Phase 3 Advanced): https://github.com/julihocc/epydemics/issues/108
-- **Epic #97** (Multi-Backend): https://github.com/julihocc/epydemics/issues/97
-- **Issue #147** (v0.11.0 Release): https://github.com/julihocc/epydemics/issues/147
-- **Issue #146** (Compat Tests - BLOCKER): https://github.com/julihocc/epydemics/issues/146
-- **Issue #145** (Benchmarks): https://github.com/julihocc/epydemics/issues/145
+- **Repository**: https://github.com/julihocc/dynasir
+- **Epic #108** (Phase 3 Advanced): https://github.com/julihocc/dynasir/issues/108
+- **Epic #97** (Multi-Backend): https://github.com/julihocc/dynasir/issues/97
+- **Issue #147** (v0.11.0 Release): https://github.com/julihocc/dynasir/issues/147
+- **Issue #146** (Compat Tests - BLOCKER): https://github.com/julihocc/dynasir/issues/146
+- **Issue #145** (Benchmarks): https://github.com/julihocc/dynasir/issues/145
 
 ---
 

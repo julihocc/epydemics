@@ -1,11 +1,11 @@
-# Epydemics User Guide
+# DynaSIR User Guide
 
 **Version**: 0.10.0
 **Last Updated**: December 2025
 
 ## Table of Contents
 
-1. [When to Use Epydemics](#when-to-use-epydemics)
+1. [When to Use DynaSIR](#when-to-use-dynasir)
 2. [When NOT to Use](#when-not-to-use)
 3. [Data Preparation Guide](#data-preparation-guide)
 4. [Working with Different Data Frequencies](#working-with-different-data-frequencies)
@@ -17,9 +17,9 @@
 
 ---
 
-## When to Use Epydemics
+## When to Use DynaSIR
 
-Epydemics is designed for **epidemiological forecasting** using discrete compartmental models (SIRD/SIRDV) combined with VAR time series analysis. It works best for:
+DynaSIR is designed for **epidemiological forecasting** using discrete compartmental models (SIRD/SIRDV) combined with VAR time series analysis. It works best for:
 
 ### Ideal Use Cases
 
@@ -29,7 +29,7 @@ Epydemics is designed for **epidemiological forecasting** using discrete compart
 - **Frequency**: Daily or weekly observations
 - **Example**: OWID COVID-19 data
 ```python
-from epydemics import process_data_from_owid, DataContainer, Model
+from dynasir import process_data_from_owid, DataContainer, Model
 
 # Load daily COVID-19 data
 data = process_data_from_owid(iso_code="USA")
@@ -71,7 +71,7 @@ container = DataContainer(data, window=7)
 
 ## When NOT to Use
 
-Epydemics may not be suitable for:
+DynaSIR may not be suitable for:
 
 ### ❌ Very Sparse Data
 - **Limitation**: < 20 time points
@@ -100,7 +100,7 @@ Epydemics may not be suitable for:
 
 ### Required Data Format
 
-Epydemics expects a pandas DataFrame with:
+DynaSIR expects a pandas DataFrame with:
 
 ```python
 import pandas as pd
@@ -223,7 +223,7 @@ The critical fix enables annual frequency with incidence mode:
 ```python
 import pandas as pd
 import numpy as np
-from epydemics import DataContainer, Model
+from dynasir import DataContainer, Model
 
 # 1. Load annual measles data (incidence mode)
 annual_data = pd.DataFrame({
@@ -403,7 +403,7 @@ model.run_simulations(n_jobs=1)
 
 ```python
 import pandas as pd
-from epydemics import DataContainer, Model
+from dynasir import DataContainer, Model
 
 # Example: Mexico measles (annual incident cases)
 dates = pd.date_range('2010', periods=15, freq='YE')
@@ -490,7 +490,7 @@ Future enhancements may include:
 - **Developer Documentation**: See `CLAUDE.md` for internal architecture
 - **API Reference**: See `docs/API_AUDIT.md`
 - **Examples**: Check `examples/notebooks/` for complete workflows
-- **Issues**: Report problems at https://github.com/julihocc/epydemics/issues
+- **Issues**: Report problems at https://github.com/julihocc/dynasir/issues
 
 ---
 

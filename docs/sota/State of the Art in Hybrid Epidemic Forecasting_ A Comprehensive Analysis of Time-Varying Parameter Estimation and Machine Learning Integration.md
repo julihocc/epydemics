@@ -8,7 +8,7 @@ In the contemporary research landscape of 2025, the assumption of constant coeff
 
 The draft manuscript under review, "Adaptive Epidemic Forecasting Using Time Series Analysis and Machine Learning" 2, positions itself at the intersection of these two challenges. By proposing a methodology that algebraically inverts the SIRD difference equations to extract time-dependent rates and subsequently employs machine learning for forecasting, the work aligns with the broader "Hybrid Modeling" trend. However, to successfully navigate the peer-review process in 2025, it is imperative to situate this specific architecture within the highly competitive hierarchy of existing methods. The current state of the art (SOTA) is defined by a tension between computational efficiency and statistical rigor, with methods ranging from the lightweight algebraic inversion proposed in the draft to the computationally intensive, physics-informed deep learning architectures that currently dominate the research frontier.
 
-This report provides an exhaustive, expert-level analysis of this landscape. It dissects the mathematical foundations of time-varying parameter estimation, evaluates the emerging dominance of Physics-Informed Neural Networks (PINNs) and Large Language Model (LLM) integration, and scrutinizes the software ecosystem to identify critical barriers to the adoption of the proposed epydemics module. The objective is to provide a rigorous theoretical and practical roadmap to elevate the draft manuscript to the standards of top-tier epidemiological and computational intelligence journals.
+This report provides an exhaustive, expert-level analysis of this landscape. It dissects the mathematical foundations of time-varying parameter estimation, evaluates the emerging dominance of Physics-Informed Neural Networks (PINNs) and Large Language Model (LLM) integration, and scrutinizes the software ecosystem to identify critical barriers to the adoption of the proposed dynasir module. The objective is to provide a rigorous theoretical and practical roadmap to elevate the draft manuscript to the standards of top-tier epidemiological and computational intelligence journals.
 
 ### **1.1 The Theoretical Imperative: From Static to Dynamic Parameters**
 
@@ -180,7 +180,7 @@ An emerging frontier in late 2024 and 2025 is **PandemicLLM** and similar multi-
 
 **5\. Software Ecosystem and Namespace Risk Assessment**
 
-A critical, non-mathematical finding of this research concerns the software implementation accompanying the draft manuscript. The user's draft introduces a Python module named **epydemics**. This name presents a severe barrier to publication and adoption.
+A critical, non-mathematical finding of this research concerns the software implementation accompanying the draft manuscript. The user's draft introduces a Python module named **dynasir**. This name presents a severe barrier to publication and adoption.
 
 ### **5.1 The "Epydemic" Namespace Collision**
 
@@ -190,10 +190,10 @@ Deep investigation into the Python ecosystem reveals a direct and dangerous name
   * **Functionality:** It is a sophisticated simulation engine for epidemic processes on complex networks (NetworkX integration). It supports stochastic dynamics (Gillespie algorithm) and synchronous processes.23  
   * **Status:** It is active, version 1.14.1 was released in November 2024, and it is documented on ReadTheDocs.23  
   * **Citation Impact:** It is widely used in network science literature.  
-* **The Conflict:** Releasing a package named epydemics (plural) is technically feasible but ethically and practically problematic.  
+* **The Conflict:** Releasing a package named dynasir (plural) is technically feasible but ethically and practically problematic.  
   * **Typosquatting:** Package repositories like PyPI aggressively monitor for "typosquatting" (names that differ by a single character). The user's package risks being flagged or removed.  
-  * **User Confusion:** Researchers attempting to pip install epydemic might accidentally install epydemics, leading to immediate errors and lack of trust.  
-  * **Citation Ambiguity:** In academic literature, citing "the epydemics package" would be indistinguishable from "the epydemic package."
+  * **User Confusion:** Researchers attempting to pip install epydemic might accidentally install dynasir, leading to immediate errors and lack of trust.  
+  * **Citation Ambiguity:** In academic literature, citing "the dynasir package" would be indistinguishable from "the epydemic package."
 
 **Strategic Recommendation:** The package **must be renamed** immediately. Suggested alternatives that reflect the specific methodology (Algebraic/Time-Series) include:
 
@@ -223,7 +223,7 @@ To claim "SOTA," the user's software must be compared against current market lea
 
 #### **5.2.3 Epydemix**
 
-**Epydemix** (note the spelling) is another entrant focusing on mechanistic modeling.27 The existence of epydemic, epydemix, and the user's epydemics creates a "crowded hallway" effect. A distinct, descriptive name is vital for visibility.
+**Epydemix** (note the spelling) is another entrant focusing on mechanistic modeling.27 The existence of epydemic, epydemix, and the user's dynasir creates a "crowded hallway" effect. A distinct, descriptive name is vital for visibility.
 
 ### **5.3 Architecture of a SOTA Library**
 

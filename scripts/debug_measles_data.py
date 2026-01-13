@@ -1,7 +1,7 @@
 """Debug script to understand the measles data and VAR fitting issues."""
 
 import pandas as pd
-from epydemics import DataContainer
+from dynasir import DataContainer
 
 # Create test data
 measles_cases = [

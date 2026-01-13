@@ -1,21 +1,21 @@
-# GitHub Project Organization Plan - Epydemics Library
+# GitHub Project Organization Plan - DynaSIR Library
 
 **Date**: December 2025  
-**Repository**: julihocc/epydemics  
+**Repository**: julihocc/dynasir  
 **Total Issues**: 131 (15 open, 116 closed)
 
 ## Executive Summary
 
-This document provides a comprehensive plan to organize all epydemics GitHub issues into a structured project board with clear swim lanes, priorities, and dependencies.
+This document provides a comprehensive plan to organize all dynasir GitHub issues into a structured project board with clear swim lanes, priorities, and dependencies.
 
 ---
 
 ## Proposed Project Structure
 
-### Project Name: **Epydemics Development Roadmap**
+### Project Name: **DynaSIR Development Roadmap**
 
 ### Description
-Centralized tracking for epydemics library development across releases v0.10.0 through v1.0.0, including feature development, bug fixes, documentation, and performance optimization.
+Centralized tracking for dynasir library development across releases v0.10.0 through v1.0.0, including feature development, bug fixes, documentation, and performance optimization.
 
 ---
 
@@ -112,7 +112,7 @@ Based on codebase verification, these issues can be confidently closed:
 
 1. **#111**: Scenario Analysis Framework
    - **Status**: CLOSED (if not already)
-   - **Verification**: `Model.create_scenario()` implemented at [src/epydemics/models/sird.py](src/epydemics/models/sird.py#L684)
+   - **Verification**: `Model.create_scenario()` implemented at [src/dynasir/models/sird.py](src/dynasir/models/sird.py#L684)
    - **Artifacts**: Method with full parameter modifier support
 
 2. **#120**: Create `Model.create_scenario()` Method
@@ -122,7 +122,7 @@ Based on codebase verification, these issues can be confidently closed:
 
 3. **#121**: Create `compare_scenarios()` Visualization
    - **Status**: CLOSED (if not already)
-   - **Verification**: Function implemented at [src/epydemics/analysis/visualization.py](src/epydemics/analysis/visualization.py#L116)
+   - **Verification**: Function implemented at [src/dynasir/analysis/visualization.py](src/dynasir/analysis/visualization.py#L116)
    - **Artifacts**: Full comparison plot utility with examples
 
 4. **#122**: Scenario Analysis Example Notebook
@@ -219,10 +219,10 @@ Create 3 new issues from `PROPOSED_ISSUES_v0.11.0.md`:
 - [ ] Review and update/close issues #63-73
 
 ### Step 3: Create GitHub Project
-1. Go to https://github.com/julihocc/epydemics/projects
+1. Go to https://github.com/julihocc/dynasir/projects
 2. Click "New project"
 3. Select "Board" template
-4. Name: "Epydemics Development Roadmap"
+4. Name: "DynaSIR Development Roadmap"
 5. Add description from this document
 
 ### Step 4: Configure Columns
@@ -372,8 +372,8 @@ Track these KPIs monthly:
 ## References
 
 - GitHub Projects Docs: https://docs.github.com/en/issues/planning-and-tracking-with-projects
-- Epydemics Repository: https://github.com/julihocc/epydemics
-- Issue List: https://github.com/julihocc/epydemics/issues
+- DynaSIR Repository: https://github.com/julihocc/dynasir
+- Issue List: https://github.com/julihocc/dynasir/issues
 - Proposed New Issues: `PROPOSED_ISSUES_v0.11.0.md`
 
 ---

@@ -1,5 +1,5 @@
 """
-Configuration management for the epydemics library.
+Configuration management for the DynaSIR library.
 """
 
 import os
@@ -12,7 +12,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     """
-    Application settings for the epydemics library.
+    Application settings for the DynaSIR library.
 
     Settings are loaded in the following order (with later sources
     overriding earlier ones):
@@ -105,7 +105,7 @@ class Settings(BaseSettings):
         description="Enable disk caching of generated results (per-configuration cache).",
     )
     CACHE_DIR: str = Field(
-        ".epydemics_cache",
+        ".dynasir_cache",
         description="Directory to store cache artifacts (per project/machine).",
     )
     CACHE_STRICT_VERSION: bool = Field(

@@ -1,7 +1,7 @@
 # GitHub Issue Organization - Implementation Summary
 
 **Date**: December 2025  
-**Repository**: julihocc/epydemics  
+**Repository**: julihocc/dynasir  
 **Status**: ✅ Planning Complete - Ready for Manual Execution
 
 ---
@@ -80,7 +80,7 @@ Created comprehensive project structure in `GITHUB_PROJECT_PLAN.md`:
 #### 1. Create 3 New Issues
 Use the content from `PROPOSED_ISSUES_v0.11.0.md`:
 
-1. Go to https://github.com/julihocc/epydemics/issues/new
+1. Go to https://github.com/julihocc/dynasir/issues/new
 2. Create Issue #144: v0.11.0 PyPI Release Preparation
    - Labels: `enhancement`, `documentation`, `release`
    - Milestone: v0.11.0
@@ -94,9 +94,9 @@ Use the content from `PROPOSED_ISSUES_v0.11.0.md`:
 #### 2. Create GitHub Project Board
 Follow instructions in `GITHUB_PROJECT_PLAN.md`:
 
-1. Visit https://github.com/julihocc/epydemics/projects
+1. Visit https://github.com/julihocc/dynasir/projects
 2. Click "New project" → Select "Board" template
-3. Name: "Epydemics Development Roadmap"
+3. Name: "DynaSIR Development Roadmap"
 4. Create 6 columns (Current Sprint, Next Release, Backlog High, Backlog Research, Documentation, Completed)
 5. Configure automation rules as specified in plan
 6. Populate with issues per categorization
@@ -234,9 +234,9 @@ Dedicate a future session to individually assess:
 - `GITHUB_ISSUE_ORGANIZATION_SUMMARY.md` - This summary
 
 ### GitHub Resources
-- Repository: https://github.com/julihocc/epydemics
-- Issues: https://github.com/julihocc/epydemics/issues
-- Projects: https://github.com/julihocc/epydemics/projects (create board here)
+- Repository: https://github.com/julihocc/dynasir
+- Issues: https://github.com/julihocc/dynasir/issues
+- Projects: https://github.com/julihocc/dynasir/projects (create board here)
 
 ### Related Documentation
 - `.github/copilot-instructions.md` - AI coding agent guide (updated earlier)

@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from epydemics import DataContainer, Model
+from dynasir import DataContainer, Model
 
 
 @pytest.fixture
@@ -167,7 +167,7 @@ class TestModelModeInForecasting:
         Uses existing sample_data_container fixture which has realistic data
         that avoids constant logit columns.
         """
-        from epydemics import Model
+        from dynasir import Model
 
         model = Model(sample_data_container)
         model.create_model()

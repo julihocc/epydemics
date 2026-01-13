@@ -1,4 +1,4 @@
-# **Comprehensive Strategic Plan: Elevating Epydemics to SOTA Standards**
+# **Comprehensive Strategic Plan: Elevating DynaSIR to SOTA Standards**
 
 **Objective:** Transform the manuscript "Adaptive Epidemic Forecasting" into "Hybrid Epidemic Intelligence" for submission to high-impact journals (e.g., *Nature Communications*, *Frontiers in AI*, *Scientific Reports*).
 
@@ -21,7 +21,7 @@
 
 1. **The "Static vs. Dynamic" Benchmark:**  
    * You must run a Static SIRD fit (constant $\\beta, \\gamma, \\mu$) on the same dataset.  
-   * Calculate **RMSE (Root Mean Square Error)** and **MAE (Mean Absolute Error)** for both the Static model and your Dynamic Epydemics model.  
+   * Calculate **RMSE (Root Mean Square Error)** and **MAE (Mean Absolute Error)** for both the Static model and your Dynamic DynaSIR model.  
    * *Hypothesis:* The Dynamic model error should be significantly lower (likely by an order of magnitude during wave peaks).  
    * *Action:* Run the provided benchmarking.py script.  
 2. **Event Correlation Analysis:**  
@@ -38,7 +38,7 @@
    * *Why:* Visualizing the "Framework" makes it look like a software product/system, not just a math equation.  
 2. **Figure 2: The "Drift" Comparison:**  
    * Plot the Static SIRD forecast vs. Real Data (showing how it fails after 20 days).  
-   * Overlay the Epydemics forecast (showing how it adapts).  
+   * Overlay the DynaSIR forecast (showing how it adapts).  
    * *Annotation:* Add arrows pointing to where the static model diverges, labeled "Parameter Drift."
 
 ## **Phase 4: Manuscript Overhaul (Section by Section)**
@@ -47,7 +47,7 @@
 
 * **The Hook:** Start with the failure of static models during COVID-19 (The "Paradigm Shift").  
 * **The Gap:** Mention that while Pure ML (Neural Networks) is powerful, it lacks interpretability.  
-* **The Solution:** Epydemics bridges the gap—physics-based interpretability \+ ML adaptability.
+* **The Solution:** DynaSIR bridges the gap—physics-based interpretability \+ ML adaptability.
 
 ### **2\. Methodology**
 
@@ -57,7 +57,7 @@
 ### **3\. Discussion**
 
 * **Interpretation:** Discuss *why* $\\alpha(t)$ dropped. Was it a lockdown? Was it depletion of susceptibles?  
-* **Future Work (Crucial):** Explicitly mention **Physics-Informed Neural Networks (PINNs)**. State that while Epydemics uses discrete time-stepping, the next logical step is continuous Neural ODEs. This proves you know the SOTA landscape.
+* **Future Work (Crucial):** Explicitly mention **Physics-Informed Neural Networks (PINNs)**. State that while DynaSIR uses discrete time-stepping, the next logical step is continuous Neural ODEs. This proves you know the SOTA landscape.
 
 ## **Phase 5: Submission Preparation**
 
@@ -65,4 +65,4 @@
    * *Tier 1:* Scientific Reports (Multidisciplinary, high volume).  
    * *Tier 2:* Frontiers in Public Health / Frontiers in AI (Good for "Hybrid" papers).  
 2. **Cover Letter Strategy:**  
-   * Highlight the open-source nature of the epydemics library (editors love reproducible code).
+   * Highlight the open-source nature of the dynasir library (editors love reproducible code).

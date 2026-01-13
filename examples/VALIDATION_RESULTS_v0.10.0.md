@@ -104,7 +104,7 @@ This extreme variance causes numerical issues in:
 
 ### For Users (v0.10.0)
 
-✅ **Use epydemics for**:
+✅ **Use dynasir for**:
 - Measles outbreak periods with stable case counts
 - Endemic diseases with consistent transmission
 - Synthetic/simulated epidemic data
@@ -155,4 +155,4 @@ The fix achieves its core objective: **eliminating LinAlgError** and enabling VA
 
 - OWID Measles Data: https://ourworldindata.org/measles
 - Notebook 06: `examples/notebooks/06_incidence_mode_measles.ipynb`
-- Issue #142: https://github.com/julihocc/epydemics/issues/142
+- Issue #142: https://github.com/julihocc/dynasir/issues/142

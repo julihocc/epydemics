@@ -5,9 +5,9 @@
 
 ## Overview
 
-Version 0.11.0 represents the consolidation and polish of all features from the v0.10.0 release cycle. This release is now published on PyPI and represents the first officially published version of epydemics with comprehensive support for epidemiological forecasting, reporting, and multi-frequency time series analysis.
+Version 0.11.0 represents the consolidation and polish of all features from the v0.10.0 release cycle. This release is now published on PyPI and represents the first officially published version of dynasir with comprehensive support for epidemiological forecasting, reporting, and multi-frequency time series analysis.
 
-**Key Milestone**: First PyPI publication of epydemics library with production-grade quality assurance.
+**Key Milestone**: First PyPI publication of dynasir library with production-grade quality assurance.
 
 ## What's New in v0.11.0
 
@@ -23,7 +23,7 @@ Version 0.11.0 represents the consolidation and polish of all features from the 
 The `ModelReport` class provides one-call publication generation:
 
 ```python
-from epydemics.analysis import ModelReport
+from dynasir.analysis import ModelReport
 
 # Create comprehensive report from model results
 report = ModelReport(
@@ -129,13 +129,13 @@ model.run_simulations(n_jobs=4)  # 4 cores
 ### Install from PyPI
 
 ```bash
-pip install epydemics==0.11.0
+pip install dynasir==0.11.0
 ```
 
 ### Verify Installation
 
 ```bash
-python -c "import epydemics; print(epydemics.__version__)"
+python -c "import dynasir; print(dynasir.__version__)"
 # Output: 0.11.0
 ```
 
@@ -143,8 +143,8 @@ python -c "import epydemics; print(epydemics.__version__)"
 
 ```python
 import pandas as pd
-from epydemics import DataContainer, Model
-from epydemics.analysis import ModelReport
+from dynasir import DataContainer, Model
+from dynasir.analysis import ModelReport
 
 # Prepare data
 data = pd.DataFrame({
@@ -247,7 +247,7 @@ Memory usage remains constant (~85 MB for 100 simulations).
 
 ## Known Limitations
 
-1. **Prophet Backend**: Requires `pip install epydemics[prophet]` for Prophet support
+1. **Prophet Backend**: Requires `pip install dynasir[prophet]` for Prophet support
 2. **GPU Support**: Not currently supported (uses CPU-based statsmodels)
 3. **Real-time Forecasting**: Designed for batch/offline analysis
 4. **Maximum Frequency**: Supports up to daily frequency (intraday not supported)
@@ -258,7 +258,7 @@ No changes required. v0.11.0 is a pure production release of v0.10.0.
 
 ```bash
 # Simply update
-pip install --upgrade epydemics==0.11.0
+pip install --upgrade dynasir==0.11.0
 ```
 
 All v0.10.0 code runs unchanged on v0.11.0.
@@ -269,7 +269,7 @@ Full backward compatibility maintained:
 
 ```bash
 # Works without code changes
-pip install epydemics==0.11.0
+pip install dynasir==0.11.0
 ```
 
 The library automatically detects data mode (cumulative/incidence) and frequency. See **CONTRIBUTING.md** for detailed migration examples.
@@ -293,9 +293,9 @@ Thanks to all contributors and testers:
 
 ## Support & Reporting Issues
 
-- **GitHub Issues**: https://github.com/julihocc/epydemics/issues
-- **Documentation**: https://github.com/julihocc/epydemics/wiki
-- **PyPI Package**: https://pypi.org/project/epydemics/
+- **GitHub Issues**: https://github.com/julihocc/dynasir/issues
+- **Documentation**: https://github.com/julihocc/dynasir/wiki
+- **PyPI Package**: https://pypi.org/project/dynasir/
 
 ## License
 

@@ -16,8 +16,8 @@ import pandas as pd
 import pytest
 
 # Import from the original module during Phase 2 transition
-from epydemics import Model
-from epydemics.data import DataContainer
+from dynasir import Model
+from dynasir.data import DataContainer
 
 
 class TestModelInitialization:

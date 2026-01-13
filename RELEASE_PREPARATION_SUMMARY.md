@@ -6,7 +6,7 @@
 
 ## What Was Done
 
-This branch contains all necessary preparations for publishing epydemics v0.11.0 to PyPI. All changes are minimal and focused solely on release preparation.
+This branch contains all necessary preparations for publishing dynasir v0.11.0 to PyPI. All changes are minimal and focused solely on release preparation.
 
 ### Files Modified (3 files)
 
@@ -35,7 +35,7 @@ This branch contains all necessary preparations for publishing epydemics v0.11.0
 ### Files NOT Modified (Intentionally)
 
 These files were already at v0.11.0 before this work:
-- `src/epydemics/__init__.py` - version already 0.11.0
+- `src/dynasir/__init__.py` - version already 0.11.0
 - `pyproject.toml` - version already 0.11.0 (only license format fixed)
 - `README.md` - already up-to-date per maintainer
 - `CLAUDE.md` - already documents v0.10.0+ features per maintainer
@@ -48,12 +48,12 @@ These files were already at v0.11.0 before this work:
 ✅ Package builds successfully without errors or warnings:
 ```bash
 $ python -m build
-Successfully built epydemics-0.11.0.tar.gz and epydemics-0.11.0-py3-none-any.whl
+Successfully built dynasir-0.11.0.tar.gz and dynasir-0.11.0-py3-none-any.whl
 ```
 
 Generated artifacts (excluded from git via .gitignore):
-- `dist/epydemics-0.11.0-py3-none-any.whl` (84K)
-- `dist/epydemics-0.11.0.tar.gz` (84K)
+- `dist/dynasir-0.11.0-py3-none-any.whl` (84K)
+- `dist/dynasir-0.11.0.tar.gz` (84K)
 
 ### Deprecation Warning Fix
 ✅ Before fix:
@@ -102,13 +102,13 @@ git push origin v0.11.0
 **Step 4**: Verify PyPI Publication
 ```bash
 # Check PyPI page
-https://pypi.org/project/epydemics/0.11.0/
+https://pypi.org/project/dynasir/0.11.0/
 
 # Test installation
 python -m venv test_env
 source test_env/bin/activate
-pip install epydemics==0.11.0
-python -c "import epydemics; print(epydemics.__version__)"  # Should print: 0.11.0
+pip install dynasir==0.11.0
+python -c "import dynasir; print(dynasir.__version__)"  # Should print: 0.11.0
 ```
 
 **Step 5**: Create GitHub Release
@@ -152,10 +152,10 @@ If the automated release workflow fails, see RELEASE_GUIDE_v0.11.0.md for:
 ## Success Criteria
 
 After following the release guide, verify:
-- [ ] PyPI page exists: https://pypi.org/project/epydemics/0.11.0/
-- [ ] `pip install epydemics==0.11.0` works
+- [ ] PyPI page exists: https://pypi.org/project/dynasir/0.11.0/
+- [ ] `pip install dynasir==0.11.0` works
 - [ ] Installed version is 0.11.0
-- [ ] Basic imports work: `from epydemics import DataContainer, Model`
+- [ ] Basic imports work: `from dynasir import DataContainer, Model`
 - [ ] GitHub Release created with notes
 - [ ] Git tag exists: `v0.11.0`
 

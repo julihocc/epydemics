@@ -2,7 +2,7 @@ import logging
 
 import pandas as pd
 
-from epydemics.core.config import get_settings
+from dynasir.core.config import get_settings
 
 from .features import feature_engineering
 from .frequency_handlers import (

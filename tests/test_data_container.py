@@ -11,10 +11,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from epydemics.core.exceptions import NotDataFrameError
+from dynasir.core.exceptions import NotDataFrameError
 
 # Import from the new extracted module
-from epydemics.data import DataContainer
+from dynasir.data import DataContainer
 
 
 class TestDataContainerInitialization:

@@ -48,8 +48,8 @@ def make_annual_cumulative_data() -> pd.DataFrame:
 
 def run_model_and_export(df: pd.DataFrame, steps: int) -> Dict[str, Any]:
     # NOTE: Import epydemics from v0.7.0 environment
-    from epydemics.data.container import DataContainer
-    from epydemics.models.sird import Model
+    from dynasir.data.container import DataContainer
+    from dynasir.models.sird import Model
 
     container = DataContainer(df)
     model = Model(container)

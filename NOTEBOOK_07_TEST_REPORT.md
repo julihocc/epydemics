@@ -111,7 +111,7 @@ This failure is **documented and expected**:
    - Technical explanation for developers
    - Alternative approaches
 
-3. **Code Warning**: `src/epydemics/data/frequency_handlers.py`
+3. **Code Warning**: `src/dynasir/data/frequency_handlers.py`
    - `AnnualFrequencyHandler` class docstring
    - Warning about incidence mode incompatibility
 
@@ -204,7 +204,7 @@ The failure is:
 
 - Documentation: `docs/user-guide/known-limitations.md`
 - Developer guide: `CLAUDE.md`
-- Code warning: `src/epydemics/data/frequency_handlers.py`
+- Code warning: `src/dynasir/data/frequency_handlers.py`
 - Resolution summary: `docs/development/TASK_2_LIMITATION_RESOLUTION_SUMMARY.md`
 - ARIMA plan: `docs/development/GITHUB_ISSUE_ARIMA_BACKEND.md`
 - Validation script: `scripts/validate_notebooks.py`

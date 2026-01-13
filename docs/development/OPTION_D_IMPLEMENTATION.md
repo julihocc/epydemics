@@ -21,7 +21,7 @@ Based on the verification findings from Tasks 1-2, we've identified that annual 
 - Provide clear guidance on alternatives
 - Include code examples showing what works
 
-**File**: `src/epydemics/data/frequency_handlers.py`
+**File**: `src/dynasir/data/frequency_handlers.py`
 - Add docstring warning to AnnualFrequencyHandler
 - Note that incidence mode may produce constant rates
 - Recommend monthly/weekly data for eliminated diseases
@@ -57,7 +57,7 @@ Based on the verification findings from Tasks 1-2, we've identified that annual 
 
 **Run full test suite** (Task 7):
 ```bash
-pytest tests/ -v --cov=src/epydemics
+pytest tests/ -v --cov=src/dynasir
 ```
 
 **Manual verification** (Task 8):

@@ -8,13 +8,13 @@
 
 ### Completed Items
 - [x] Version updated to 0.11.1 in `pyproject.toml`
-- [x] Version updated to 0.11.1 in `src/epydemics/__init__.py`
+- [x] Version updated to 0.11.1 in `src/dynasir/__init__.py`
 - [x] CHANGELOG.md entry added for v0.11.1
 - [x] Package builds successfully (`python -m build`)
 - [x] License format fixed in pyproject.toml (deprecation warning resolved)
 - [x] Distribution artifacts generated:
-  - `dist/epydemics-0.11.1-py3-none-any.whl` (84K)
-  - `dist/epydemics-0.11.1.tar.gz` (84K)
+  - `dist/dynasir-0.11.1-py3-none-any.whl` (84K)
+  - `dist/dynasir-0.11.1.tar.gz` (84K)
 - [x] Test suite: 433/433 passing (100% per maintainer verification)
 - [x] Documentation complete (README, CLAUDE.md, notebooks)
 - [x] Code quality verified (black, isort, flake8 per maintainer)
@@ -59,7 +59,7 @@ Production-ready consolidation of v0.10.0 features with:
 - All 7 example notebooks validated
 - Complete backward compatibility
 
-Official PyPI release: pip install epydemics==0.11.1"
+Official PyPI release: pip install dynasir==0.11.1"
 
 # Push the tag to trigger release workflow
 git push origin v0.11.1
@@ -93,19 +93,19 @@ After workflow completes:
 
 ```bash
 # Check PyPI page
-https://pypi.org/project/epydemics/0.11.1/
+https://pypi.org/project/dynasir/0.11.1/
 
 # Test installation in clean virtualenv
 python -m venv test_env
 source test_env/bin/activate  # Windows: test_env\Scripts\activate
-pip install epydemics==0.11.1
+pip install dynasir==0.11.1
 
 # Verify version
-python -c "import epydemics; print(epydemics.__version__)"
+python -c "import dynasir; print(dynasir.__version__)"
 # Expected output: 0.11.1
 
 # Quick smoke test
-python -c "from epydemics import DataContainer, Model; print('Import successful')"
+python -c "from dynasir import DataContainer, Model; print('Import successful')"
 
 # Clean up
 deactivate
@@ -114,7 +114,7 @@ rm -rf test_env
 
 ### Step 5: Create GitHub Release with Notes
 
-Visit: https://github.com/julihocc/epydemics/releases/new?tag=v0.11.1
+Visit: https://github.com/julihocc/dynasir/releases/new?tag=v0.11.1
 
 **Release Title**: `Release v0.11.1: Production-Ready PyPI Publication`
 
@@ -123,7 +123,7 @@ Visit: https://github.com/julihocc/epydemics/releases/new?tag=v0.11.1
 ```markdown
 # Release v0.11.1: Production-Ready PyPI Publication
 
-**Official PyPI Release**: `pip install epydemics==0.11.1`
+**Official PyPI Release**: `pip install dynasir==0.11.1`
 
 ## Summary
 
@@ -148,14 +148,14 @@ Production-ready consolidation of v0.10.0 features with comprehensive testing, d
 ### Installation
 
 ```bash
-pip install epydemics==0.11.1
+pip install dynasir==0.11.1
 ```
 
 ### Quick Start
 
 ```python
-from epydemics import DataContainer, Model
-from epydemics.analysis import ModelReport
+from dynasir import DataContainer, Model
+from dynasir.analysis import ModelReport
 
 # Load and prepare data
 container = DataContainer(data, mode='incidence', frequency='YE')
@@ -183,9 +183,9 @@ report.export_latex_table("table1.tex", "summary")
 
 ## Documentation
 
-- [README.md](https://github.com/julihocc/epydemics/blob/v0.11.1/README.md)
-- [CHANGELOG.md](https://github.com/julihocc/epydemics/blob/v0.11.1/CHANGELOG.md)
-- [Example Notebooks](https://github.com/julihocc/epydemics/tree/v0.11.1/examples/notebooks)
+- [README.md](https://github.com/julihocc/dynasir/blob/v0.11.1/README.md)
+- [CHANGELOG.md](https://github.com/julihocc/dynasir/blob/v0.11.1/CHANGELOG.md)
+- [Example Notebooks](https://github.com/julihocc/dynasir/tree/v0.11.1/examples/notebooks)
   - 07_reporting_and_publication.ipynb (NEW: ModelReport demo)
 
 ## Contributors
@@ -193,7 +193,7 @@ report.export_latex_table("table1.tex", "summary")
 - @julihocc (Juliho David Castillo Colmenares) - Project Lead
 - GitHub Copilot - AI-assisted development
 
-**Full Changelog**: https://github.com/julihocc/epydemics/compare/v0.10.0...v0.11.1
+**Full Changelog**: https://github.com/julihocc/dynasir/compare/v0.10.0...v0.11.1
 ```
 
 ### Step 6: Post-Release Announcements (Optional)
@@ -216,7 +216,7 @@ Consider announcing the release on:
   1. Go to https://pypi.org/manage/account/publishing/
   2. Add new GitHub Actions publisher:
      - Owner: julihocc
-     - Repository: epydemics
+     - Repository: dynasir
      - Workflow: release.yml
      - Environment: release
   3. Create GitHub environment "release" in repo settings
@@ -237,10 +237,10 @@ pip install twine
 python -m build
 
 # Upload to PyPI (requires PyPI API token)
-twine upload dist/epydemics-0.11.1*
+twine upload dist/dynasir-0.11.1*
 
 # Upload to TestPyPI first (recommended for testing)
-twine upload --repository testpypi dist/epydemics-0.11.1*
+twine upload --repository testpypi dist/dynasir-0.11.1*
 ```
 
 **Note**: You'll need a PyPI API token stored in `~/.pypirc`:
@@ -259,10 +259,10 @@ password = pypi-AgEIcH...your-token-here...
 
 After release, verify:
 
-- [ ] PyPI page shows v0.11.1: https://pypi.org/project/epydemics/
-- [ ] `pip install epydemics==0.11.1` works in clean virtualenv
+- [ ] PyPI page shows v0.11.1: https://pypi.org/project/dynasir/
+- [ ] `pip install dynasir==0.11.1` works in clean virtualenv
 - [ ] Imported package version is 0.11.1
-- [ ] Basic import test passes: `from epydemics import DataContainer, Model`
+- [ ] Basic import test passes: `from dynasir import DataContainer, Model`
 - [ ] GitHub Release created with proper notes
 - [ ] Release tagged in git: `git tag -l v0.11.1`
 
@@ -277,7 +277,7 @@ After release, verify:
 ## Support
 
 For issues or questions about this release:
-- GitHub Issues: https://github.com/julihocc/epydemics/issues
+- GitHub Issues: https://github.com/julihocc/dynasir/issues
 - Email: juliho.colmenares@gmail.com
 
 ---

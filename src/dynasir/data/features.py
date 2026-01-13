@@ -10,7 +10,7 @@ from typing import Union
 
 import pandas as pd
 
-from epydemics.core.config import get_settings
+from dynasir.core.config import get_settings
 
 # Import constants from the core module
 from ..core.constants import LOGIT_RATIOS, RATIOS

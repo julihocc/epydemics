@@ -7,7 +7,7 @@ Tests:
 import pandas as pd
 import numpy as np
 import logging
-from epydemics import DataContainer, Model
+from dynasir import DataContainer, Model
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

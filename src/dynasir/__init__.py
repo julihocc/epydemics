@@ -1,9 +1,9 @@
-"""Epydemics: Advanced epidemiological modeling and forecasting.
+"""DynaSIR: Hybrid Epidemic Intelligence for SIRD inverse modeling.
 
 This package provides tools for modeling and analyzing epidemic data using
 discrete SIRD/SIRDV models combined with time series analysis.
 
-v0.11.2 Features:
+v1.0.0 Features:
 - Publication-ready reporting tools (ModelReport class)
 - Markdown/LaTeX export and 300-600 DPI figures
 - Comprehensive summary statistics and forecast evaluation
@@ -11,7 +11,7 @@ v0.11.2 Features:
 - All v0.10.0+ features: reporting, fractional recovery lag fix
 - Full backward compatibility
 
-Version: 0.11.2
+Version: 1.0.0
 """
 
 import logging
@@ -41,7 +41,7 @@ from .core.constants import (
 from .core.exceptions import (
     DataValidationError,
     DateRangeError,
-    EpydemicsError,
+    DynaSIRError,
     NotDataFrameError,
 )
 from .data.container import DataContainer, validate_data
@@ -52,6 +52,27 @@ from .utils.transformations import prepare_for_logit_function
 __version__ = "0.11.2"
 __author__ = "Juliho David Castillo Colmenares"
 __email__ = "juliho.colmenares@gmail.com"
+
+# Backward-compatibility alias for legacy 'epydemics' package
+import sys
+
+epydemics = sys.modules[__name__]
+sys.modules["epydemics"] = epydemics
+
+# Expose legacy name at builtins-level for tests expecting a global symbol
+import builtins
+
+builtins.epydemics = epydemics
+
+# Map legacy subpackages to the same module objects
+import importlib
+
+for _sub in ["analysis", "core", "data", "models", "utils"]:
+    sys.modules[f"epydemics.{_sub}"] = importlib.import_module(f"dynasir.{_sub}")
+# Explicitly map commonly-used legacy modules
+sys.modules["epydemics.data.container"] = importlib.import_module(
+    "dynasir.data.container"
+)
 
 # Configure logging
 settings = get_settings()
@@ -73,7 +94,7 @@ __all__ = [
     "METHOD_NAMES",
     "METHOD_COLORS",
     # Exceptions
-    "EpydemicsError",
+    "DynaSIRError",
     "NotDataFrameError",
     "DataValidationError",
     "DateRangeError",

@@ -10,11 +10,11 @@ SOTA Insight: The field has moved to "Hybrid" and "Data-Driven" terminology. The
 
 * **Proposed Title Change:**  
   * *From:* "Adaptive Epidemic Forecasting Using Time Series Analysis and Machine Learning"  
-  * *To:* "Hybrid Epidemic Intelligence: Integrating Time-Varying Parameter Estimation with Mechanistic SIRD Models in the epydemics Framework"  
+  * *To:* "Hybrid Epidemic Intelligence: Integrating Time-Varying Parameter Estimation with Mechanistic SIRD Models in the dynasir Framework"  
 * **Abstract Update:**  
   * **Hook:** Open with the "Paradigm Shift" mentioned in the SOTA doc. Acknowledge that static parameters are a "disqualifying error" in modern modeling.  
   * **Method:** Explicitly label your method as a **Hybrid Compartmental Model**. You are using the SIRD structure to constrain the physics, but ML/Time Series to learn the dynamics ($\\alpha(t), \\beta(t)$).  
-  * **Tool:** Mention epydemics not just as a script, but as a "flexible data-assimilation framework."
+  * **Tool:** Mention dynasir not just as a script, but as a "flexible data-assimilation framework."
 
 ## **2\. Introduction: The "Paradigm Shift"**
 
@@ -23,7 +23,7 @@ SOTA Insight: You need to set the historical context of the 2020-2025 shift.
 
 * **Actionable Edits:**  
   1. **Cite the Failure of Static Models:** Use the text from the SOTA doc regarding the "operational demands of the 2020s" and "complex feedback loops."  
-  2. **Define the Gap:** Explain that while Neural ODEs and PINNs are powerful (cite them as neighbors), they can be computationally expensive. Your approach (Time-Varying SIRD via epydemics) offers a pragmatic balance between **interpretability** (it's still SIRD) and **accuracy** (it adapts like a Neural Net).  
+  2. **Define the Gap:** Explain that while Neural ODEs and PINNs are powerful (cite them as neighbors), they can be computationally expensive. Your approach (Time-Varying SIRD via dynasir) offers a pragmatic balance between **interpretability** (it's still SIRD) and **accuracy** (it adapts like a Neural Net).  
   3. **Notation Standardization (Crucial):**  
      * Your paper uses $\\alpha(t)$ for infection rate. The SOTA doc (and standard literature) usually uses $\\beta(t)$.  
      * Your paper uses $\\beta(t)$ for recovery. Standard is often $\\gamma(t)$.  
@@ -38,15 +38,15 @@ SOTA Insight: The process of finding $\\alpha(t)$ is formally an Inverse Problem
   * Describe your calculation of $\\alpha(t)$ not just as algebra, but as extracting the **"Force of Infection"** from data.  
   * When you use Machine Learning (or ARIMA) to project $\\alpha(t)$ into the future, describe this as **"Latent Variable Forecasting."** You are predicting the *behavior* of the virus/population, which then drives the mechanistic model.
 
-## **4\. The epydemics Library as a Platform**
+## **4\. The dynasir Library as a Platform**
 
 Current Issue: It is mentioned as a module.  
 SOTA Insight: Reproducibility and open-source tools are major publication drivers in 2025\.
 
 * **Actionable Edits:**  
-  * Create a dedicated section or distinct paragraph highlighting epydemics architecture.  
-  * Emphasize that it solves the "Deployment Gap." SOTA models often stay in papers; epydemics is designed for actual forecasting.  
-  * Highlight its modularity: "The epydemics architecture decouples the solver from the parameter estimator, allowing for plug-and-play integration of different ML models (LSTMs, XGBoost, etc.) to predict $\\alpha(t)$."
+  * Create a dedicated section or distinct paragraph highlighting dynasir architecture.  
+  * Emphasize that it solves the "Deployment Gap." SOTA models often stay in papers; dynasir is designed for actual forecasting.  
+  * Highlight its modularity: "The dynasir architecture decouples the solver from the parameter estimator, allowing for plug-and-play integration of different ML models (LSTMs, XGBoost, etc.) to predict $\\alpha(t)$."
 
 ## **5\. Results & Discussion: Benchmarking & Complexity**
 
@@ -58,7 +58,7 @@ SOTA Insight: You must prove why it is better than the static alternative quanti
 
 ## **6\. Future Work (The Bridge to PINNs)**
 
-* Acknowledge that the next step for epydemics is moving from Time-Series forecasting of parameters to full **Physics-Informed Neural Networks (PINNs)** or **Neural ODEs**, where the derivative functions are learned directly. This shows you are aware of the absolute cutting edge (Neural-SEIR, etc.) even if you aren't implementing it fully in this specific paper.
+* Acknowledge that the next step for dynasir is moving from Time-Series forecasting of parameters to full **Physics-Informed Neural Networks (PINNs)** or **Neural ODEs**, where the derivative functions are learned directly. This shows you are aware of the absolute cutting edge (Neural-SEIR, etc.) even if you aren't implementing it fully in this specific paper.
 
 ### **Summary of Key Terminology Updates**
 

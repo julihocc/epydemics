@@ -1,7 +1,7 @@
 
  ▐▛███▜▌   Claude Code v2.0.55
 ▝▜█████▛▘  Sonnet 4.5 · Claude API
-  ▘▘ ▝▝    K:\epydemics\epydemics.worktrees\sirdv-model-implementation
+  ▘▘ ▝▝    K:\dynasir\dynasir.worktrees\sirdv-model-implementation
 ══════════════════ Conversation compacted · ctrl+o for history ═════════════════
   ⎿  Read tests\unit\data\test_features_vaccination.py (413 lines)
   ⎿ Read C:\Users\julih\.claude\todos\5415c057-68a5-499e-bf29-9b1c56f6f0cc-agent
