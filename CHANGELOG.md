@@ -5,6 +5,23 @@ All notable changes to the dynasir project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-01-13
+
+### Summary
+
+Official rename from epydemics to dynasir on PyPI, with packaging, CI, and documentation aligned to the new name and version.
+
+### Changed
+
+- Package metadata set to dynasir v1.0.0; removed legacy epydemics module aliasing.
+- CI pipelines now lint/test/cover `src/dynasir` and smoke-test dynasir wheel installs.
+- Release workflow points to the dynasir PyPI project for trusted publishing.
+- README updated to reflect the rename and 1.0.0 release status.
+
+### Notes
+
+- Codebase functionality remains the same as the 0.11.x line; this release formalizes the namespace rename.
+
 ## [0.11.2] - 2026-01-08
 
 ### Summary

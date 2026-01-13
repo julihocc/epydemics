@@ -1,8 +1,8 @@
 # DynaSIR: Forecasting COVID-19 using time series and machine learning
 
-Note: DynaSIR is the evolution of the epydemics package, featuring enhanced algorithms for time-varying parameter estimation.
+Note: DynaSIR (formerly epydemics) is the canonical package name going forward.
 
-**Version 0.11.1** - Publication-Ready Reporting Tools
+**Version 1.0.0** - Official dynasir release and publication-ready reporting tools
 
 `dynasir` is a Python library for epidemiological modeling and forecasting. It provides tools for creating, fitting, and evaluating discrete SIRD/SIRDV models with time-dependent parameters. The library is designed to be flexible and extensible, allowing users to easily incorporate their own data and models.
 

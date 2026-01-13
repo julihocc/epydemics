@@ -141,17 +141,14 @@ def test_compartment_labels():
 
 def test_backward_compatibility():
     """Test that constants maintain backward compatibility with original module."""
-    # Import from original location (should still work)
     import dynasir
 
-    # These should exist in the original module
-    assert hasattr(epydemics, "RATIOS")
-    assert hasattr(epydemics, "LOGIT_RATIOS")
-    assert hasattr(epydemics, "COMPARTMENTS")
-    assert hasattr(epydemics, "FORECASTING_LEVELS")
-    assert hasattr(epydemics, "CENTRAL_TENDENCY_METHODS")
+    assert hasattr(dynasir, "RATIOS")
+    assert hasattr(dynasir, "LOGIT_RATIOS")
+    assert hasattr(dynasir, "COMPARTMENTS")
+    assert hasattr(dynasir, "FORECASTING_LEVELS")
+    assert hasattr(dynasir, "CENTRAL_TENDENCY_METHODS")
 
-    # Values should match
     from dynasir.core.constants import (
         CENTRAL_TENDENCY_METHODS,
         COMPARTMENTS,
@@ -160,8 +157,8 @@ def test_backward_compatibility():
         RATIOS,
     )
 
-    assert epydemics.RATIOS == RATIOS
-    assert epydemics.LOGIT_RATIOS == LOGIT_RATIOS
-    assert epydemics.COMPARTMENTS == COMPARTMENTS
-    assert epydemics.FORECASTING_LEVELS == FORECASTING_LEVELS
-    assert epydemics.CENTRAL_TENDENCY_METHODS == CENTRAL_TENDENCY_METHODS
+    assert dynasir.RATIOS == RATIOS
+    assert dynasir.LOGIT_RATIOS == LOGIT_RATIOS
+    assert dynasir.COMPARTMENTS == COMPARTMENTS
+    assert dynasir.FORECASTING_LEVELS == FORECASTING_LEVELS
+    assert dynasir.CENTRAL_TENDENCY_METHODS == CENTRAL_TENDENCY_METHODS

@@ -29,17 +29,17 @@ def test_package_version():
     """Test that package version is accessible."""
     import dynasir
 
-    assert hasattr(epydemics, "__version__")
-    assert epydemics.__version__ == "0.11.2"
+    assert hasattr(dynasir, "__version__")
+    assert dynasir.__version__ == "1.0.0"
 
 
 def test_package_metadata():
     """Test that package metadata is accessible."""
     import dynasir
 
-    assert hasattr(epydemics, "__author__")
-    assert hasattr(epydemics, "__email__")
-    assert epydemics.__author__ == "Juliho David Castillo Colmenares"
+    assert hasattr(dynasir, "__author__")
+    assert hasattr(dynasir, "__email__")
+    assert dynasir.__author__ == "Juliho David Castillo Colmenares"
 
 
 def test_v080_new_constants_available():

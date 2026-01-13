@@ -132,9 +132,9 @@ class TestDataContainerProcessing:
         # Assert - Check for SIRD compartments
         expected_columns = ["S", "I", "R", "D", "C", "A"]
         for col in expected_columns:
-            assert (
-                col in container.data.columns
-            ), f"Column {col} missing from processed data"
+            assert col in container.data.columns, (
+                f"Column {col} missing from processed data"
+            )
 
     def test_datacontainer_rate_calculations(self, sample_owid_data):
         """Test that rate calculations are performed."""
@@ -144,9 +144,9 @@ class TestDataContainerProcessing:
         # Assert - Check for rate columns
         expected_rates = ["alpha", "beta", "gamma"]
         for rate in expected_rates:
-            assert (
-                rate in container.data.columns
-            ), f"Rate {rate} missing from processed data"
+            assert rate in container.data.columns, (
+                f"Rate {rate} missing from processed data"
+            )
 
     def test_datacontainer_logit_transformations(self, sample_owid_data):
         """Test that logit transformations are applied."""
@@ -156,9 +156,9 @@ class TestDataContainerProcessing:
         # Assert - Check for logit rate columns
         expected_logit_rates = ["logit_alpha", "logit_beta", "logit_gamma"]
         for logit_rate in expected_logit_rates:
-            assert (
-                logit_rate in container.data.columns
-            ), f"Logit rate {logit_rate} missing"
+            assert logit_rate in container.data.columns, (
+                f"Logit rate {logit_rate} missing"
+            )
 
     def test_datacontainer_difference_calculations(self, sample_owid_data):
         """Test that difference calculations are performed."""
@@ -168,9 +168,9 @@ class TestDataContainerProcessing:
         # Assert - Check for difference columns
         expected_diffs = ["dC", "dI", "dR", "dD"]
         for diff in expected_diffs:
-            assert (
-                diff in container.data.columns
-            ), f"Difference {diff} missing from processed data"
+            assert diff in container.data.columns, (
+                f"Difference {diff} missing from processed data"
+            )
 
     def test_datacontainer_manual_process_call(self, sample_owid_data):
         """Test that process() can be called manually to update results."""
@@ -368,7 +368,7 @@ class TestDataContainerIntegration:
         for feature in epidemio_features:
             assert feature in container.data.columns, f"Missing feature: {feature}"
 
-    @patch("epydemics.data.container.logging")
+    @patch("dynasir.data.container.logging")
     def test_datacontainer_logging_behavior(self, mock_logging):
         """Test that DataContainer maintains proper logging behavior."""
         # Arrange

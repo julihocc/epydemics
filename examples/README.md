@@ -256,10 +256,10 @@ For questions or issues:
 If you use these examples in your research, please cite:
 
 ```bibtex
-@software{epydemics2024,
+@software{dynasir2026,
   author = {Castillo Colmenares, Juliho David},
   title = {DynaSIR: Adaptive Epidemic Forecasting Using Time Series Analysis},
-  year = {2024},
+  year = {2026},
   url = {https://github.com/julihocc/dynasir}
 }
 ```
