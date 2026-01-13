@@ -66,9 +66,6 @@ jobs:
   publish-pypi:
     needs: release
     runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/project/dynasir
     permissions:
       id-token: write
 
@@ -82,3 +79,4 @@ jobs:
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         verbose: true
+        skip-existing: true
