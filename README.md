@@ -8,7 +8,7 @@ Note: DynaSIR (formerly epydemics) is the canonical package name going forward.
 
 **📖 New Users?** Start with the **[User Guide](docs/USER_GUIDE.md)** to understand when and how to use dynasir.
 
-✨ **v0.11.1 Features**: Publication-ready reporting tools with ModelReport class for Markdown, LaTeX, and high-DPI figure export. See [Reporting Guide](examples/notebooks/07_reporting_and_publication.ipynb) for complete workflow examples.
+✨ **v1.0.0 Features**: Publication-ready reporting tools with ModelReport class for Markdown, LaTeX, and high-DPI figure export. See [Reporting Guide](docs/REPORTING_GUIDE.md) for complete workflow examples.
 
 ## Features
 
@@ -78,7 +78,7 @@ fig = report.plot_forecast_panel(dpi=600, save_path="forecast.png")
 
 ## Getting Started
 
-To get started with `dynasir`, we recommend following the tutorial in [TUTORIAL.md](TUTORIAL.md).
+To get started with `dynasir`, we recommend following the tutorial in [TUTORIAL.md](docs/tutorials/TUTORIAL.md).
 
 ## Installation
 
@@ -100,17 +100,20 @@ pip install -e .
 
 **User Documentation**:
 -   **[User Guide](docs/USER_GUIDE.md)**: Complete guide on when to use dynasir, data preparation, and frequency handling
--   **[Tutorial](TUTORIAL.md)**: Step-by-step guide for COVID-19 forecasting
--   **[CHANGELOG.md](CHANGELOG.md)**: Version history and detailed changes
+-   **[Tutorial](docs/tutorials/TUTORIAL.md)**: Step-by-step guide for COVID-19 forecasting
+-   **[CHANGELOG.md](docs/CHANGELOG.md)**: Version history and detailed changes
+-   **[Quick Reference](docs/QUICK_REFERENCE.md)**: Quick lookup for common workflows
 
 **Developer Documentation**:
--   **[Architecture](ARCHITECTURE.md)**: High-level architecture overview
--   **[Contributing](CONTRIBUTING.md)**: Contribution guidelines and workflow
--   **[CLAUDE.md](CLAUDE.md)**: Developer guide for AI assistants
+-   **[Architecture](docs/architecture/ARCHITECTURE.md)**: High-level architecture overview
+-   **[Contributing](docs/CONTRIBUTING.md)**: Contribution guidelines and workflow
+-   **[CLAUDE.md](docs/architecture/CLAUDE.md)**: Developer guide for AI assistants
 -   **[Documentation Index](docs/INDEX.md)**: Complete documentation organization and navigation
 
 **Release Documentation**:
--   **[v0.10.0 Release Notes](RELEASE_NOTES_v0.10.0.md)**: Latest release details (fractional recovery lag fix)
+-   **[v1.0.0 Release Notes](docs/releases/RELEASE_v1.0.0.md)**: Official release with publication-ready reporting
+-   **[v0.11.0 Release Notes](docs/releases/RELEASE_NOTES_v0.11.0.md)**: Comprehensive reporting tools
+-   **[v0.10.0 Release Notes](docs/releases/RELEASE_NOTES_v0.10.0.md)**: Fractional recovery lag fix
 -   **[v0.9.0 Release Notes](docs/releases/RELEASE_NOTES_v0.9.0.md)**: Native multi-frequency support
 -   **[Migration Guide](docs/releases/MIGRATION_GUIDE.md)**: Upgrade from v0.8.0 to v0.9.0
 -   **[PyPI Publication Guide](docs/releases/PYPI_PUBLICATION_GUIDE.md)**: Publishing to PyPI
